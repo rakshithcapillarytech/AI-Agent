@@ -1,0 +1,37 @@
+[project]
+name = "hydra-onboarding-agent"
+version = "0.1.0"
+description = "Experience+ Integration Copilot: an AI agent that onboards clients onto the Hydra SDK"
+requires-python = ">=3.12"
+# Lower bounds only here; exact versions are pinned in uv.lock (run `uv lock`).
+# Upgrade LangGraph/LangChain deliberately and re-run the evals (see PLAN.md §6.2).
+dependencies = [
+    "langgraph>=1.0",
+    "langgraph-checkpoint-postgres",
+    "langchain-core>=1.0",
+    "langchain-anthropic>=1.0",
+    "langchain-google-genai",  # dev provider (free Gemini key); needs Gemini 3 thought-signature support
+    "langchain-text-splitters",
+    "psycopg[binary,pool]",
+    "fastapi",
+    "uvicorn[standard]",
+    "streamlit",
+    "requests",
+    "pydantic>=2",
+    "pydantic-settings",
+    "python-dotenv",
+    "python-frontmatter",
+    "pyyaml",
+]
+
+[dependency-groups]
+dev = ["pytest", "pytest-asyncio", "ruff"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

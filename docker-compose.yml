@@ -1,0 +1,44 @@
+services:
+  postgres:
+    # pgvector image so stage-C semantic search needs no migration later; pg_trgm is enabled in init.sql
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: hydra
+      POSTGRES_PASSWORD: hydra
+      POSTGRES_DB: hydra
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hydra -d hydra"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: .
+    command: uv run uvicorn app.api.main:app --host 0.0.0.0 --port 8000
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://hydra:hydra@postgres:5432/hydra
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./knowledge_base:/app/knowledge_base
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ui:
+    build: .
+    command: uv run streamlit run ui/portal.py --server.port 8501 --server.address 0.0.0.0
+    environment:
+      API_BASE_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

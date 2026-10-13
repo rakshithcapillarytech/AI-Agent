@@ -1,0 +1,11 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+data/
+.DS_Store
+# Client secrets must never land in this repo
+github.properties
+*.p8
