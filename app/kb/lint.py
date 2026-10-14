@@ -32,6 +32,40 @@ PLACEHOLDERS = {
 }
 _PLACEHOLDER = re.compile(r"\{\{\s*([^}]+?)\s*\}\}")
 _H2 = re.compile(r"^## (.+?)\s*$", re.M)
+_CALLOUT_KIND = re.compile(r"⚠️\s*(Gap|Correction|Source doc correction)\s*:")
+
+
+def callouts(text: str) -> list[tuple[int, str]]:
+    """Every ⚠️ callout as (1-based line, full text); blockquote callouts span their "> " lines."""
+    lines = text.splitlines()
+    found = []
+    for i, line in enumerate(lines):
+        if "⚠️" not in line:
+            continue
+        block = [line.strip().lstrip(">").strip()]
+        if line.lstrip().startswith(">"):
+            j = i + 1
+            while j < len(lines) and lines[j].lstrip().startswith(">"):
+                block.append(lines[j].strip().lstrip(">").strip())
+                j += 1
+        found.append((i + 1, " ".join(part for part in block if part)))
+    return found
+
+
+def callout_issues(text: str) -> tuple[list[str], list[str]]:
+    """(errors, warnings) for ⚠️ callouts. Corrections must say plainly what to use and avoid:
+    `⚠️ Correction: ✅ Use … ❌ Don't use …`, so a model can't pick the wrong value."""
+    errors, warnings = [], []
+    for line, callout in callouts(text):
+        match = _CALLOUT_KIND.search(callout)
+        kind = match.group(1) if match else None
+        if kind == "Correction" and not ("✅ Use" in callout and "❌" in callout):
+            errors.append(f"L{line}: correction must state '✅ Use …' and '❌ Don't use …'")
+        elif kind == "Source doc correction":
+            errors.append(f"L{line}: old correction format; rewrite as '⚠️ Correction: ✅ Use … ❌ Don't use …'")
+        elif kind is None:
+            warnings.append(f"L{line}: callout should start with '⚠️ Gap:' or '⚠️ Correction:'")
+    return errors, warnings
 
 
 def lint_file(path: Path, kb_dir: Path) -> list[str]:
@@ -61,6 +95,7 @@ def lint_file(path: Path, kb_dir: Path) -> list[str]:
         problems.append(f"unknown placeholders: {unknown}")
     if "<VERSION>" in body:
         problems.append("hard-coded <VERSION>; use {{sdk_version}} with front-matter sdk_version")
+    problems += callout_issues(body)[0]
     return problems
 
 
@@ -77,10 +112,13 @@ def main(argv: list[str]) -> int:
     failed = 0
     for path in files:
         problems = lint_file(path, kb_dir)
-        status = "FAIL" if problems else "ok"
+        warnings = callout_issues(frontmatter.loads(path.read_text(encoding="utf-8")).content)[1]
+        status = "FAIL" if problems else "warn" if warnings else "ok"
         print(f"{status:4}  {path.relative_to(kb_dir)}")
         for problem in problems:
             print(f"      - {problem}")
+        if warnings:
+            print(f"      ({len(warnings)} warning(s): old-format callouts, see `kb review`)")
         failed += bool(problems)
     print(f"\n{len(files) - failed}/{len(files)} files pass")
     return 1 if failed else 0

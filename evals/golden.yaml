@@ -1,0 +1,166 @@
+# Golden test set: questions with known answers, checked automatically.
+#
+# Each case starts a fresh session with the given profile (as if the client had completed the
+# setup wizard), asks one question, and checks the final answer:
+#   contains      every string must appear (case-insensitive)
+#   not_contains  none of these strings may appear
+#   judge         yes/no questions about the answer, graded by an LLM; `want` is the right reply
+#
+# `profile` is shorthand "<platform>/<firebase|direct>". Every expected fact is traceable to the
+# `source` in the knowledge base; keep it that way when adding cases. Real client questions from
+# the integration team should be added here as they come in.
+
+- id: flutter-gamification-base-url-key
+  profile: flutter/firebase
+  question: >-
+    While setting up gamification we get an error that the Gamification Base URL isn't
+    recognised, even though it's set in Firebase Remote Config. What's wrong?
+  expect:
+    contains: ["hydra_gamification_base_url"]
+    judge:
+      - q: "Does the answer tell the client to use `hydra_gamification_url` as the Remote Config key name?"
+        want: "no"
+  source: flutter/firebase.md › Modules › Gamification (key-name correction)
+
+- id: flutter-init
+  profile: flutter/firebase
+  question: How do we initialise the SDK in our Flutter app?
+  expect:
+    contains: ["HydraInitializer.initialize", "main"]
+  source: flutter/firebase.md › Steps › 6
+
+- id: flutter-ios-push
+  profile: flutter/firebase
+  question: What do we need to set up on iOS for push notifications in our Flutter app?
+  expect:
+    contains: ["Notification Service Extension"]
+    judge:
+      - q: "Does the answer mention an App Group shared by the main app target and the extension?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Push
+
+- id: android-direct-maven-401
+  profile: android/direct
+  question: >-
+    Gradle fails with "Could not resolve com.capillary:hydra-core" and a 401 from
+    maven.pkg.github.com. How do we fix it?
+  expect:
+    contains: ["read:packages"]
+  source: android/direct.md › Known Issues
+
+- id: android-direct-version
+  profile: android/direct
+  question: Which Hydra SDK version should we add to our Gradle dependencies?
+  expect:
+    contains: ["1.9.22-beta02"]
+  source: android/direct.md front-matter sdk_version
+
+- id: android-direct-sign-in
+  profile: android/direct
+  question: How do we tell the SDK that a user has logged in?
+  expect:
+    contains: ["pushUserSignin"]
+  source: android/direct.md › Steps › 6
+
+- id: android-direct-init
+  profile: android/direct
+  question: How do we initialise the SDK in our Android app?
+  expect:
+    contains: ["HydraConfig.Builder", "instanceWithConfig"]
+  source: android/direct.md › Steps › 4
+
+- id: android-direct-no-google-services
+  profile: android/direct
+  question: Should we add google-services.json and the Google Services Gradle plugin for the Hydra SDK?
+  expect:
+    judge:
+      - q: "Does the answer tell the client NOT to add google-services.json or the Google Services plugin for this setup?"
+        want: "yes"
+  source: android/direct.md › Steps › 3
+
+- id: android-direct-push-unavailable
+  profile: android/direct
+  question: Can we send push notifications to our Android users with our current setup?
+  expect:
+    judge:
+      - q: "Does the answer say push notifications are not available in this (no-Firebase) setup?"
+        want: "yes"
+  source: android/direct.md › Modules › Push
+
+- id: android-direct-minsdk-gap
+  profile: android/direct
+  question: What's the minimum Android API level (minSdk) the Hydra SDK supports?
+  expect:
+    judge:
+      - q: "Does the answer state a specific minimum Android API level number as a fact?"
+        want: "no"
+      - q: "Does the answer say this isn't documented, or suggest checking with Capillary?"
+        want: "yes"
+  source: android/direct.md › Requirements (gap)
+
+- id: android-firebase-push-gap
+  profile: android/firebase
+  question: How do we set up push notifications on Android with Firebase? Give us the Gradle lines.
+  expect:
+    judge:
+      - q: "Does the answer give specific Gradle dependency lines with version numbers for hydra-pushbase or hydra-firebase?"
+        want: "no"
+      - q: "Does the answer say this isn't fully documented, or offer to involve a Capillary engineer?"
+        want: "yes"
+  source: android/firebase.md › Modules › Push (gap)
+
+- id: shared-account-linking
+  profile: android/direct
+  question: Where do we configure which customer identifier Capillary uses to match our users?
+  expect:
+    contains: ["Account Linking Identifier"]
+  source: _shared/prerequisites.md › Capillary CRM
+
+- id: web-direct-init-placement
+  profile: web/direct
+  question: Where should we call HydraSDK.initialize() in our React app?
+  expect:
+    judge:
+      - q: "Does the answer say to call it once at module load (top level), and not inside useEffect?"
+        want: "yes"
+  source: web/direct.md › Steps › 2
+
+- id: web-direct-identify-action
+  profile: web/direct
+  question: Which actionType do we pass to identify() when a user logs in?
+  expect:
+    contains: ["USER_REGISTER"]
+    judge:
+      - q: "Does the answer say to use USER_UPDATE when a user logs in?"
+        want: "no"
+  source: web/direct.md › Steps › 3
+
+- id: web-direct-csp
+  profile: web/direct
+  question: Our website has a Content Security Policy. Which domains must we allow for Hydra?
+  expect:
+    contains: ["capillarytech.com"]
+  source: web/direct.md › Steps › 9
+
+- id: rn-direct-screen-reporting
+  profile: react-native/direct
+  question: How do we report screens for gamification in React Native?
+  expect:
+    contains: ["gamificationScreenAppeared", "500"]
+  source: react-native/direct.md › Steps › 10
+
+- id: ios-direct-repo
+  profile: ios/direct
+  question: Which repository do we install the iOS SDK from?
+  expect:
+    contains: ["hydra-sdk-ios-packages"]
+  source: ios/direct.md › Prerequisites
+
+- id: off-topic-no-invention
+  profile: android/direct
+  question: What's the Hydra SDK method to delete a customer from Capillary CRM?
+  expect:
+    judge:
+      - q: "Does the answer present a specific SDK method or API endpoint for deleting a customer as if it exists?"
+        want: "no"
+  source: none (not in the knowledge base; the agent must not invent one)

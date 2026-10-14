@@ -7,43 +7,49 @@ review_status: draft
 ---
 # Prerequisites (all platforms)
 
-Before writing any code, the client and Capillary exchange the values below. Each platform file's **Prerequisites** section lists exactly which ones apply to it.
+Exchanged before any code is written. The platform file's **Prerequisites** section says which apply.
 
-## The client gives Capillary
-| Item | Needed for |
+## The client gives Capillary (to register the app)
+| Item | Platforms |
 |---|---|
 | Android application ID (package name) | Android, React Native, Flutter |
 | iOS bundle ID | iOS, React Native, Flutter |
-| App signature (SHA256, from the Android signing report) | React Native and Flutter guides |
+| App signature (SHA256, from the Android app signing report) | React Native, Flutter |
 
-Capillary's apps team uses these to register the app.
+The Web guides list nothing the client provides; Capillary registers the app and sends the values below.
 
 ## Capillary gives the client
-| Item | Notes |
+| Item | When |
 |---|---|
 | Account Id | Always |
 | Base URL | Always |
-| SSL Public Key | Mobile platforms only (not Web) |
-| Org Id | Required on Web and passed into the native direct-mode init (Android, iOS, React Native). Optional in Flutter, where only the visitor flow uses it. The platform file says which applies. |
-| Gamification Key (write key) | Only if using gamification |
-| Gamification Region | Only if using gamification: `IN`, `US` or `ME`. Native SDKs use these uppercase forms (e.g. Android `GamificationRegion.IN`); the Web docs write them lowercase (`in`, `us`, `me`). Follow the platform file. |
-| Gamification Base URL | Optional |
-| Banner / Embed / Loyalty entry-point IDs | Only if using those gamification views; configured in the gamification dashboard |
+| SSL Public Key | Mobile only (not Web) |
+| Org Id | Web; native direct-mode init (Android, iOS, React Native). Flutter: only for the visitor flow. |
+| Gamification Key (write key) | Gamification |
+| Gamification Region | Gamification. Values `IN`, `US`, `ME` (Android `GamificationRegion.IN/.US/.ME`); Web examples use lower case (`"us"`, `"me"`, `"in"`). |
+| Gamification Base URL | Gamification; optional on most platforms (see the platform file) |
+| Banner / Embedded / Loyalty IDs | Only for those views. Banner / Embedded IDs: Gamification dashboard entry-point settings. Loyalty ID: Capillary team. |
 
-## Access to private SDK repositories (native apps in direct mode)
-| Platform | Repository | Credentials |
+> ⚠️ Gap: the docs disagree on whether the Gamification Base URL is optional (required in the React Native gamification guide p.3 and the Web direct config reference p.69). Ask a Capillary engineer.
+
+## SDK repository access (native direct mode)
+Request access from Capillary's access team.
+
+| Platform | Private repository | Credentials |
 |---|---|---|
-| Android | `https://github.com/Capillary/hydra-sdk-android-maven` | GitHub username + Personal Access Token with `read:packages` |
-| iOS | `https://github.com/Capillary/hydra-sdk-ios-packages` | GitHub account in Xcode, or username + PAT |
+| Android | `https://github.com/Capillary/hydra-sdk-android-maven` | GitHub username + Personal Access Token with `read:packages` scope |
+| iOS | `https://github.com/Capillary/hydra-sdk-ios-packages` | GitHub account added in Xcode, or GitHub username + PAT with access to the repo |
 
-Request access from Capillary's access team. **Tokens stay on the client's machine.** Never share them in chat.
+**Tokens stay on the client's machine.** Never share them in chat.
 
 ## Capillary CRM: Account Linking Identifier
-The `customerId` the app sends at sign-in must match the **Account Linking Identifier** configured in Capillary CRM. The setting is at:
+The `customerId` the app sends at sign-in must match the **Account Linking Identifier** configured in Capillary CRM:
 
 *Organisation Settings → Omni Channel Settings → Channel Configurations → MAPP_SDK → Account Linking Identifier*
 
-Allowed values: mobile, email, InTouchUserId, externalId, FCMToken.
+It can be: `mobile`, `email`, `InTouchUserId`, `externalId` or `FCMToken`.
 
-## Loyalty View
-To use the Loyalty View, the client's backend must provide a **Capillary B2B short-lived token** after login. The app passes it to the SDK with `setCapToken` before the Loyalty View is shown.
+## Loyalty View: Capillary token
+The Loyalty View needs a **Capillary B2B short-lived token**. The app passes it with `setCapToken` after the user logs in, before the Loyalty View is shown.
+
+> ⚠️ Gap: how the client obtains the B2B short-lived token isn't documented. Ask a Capillary engineer.

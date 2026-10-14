@@ -13,64 +13,41 @@ review_status: draft   # drafted from the source doc; not yet SME-verified
 # Android (with Firebase)
 
 ## Coverage
-**What the source is:** pp.38–51 are a **gamification add-on guide** for apps that **already integrate the Hydra Android SDK with Firebase**. The guide says that if you already use the Hydra Android SDK, "no additional framework integration is required": HydraGamification is bundled within HydraCore and is turned on through configuration (Firebase Remote Config keys `hydra_gamification_*`). It does **not** describe how to integrate Hydra with Firebase in the first place.
+A **gamification add-on** for apps already running the Hydra Android SDK with Firebase.
 
-> ⚠️ Gap: the **core Android + Firebase integration is not documented anywhere in this knowledge base.** That covers the repository and Maven setup, Gradle dependencies, the `google-services` plugin and `google-services.json`, reading Firebase Remote Config, Firebase-mode SDK initialisation, sign-in, sign-out, custom events, push via FCM, in-app and inbox. Don't fill these in from `android/direct.md` (that's the setup *without* Firebase) or from general knowledge. Ask a Capillary engineer.
+> ⚠️ Gap: the **core Android + Firebase integration is not documented**: dependencies and repository, `google-services` plugin and `google-services.json`, reading Remote Config, Firebase-mode init, sign-in/sign-out, custom events, push, In-App, Inbox. Don't fill these in from `android/direct.md` (setup without Firebase) or general knowledge. Ask a Capillary engineer.
 
 | Module | Status in this mode |
 |---|---|
-| Core (dependencies, `google-services.json`, Firebase-mode init, sign-in, sign-out, custom events) | **Not documented.** The source assumes it's already done. Only the gamification-related `HydraConfig.Builder` / `HydraAPI.initialize` code is shown (step 2). |
-| Gamification (automatic campaigns, late Remote Config, callback, Banner, Embedded, Loyalty, screen tracking, cap token) | Documented (pp.39–51) |
-| Push notifications (FCM) | **Not documented.** Only one sentence elsewhere in the source (see Modules → Push). |
-| In-App messaging | Not documented |
-| Inbox / Notification Center | Not documented |
-| Visitor flow | Not documented |
-| Multi-account | Not documented |
+| Gamification (screen tracking, callback, late Remote Config, Banner, Embedded, Loyalty, cap token) | Documented |
+| Core, Push, In-App, Inbox, Visitor, multi-account | **Not documented** (push: one-line hint, Modules → Push) |
 
 ## Requirements
-- SDK version: `{{sdk_version}}` (Beta) or later. The guide says to update to "the latest Hydra Android SDK version that includes HydraGamification support" (p.39, checklist p.50).
-- Languages: the guide gives code for Kotlin and Java.
-- An app that already runs the Hydra Android SDK with Firebase (see Coverage).
+- SDK version: `{{sdk_version}}` (Beta) or later. Kotlin or Java.
 
-> ⚠️ Source doc correction: this guide gives the minimum version as `1.9.22-beta01` (pp.39, 50) vs `1.9.22-beta02` as the required version in the Android without-Firebase guide (pp.100–112). Confirm which build to use for Firebase mode. *Pending SME confirmation.*
+> ⚠️ Gap: this guide says minimum `1.9.22-beta01` (pp.39, 50); the without-Firebase guide requires `1.9.22-beta02` (p.104). Ask a Capillary engineer.
 
-> ⚠️ Gap: the source doesn't state the minimum Android API level (minSdk), compileSdk, AGP, Gradle or Kotlin versions. It also doesn't say which library provides `ProcessLifecycleOwner` / `DefaultLifecycleObserver` (step 5), or whether the Hydra SDK brings it in. Ask a Capillary engineer.
+> ⚠️ Gap: minSdk, compileSdk, AGP, Gradle and Kotlin versions aren't documented, nor the library providing `ProcessLifecycleOwner` / `DefaultLifecycleObserver`. Ask a Capillary engineer.
 
 ## Prerequisites
-See `_shared/prerequisites.md` for the common exchange with Capillary, and `_shared/firebase-setup.md` for the Firebase project and Remote Config setup.
+Common exchange: `_shared/prerequisites.md`. Firebase project and Remote Config setup: `_shared/firebase-setup.md`.
 
-The Android guide has no prerequisites section of its own. Its code uses these values:
-- **For gamification (Firebase Remote Config keys, p.39):**
+| Firebase Remote Config key | Value from Capillary | Required? |
+|---|---|---|
+| `hydra_gamification_key` | Gamification Key (write key) | Required |
+| `hydra_gamification_region` | Gamification Region | Required |
+| `hydra_gamification_base_url` | Gamification Base URL | Optional |
 
-  | Remote Config key | Value from Capillary | Required? |
-  |---|---|---|
-  | `hydra_gamification_key` | Gamification Key (write key) | Listed as Required in the checklist (p.50) |
-  | `hydra_gamification_region` | Gamification Region (`IN`, `US` or `ME`; see `_shared/prerequisites.md`) | Listed as Required in the checklist (p.50) |
-  | `hydra_gamification_base_url` | Gamification Base URL | Optional (checklist p.50) |
-
-  Step 2 of the source prints this key as `hydra_gamification_base_url ()` with empty parentheses; the checklist (p.50) marks it "(Optional)". Key names and mandatory rules vary across platforms: see the per-platform table in `_shared/firebase-setup.md`.
-- **Also passed to the SDK in the code:** Account Id, Base URL and SSL Public Key (step 2), and Org Id (step 7).
-- **For the custom UI components (optional):** Banner, Embed and Loyalty entry-point IDs from the gamification campaign dashboard.
-- **For the Loyalty View:** a Capillary B2B short-lived token from the client's backend (step 6).
+Also used: Account Id, Base URL, SSL Public Key, Org Id; the Capillary B2B short-lived token (step 6).
 
 ## Steps
-These steps come from the source in its order. They add gamification to an app that already has the core Hydra + Firebase integration (see the Coverage gap).
-
 ### 1. Update to the latest Hydra Android SDK version
-Update the app to the latest Hydra Android SDK that includes HydraGamification support: `{{sdk_version}}` (Beta) or later. No separate gamification framework is needed, because HydraGamification is bundled within HydraCore (p.39).
+Use `{{sdk_version}}` (Beta) or later. HydraGamification is bundled within HydraCore; no extra framework integration.
 
-> ⚠️ Gap: this source gives no dependency lines, Maven coordinates or repository for Firebase mode. Ask a Capillary engineer.
+> ⚠️ Gap: no dependency lines are given, and "bundled within HydraCore" (p.39) conflicts with the separate `com.capillary:hydra-gamification` / `hydra-gamification-ui` dependencies in the without-Firebase guide (p.103). Ask a Capillary engineer.
 
-> ⚠️ Source doc correction: this guide says HydraGamification is "bundled within HydraCore" and "no additional framework integration is required" (p.39) vs the Android without-Firebase guide (pp.100–112), which adds separate optional `com.capillary:hydra-gamification` and `com.capillary:hydra-gamification-ui` dependencies. Confirm whether Firebase-mode apps need these modules. *Pending SME confirmation.*
-
-### 2. Add the gamification configuration and pass it to `HydraConfig.Builder`
-1. Add these Firebase Remote Config keys (how to add and publish a parameter: `_shared/firebase-setup.md`):
-   - `hydra_gamification_key`
-   - `hydra_gamification_region`
-   - `hydra_gamification_base_url` (optional)
-2. Configure Hydra with these values during SDK initialisation. This code goes inside the Application class's Hydra setup (the `initializeHydraSDK()` method in step 3).
-
-Kotlin:
+### 2. Add the Remote Config keys and pass them to `HydraConfig.Builder`
+Add the three Remote Config keys (Prerequisites), then pass them during SDK initialisation (in `initializeHydraSDK()`, step 3).
 
 ```kotlin
 val hydraConfig = HydraConfig.Builder(applicationContext, accountId)
@@ -92,8 +69,6 @@ val hydraConfig = HydraConfig.Builder(applicationContext, accountId)
 HydraAPI.initialize(applicationContext, hydraConfig)
 ```
 
-Java:
-
 ```java
 HydraConfig.Builder builder = new HydraConfig.Builder(getApplicationContext(), accountId)
     .baseURL(baseURL)
@@ -113,32 +88,14 @@ HydraConfig hydraConfig = builder.build();
 HydraAPI.initialize(getApplicationContext(), hydraConfig);
 ```
 
-The variables in this code hold runtime values:
+Variables: `accountId` = `{{account_id}}`, `baseURL` = `{{base_url}}` (Hydra), `sslPublicKey` = `{{ssl_public_key}}`; `writeKey` = `{{gamification_key}}`, `region` = `{{gamification_region}}`, `baseUrl` = `{{gamification_base_url}}` (from the Remote Config keys). `baseURL` and `baseUrl` are different values.
 
-| Variable | Value | Where it comes from (per the source) |
-|---|---|---|
-| `accountId` | Account Id (`{{account_id}}`) | Not stated |
-| `baseURL` | Hydra Base URL (`{{base_url}}`) | Not stated |
-| `sslPublicKey` | SSL Public Key (`{{ssl_public_key}}`) | Not stated |
-| `writeKey` | Gamification Key (`{{gamification_key}}`) | Remote Config `hydra_gamification_key` |
-| `region` | Gamification Region (`{{gamification_region}}`) | Remote Config `hydra_gamification_region` |
-| `baseUrl` | Gamification Base URL (`{{gamification_base_url}}`) | Remote Config `hydra_gamification_base_url` |
+> ⚠️ Gap: not documented: how to read Remote Config; where `accountId`, `baseURL`, `sslPublicKey` come from; whether `.orgId()` / `.debugLevel()` are needed. Ask a Capillary engineer.
 
-Notes:
-- `baseURL` (the Hydra Base URL) and `baseUrl` (the gamification base URL) are **two different values** whose names differ only in letter case.
-- The gamification settings are applied only when `writeKey` is non-empty. Within that, the base URL and region are each applied only when non-empty.
-- The region string is upper-cased before `GamificationRegion.valueOf(...)`.
-
-> ⚠️ Gap: the source doesn't show how the app reads these values from Firebase Remote Config (fetch, activate, defaults), or whether `accountId`, `baseURL` and `sslPublicKey` also come from Remote Config on Android. `_shared/firebase-setup.md` lists the core key names (`hydra_account_id` …), but those come from the Flutter guide and aren't confirmed for native Android. Ask a Capillary engineer.
-
-> ⚠️ Gap: this snippet doesn't call `.orgId(...)` or `.debugLevel(...)`, although step 7 passes an `orgId`. The source doesn't say whether Firebase mode needs them. Ask a Capillary engineer.
-
-> ⚠️ Source doc correction: this guide initialises with `HydraAPI.initialize(context, hydraConfig)` (p.40) vs `HydraAPI.instanceWithConfig(context, hydraConfig)` in the Android without-Firebase guide (pp.100–112). The source doesn't say whether they're the same call or which one Firebase mode should use. *Pending SME confirmation.*
+> ⚠️ Gap: this guide initialises with `HydraAPI.initialize(context, hydraConfig)` (p.40); the without-Firebase guide uses `HydraAPI.instanceWithConfig(context, hydraConfig)` (p.105). Ask a Capillary engineer.
 
 ### 3. Wire `GamificationUIManager`
-After Hydra initialisation, create and store the `GamificationUIManager` in your Application class. This sets the gamification callback and enables automatic campaign rendering.
-
-Kotlin:
+After Hydra initialisation, store it in the Application class. Wires the callback (`MyGamificationCallback`, Modules → Gamification) and enables automatic campaign rendering.
 
 ```kotlin file=app/src/main/java/<your-package>/MyApplication.kt
 class MyApplication : Application() {
@@ -159,8 +116,6 @@ class MyApplication : Application() {
     }
 }
 ```
-
-Java:
 
 ```java file=app/src/main/java/<your-package>/MyApplication.java
 public class MyApplication extends Application {
@@ -187,15 +142,10 @@ public class MyApplication extends Application {
 }
 ```
 
-- `MyGamificationCallback` is the class from the source's "Optional: Gamification Callback" section (Modules → Gamification). Define it before compiling this code.
-- The source's comment says the UI manager is wired "if gamification is enabled". The code null-checks `getGamificationManager()` before creating it.
-
-> ⚠️ Gap: the source doesn't show where `initializeHydraSDK()` is called from, or how it is ordered relative to the `onCreate()` code in steps 4–5. Ask a Capillary engineer.
+> ⚠️ Gap: where `initializeHydraSDK()` is called (vs steps 4–5) isn't documented. Ask a Capillary engineer.
 
 ### 4. Report the current screen
-HydraGamification uses screen information to decide when and where campaigns are displayed. Register `ActivityLifecycleCallbacks` in `Application.onCreate()` so every Activity reports screen changes automatically.
-
-Kotlin:
+In `Application.onCreate()`:
 
 ```kotlin
 override fun onCreate() {
@@ -221,8 +171,6 @@ override fun onCreate() {
     // ... rest of initialization
 }
 ```
-
-Java:
 
 ```java
 @Override
@@ -256,15 +204,10 @@ public void onCreate() {
 }
 ```
 
-**Important** (p.44):
-- Screen reporting is **mandatory** for screen-targeted campaigns.
-- Campaign visibility and eligibility depend on the currently reported screen.
-- The `onActivityDestroyed` cleanup is **required** to prevent memory leaks from attached entry-point views.
+**Important:** screen reporting is mandatory for screen-targeted campaigns. `onActivityDestroyed` cleanup is required to prevent memory leaks from attached entry-point views.
 
 ### 5. Handle the app foreground/background lifecycle
-Register a `ProcessLifecycleOwner` observer that tells gamification when the app moves to the foreground or background. This enables freshness checks. The snippet uses the `gamificationUIManager` field from step 3.
-
-Kotlin:
+Enables freshness checks.
 
 ```kotlin
 ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
@@ -277,8 +220,6 @@ ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObser
     }
 })
 ```
-
-Java:
 
 ```java
 ProcessLifecycleOwner.get().getLifecycle().addObserver(new DefaultLifecycleObserver() {
@@ -298,19 +239,13 @@ ProcessLifecycleOwner.get().getLifecycle().addObserver(new DefaultLifecycleObser
 });
 ```
 
-> ⚠️ Gap: the source doesn't say exactly where to register this observer (for example in `Application.onCreate()`). Ask a Capillary engineer.
-
 ### 6. Set the Capillary token (required for Loyalty View)
-Set the Capillary B2B short-lived token **before** a Loyalty View is displayed (the client's backend provides it; see `_shared/prerequisites.md`).
-
-Kotlin:
+Set the Capillary B2B short-lived token **before** the Loyalty View is rendered. Without a valid token, loyalty content may not be displayed.
 
 ```kotlin
 val hydra = HydraAPI.getDefaultInstance(context)
 hydra?.setCapToken(token)
 ```
-
-Java:
 
 ```java
 HydraAPI hydra = HydraAPI.getDefaultInstance(context);
@@ -319,14 +254,8 @@ if (hydra != null) {
 }
 ```
 
-**Important** (p.45):
-- The Capillary token must be set before the Loyalty View is rendered.
-- Without a valid token, loyalty content may not be displayed.
-
 ### 7. Handle late initialisation via Remote Config
-If the gamification keys arrive from Firebase Remote Config **after** Hydra is already initialised, pass them with `HydraAPI.updateRemoteConfig(...)`. The SDK then initialises gamification lazily. After `updateRemoteConfig` succeeds, wire the `GamificationUIManager` (step 3) if it hasn't been created yet.
-
-Kotlin:
+If the gamification keys arrive **after** Hydra is initialised, pass them with `updateRemoteConfig` (gamification then initialises lazily), then wire `GamificationUIManager` if not yet created.
 
 ```kotlin
 val success = HydraAPI.updateRemoteConfig(
@@ -348,8 +277,6 @@ if (success && gamificationUIManager == null) {
         }
 }
 ```
-
-Java:
 
 ```java
 boolean success = HydraAPI.updateRemoteConfig(
@@ -374,47 +301,30 @@ if (success && gamificationUIManager == null) {
 }
 ```
 
-| Argument (variable) | Value |
-|---|---|
-| `orgId` (`newOrgId`) | Org Id (`{{org_id}}`) |
-| `accountId` (`newAccountId`) | Account Id (`{{account_id}}`) |
-| `baseURL` (`newBaseUrl`) | Hydra Base URL (`{{base_url}}`) |
-| `sslPublicKey` (`newSslKey`) | SSL Public Key (`{{ssl_public_key}}`) |
-| `gamificationWriteKey` (`newCgWriteKey`) | Gamification Key (`hydra_gamification_key`). The code passes `null` when it's empty. |
-| `gamificationRegion` (`cgRegion`) | Gamification Region (`hydra_gamification_region`) |
-| `gamificationBaseUrl` (`newCgBaseUrl`) | Gamification Base URL (`hydra_gamification_base_url`) |
+Variables: `newOrgId` = `{{org_id}}`, `newAccountId` = `{{account_id}}`, `newBaseUrl` = `{{base_url}}`, `newSslKey` = `{{ssl_public_key}}`, `newCgWriteKey` / `cgRegion` / `newCgBaseUrl` = the three `hydra_gamification_*` values.
 
-> ⚠️ Gap: the source doesn't show how the app detects that Remote Config values arrived late (which Firebase listener or callback to use), the type of `cgRegion` (in step 2 the region is converted with `GamificationRegion.valueOf(...)`), or which arguments may be null. Ask a Capillary engineer.
+> ⚠️ Gap: how to detect late Remote Config values, and the type of `cgRegion`, aren't documented. Ask a Capillary engineer.
 
 ## Modules
 
 ### Push
-**Not documented in this source.** The only push guidance in the knowledge base is one sentence at the end of the Android without-Firebase guide (Integration doc p.112, also quoted in `android/direct.md`):
+> ⚠️ Gap: Android push setup is not documented. The only hint (p.112): push needs the `hydra-pushbase` and `hydra-firebase` modules plus Firebase dependencies and `google-services.json`, per a "standard integration guide" not in the knowledge base (no coordinates, manifest, permission or FCM token flow). Ask a Capillary engineer.
 
-> "To add push notification support later, include the hydra-pushbase, hydra-firebase modules along with Firebase dependencies and google-services.json, and follow the standard integration guide."
-
-> ⚠️ Gap: that "standard integration guide" isn't in the knowledge base yet. Nothing documents the Gradle coordinates for `hydra-pushbase` / `hydra-firebase`, the Firebase dependencies, the `google-services` plugin, where `google-services.json` goes, the manifest entries, notification permission, the FCM token flow or the notification icon and colour. Ask a Capillary engineer.
-
-For the Firebase console side (creating the project, registering the app, downloading `google-services.json`, enabling Cloud Messaging), see `_shared/firebase-setup.md`.
+Firebase console side: `_shared/firebase-setup.md`.
 
 ### In-App
 > ⚠️ Gap: not documented for Android in Firebase mode. Ask a Capillary engineer.
 
 ### Inbox
-> ⚠️ Gap: Inbox API and Inbox UI (Notification Center) aren't documented for Android in Firebase mode. Ask a Capillary engineer.
+> ⚠️ Gap: Inbox API and Inbox UI aren't documented for Android in Firebase mode. Ask a Capillary engineer.
 
 ### Visitor
-> ⚠️ Gap: the visitor (anonymous) flow isn't documented for Android in Firebase mode. Ask a Capillary engineer.
+> ⚠️ Gap: the visitor flow isn't documented for Android in Firebase mode. Ask a Capillary engineer.
 
 ### Gamification
-**Automatic experiences.** Once configured (steps 1–5), Hydra handles these campaign types automatically, with no additional implementation. Hydra evaluates campaign eligibility and displays content when applicable (p.47):
-- Floating Button campaigns
-- Popup campaigns
-- Bottom Sheet campaigns
+**Automatic** (no extra code after steps 1–5): Floating Button, Popup and Bottom Sheet campaigns.
 
-**Gamification callback (optional).** Implement `GamificationCallback` to receive gamification lifecycle events. Steps 3 and 7 assign it to the flow manager.
-
-Kotlin:
+**Gamification callback (optional)**, assigned in steps 3 and 7:
 
 ```kotlin
 class MyGamificationCallback : GamificationCallback {
@@ -444,8 +354,6 @@ class MyGamificationCallback : GamificationCallback {
     }
 }
 ```
-
-Java:
 
 ```java
 public class MyGamificationCallback implements GamificationCallback {
@@ -482,98 +390,57 @@ public class MyGamificationCallback implements GamificationCallback {
 }
 ```
 
-**Custom UI components (optional).** These show gamification content directly inside the app's screens. Add them to XML layouts.
-
-- **Banner View.** The `android:id` must correspond to the **bannerId** configured in the campaign dashboard. `GamificationUIManager` binds and renders Banner views automatically when `onScreenChanged` is called, so no extra code is needed.
+**Custom UI components (optional, in XML layouts).**
+- **Banner View.** `android:id` must correspond to the **bannerId** configured in the campaign dashboard. Bound and rendered automatically by `GamificationUIManager` on `onScreenChanged`; no extra code.
   ```xml
   <com.capillary.hydra.gamification.ui.entrypoints.BannerView
       android:id="@+id/{{banner_id}}"
       android:layout_width="match_parent"
       android:layout_height="wrap_content" />
   ```
-- **Embedded View.** `GamificationUIManager` binds and renders Embedded views automatically when `onScreenChanged` is called, the same way as Banner views. No extra code is needed.
+- **Embedded View.** Bound and rendered automatically on `onScreenChanged`, same as Banner; no extra code.
   ```xml
   <com.capillary.hydra.gamification.ui.entrypoints.EmbedWebView
       android:id="@+id/{{embed_id}}"
       android:layout_width="match_parent"
       android:layout_height="wrap_content" />
   ```
-  > ⚠️ Source doc correction: the source says the Embedded View's `android:id` "must correspond to the bannerId configured in the campaign dashboard, same pattern as Banner View" (p.49) vs the embed ID being the likely intent. The source's own example ID is `rn_embed1`, and the Flutter and React Native guides key Embed views by `embedId`. *Pending SME confirmation.*
-
-  > ⚠️ Source doc correction: this guide says Embedded views are bound automatically with no additional code (pp.49–50) vs the Android without-Firebase guide (pp.100–112), which says "Embed views require explicit binding via bindEmbedView()". Confirm whether Firebase-mode apps need `bindEmbedView`. *Pending SME confirmation.*
-- **Loyalty View.** The `android:id` must match the **embedId** from the API response. `GamificationUIManager` renders Loyalty views automatically when `onScreenChanged` is called, **provided the Capillary token has been set with `setCapToken()`** (step 6).
+  > ⚠️ Gap: the docs disagree. This guide says the Embedded View's `android:id` must match the **bannerId** from the dashboard, "same pattern as Banner View" (p.49), yet its example ID is `rn_embed1`; and it says no binding code is needed (pp.49–50), while the without-Firebase guide requires `bindEmbedView()` (p.109). Ask a Capillary engineer.
+- **Loyalty View.** `android:id` must match the **embedId** from the API response. Rendered automatically on `onScreenChanged`, provided `setCapToken()` was called (step 6).
   ```xml
   <com.capillary.hydra.gamification.ui.entrypoints.LoyaltyEmbedView
       android:id="@+id/{{loyalty_id}}"
       android:layout_width="match_parent"
       android:layout_height="match_parent" />
   ```
-  > ⚠️ Gap: the source doesn't say which API response returns the Loyalty `embedId`, or how the client obtains it. Ask a Capillary engineer.
+  > ⚠️ Gap: which API response returns the Loyalty `embedId` isn't documented. Ask a Capillary engineer.
 
 ## Verification
-- **Gamification initialisation:** implement `GamificationCallback` (Modules → Gamification). `onInitSuccess()` is called when gamification initialises successfully. `onInitFailure(error: GamificationError)` is called when it fails. `onEntryPointsLoaded(entryPoints)` means the entry points are ready.
-- **Late Remote Config:** `HydraAPI.updateRemoteConfig(...)` returns `true` on success (step 7).
-- **Result** (p.51): after the required steps, Floating Button, Bottom Sheet and Popup campaigns become available in the app automatically. If you added the optional UI components, Banner, Embedded and Loyalty content can also appear in your screens.
+- `GamificationCallback`: `onInitSuccess()` / `onInitFailure(GamificationError)`; `onEntryPointsLoaded(...)` when entry points are ready.
+- `updateRemoteConfig(...)` returns `true` on success.
+- Expected: Floating Button, Bottom Sheet and Popup campaigns appear automatically; Banner, Embedded, Loyalty content if added.
+- Checklist: required = steps 1–6 (base URL key optional, `onActivityDestroyed` included); optional = callback, Banner, Embedded, Loyalty views.
 
-**Integration checklist** (from the source, pp.50–51).
-
-Required:
-- Update to the latest Hydra Android SDK version (`{{sdk_version}}` or later).
-- Add `hydra_gamification_key` to Firebase Remote Config.
-- Add `hydra_gamification_region` to Firebase Remote Config.
-- Add `hydra_gamification_base_url` to Firebase Remote Config (optional).
-- Wire `GamificationUIManager` in your Application class after SDK initialisation.
-- Register `ActivityLifecycleCallbacks` to report screen names via `onScreenChanged`.
-- Register the `ProcessLifecycleOwner` observer for `onAppForegrounded` / `onAppBackgrounded`.
-- Call `onActivityDestroyed` in the lifecycle callbacks for cleanup.
-- Set the Capillary token with `setCapToken(token)` (required for Loyalty View).
-
-Optional:
-- Implement `GamificationCallback` for lifecycle events.
-- Add Banner View.
-- Add Embedded View.
-- Add Loyalty View.
-
-> ⚠️ Gap: there's no formal verification procedure. The source documents no Logcat lines, no way to confirm that the core SDK initialised in Firebase mode or read Remote Config, no fields or codes for `GamificationError`, and no dashboard checks. Ask a Capillary engineer.
+> ⚠️ Gap: no Logcat lines, `GamificationError` details or dashboard checks are documented. Ask a Capillary engineer.
 
 ## Known Issues
-
-**Memory leaks from attached entry-point views**
-- Cause: `onActivityDestroyed` isn't forwarded to `GamificationUIManager`.
-- Fix: call `gamificationUIManager?.onActivityDestroyed(activity)` in `onActivityDestroyed` (step 4).
-
-*From the source doc (p.44).*
-
-**Screen-targeted campaigns don't appear**
-- Cause: the current screen isn't reported. Campaign visibility and eligibility depend on the currently reported screen, and screen reporting is mandatory for screen-targeted campaigns.
-- Fix: register the `ActivityLifecycleCallbacks` that call `onScreenChanged` (step 4).
-
-*From the source doc (p.44).*
-
-**Loyalty View shows no content**
-- Cause: no valid Capillary token was set before the Loyalty View rendered.
-- Fix: call `setCapToken(token)` before the Loyalty View is rendered (step 6).
-
-*From the source doc (pp.45, 50).*
-
-**Gamification keys arrive via Remote Config after Hydra is already initialised**
-- Cause: Hydra was initialised before the `hydra_gamification_*` values were available.
-- Fix: pass the keys with `HydraAPI.updateRemoteConfig(...)`. If it returns `true` and `gamificationUIManager` is still null, wire the `GamificationUIManager` (step 7).
-
-*From the source doc (pp.45–46).*
+| Symptom | Cause | Fix |
+|---|---|---|
+| Memory leaks from entry-point views | `onActivityDestroyed` not forwarded | Call `gamificationUIManager?.onActivityDestroyed(activity)` (step 4) |
+| Screen-targeted campaigns don't appear | Current screen not reported | Register the `onScreenChanged` callbacks (step 4) |
+| Loyalty View empty | No valid token set before render | Call `setCapToken(token)` first (step 6) |
+| Gamification keys arrive via Remote Config after Hydra is initialised | Hydra initialised before `hydra_gamification_*` values were available | Call `HydraAPI.updateRemoteConfig(...)`, then wire `GamificationUIManager` if null (step 7) |
 
 ## API Reference
 | API | Purpose |
 |---|---|
-| `HydraConfig.Builder(context, accountId)` | Builds the SDK config. Methods used in this guide: `.baseURL()`, `.sslPublicKey()`, `.gamificationWriteKey()`, `.gamificationBaseUrl()`, `.gamificationRegion(GamificationRegion)`, `.build()` |
-| `GamificationRegion.valueOf(String)` | Converts the upper-cased region string to the enum (values: see `_shared/prerequisites.md`) |
-| `HydraAPI.initialize(context, config)` | Initialises the SDK (see the step 2 correction about `instanceWithConfig`) |
-| `HydraAPI.getDefaultInstance(context)` | Returns the SDK instance (nullable) |
-| `getGamificationManager()` | Returns the `GamificationFlowManager` (nullable; the source's code null-checks it) |
-| `GamificationFlowManager.callback` (Kotlin) / `setCallback(GamificationCallback)` (Java) | Sets the gamification callback |
-| `GamificationUIManager(flowManager, context)` | Methods: `.onScreenChanged(activity, screenName)`, `.onActivityDestroyed(activity)`, `.onAppForegrounded()`, `.onAppBackgrounded()` |
-| `setCapToken(token)` | Sets the Capillary B2B short-lived token for Loyalty View |
-| `HydraAPI.updateRemoteConfig(orgId, accountId, baseURL, sslPublicKey, gamificationWriteKey, gamificationRegion, gamificationBaseUrl)` | Passes late-arriving Remote Config values. Returns `Boolean` (success). |
+| `HydraConfig.Builder(context, accountId)` | `.baseURL()`, `.sslPublicKey()`, `.gamificationWriteKey()`, `.gamificationBaseUrl()`, `.gamificationRegion(GamificationRegion)`, `.build()` |
+| `HydraAPI.initialize(context, config)` | Initialises the SDK (see step 2 gap) |
+| `HydraAPI.getDefaultInstance(context)` | SDK instance (nullable) |
+| `getGamificationManager()` | `GamificationFlowManager` (nullable) |
+| `GamificationFlowManager.callback` / `setCallback(...)` | Sets the `GamificationCallback` |
+| `GamificationUIManager(flowManager, context)` | `.onScreenChanged(activity, screenName)`, `.onActivityDestroyed(activity)`, `.onAppForegrounded()`, `.onAppBackgrounded()` |
+| `setCapToken(token)` | Capillary B2B token for Loyalty View |
+| `HydraAPI.updateRemoteConfig(orgId, accountId, baseURL, sslPublicKey, gamificationWriteKey, gamificationRegion, gamificationBaseUrl)` | Late Remote Config values; returns `Boolean` |
 | `GamificationCallback` | `onInitSuccess()`, `onInitFailure(GamificationError)`, `onEntryPointsLoaded(List<EntryPointData>)`, `onCampaignOpened(campaignId)`, `onCampaignClosed(campaignId)`, `onAnalyticsEvent(eventName, data)` |
-| Views | `com.capillary.hydra.gamification.ui.entrypoints.BannerView`, `EmbedWebView`, `LoyaltyEmbedView` |
-| Remote Config keys | `hydra_gamification_key`, `hydra_gamification_region`, `hydra_gamification_base_url` (optional) |
+| Views (`com.capillary.hydra.gamification.ui.entrypoints`) | `BannerView`, `EmbedWebView`, `LoyaltyEmbedView` |

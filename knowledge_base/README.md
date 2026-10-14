@@ -19,5 +19,8 @@ mode**, so information from different platforms never mixes (see `../PLAN.md` §
 Rules:
 1. **Platform files follow the template.** That means the same front-matter and headings. `kb lint` enforces this from Week 2.
 2. **Versions live only in the front-matter `sdk_version`.** Code blocks use `{{sdk_version}}`.
-3. **Corrections to the source docs are inline callouts**, also logged in `CHANGELOG.md`. Format: `> ⚠️ Source doc says X; confirmed Y — SME, date`.
+3. **Problems in the source docs are inline callouts**, in one of two forms (enforced by `kb lint`), and logged in `CHANGELOG.md`:
+   - `> ⚠️ Correction: ✅ Use X. ❌ Don't use Y (where Y appears). *Pending SME confirmation.*` when one option is clearly right;
+   - `> ⚠️ Gap: what isn't documented or what the docs disagree on. Ask a Capillary engineer.` for everything else.
+   Once an SME confirms a correction, fold the ✅ value into the steps and drop the callout.
 4. **New documents are merged into these files.** They never sit beside them as separate files.

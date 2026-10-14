@@ -15,8 +15,6 @@ dependencies = [
     "psycopg[binary,pool]",
     "fastapi",
     "uvicorn[standard]",
-    "streamlit",
-    "requests",
     "pydantic>=2",
     "pydantic-settings",
     "python-dotenv",

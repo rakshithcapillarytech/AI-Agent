@@ -322,7 +322,7 @@ The agent's tools stay fixed:
 ## 6. Architecture
 
 ```
-┌──────────────────────── Streamlit (MVP UI) ────────────────────────┐
+┌──────────────────────── React portal (web/) ───────────────────────┐
 │ Client portal: chat · live Profile & Checklist panel · file upload │
 │ Admin: sessions · escalation queue (resume interrupts) · issue     │
 │        review · Knowledge Inbox (doc diffs) · Capillary values ·   │
@@ -408,7 +408,7 @@ The agent's tools stay fixed:
 | Models | Claude Opus 5.5 (main), Claude Haiku 5.5 (router, extraction, drafting, judge) |
 | Knowledge | `.md` files in git (`python-frontmatter`, `MarkdownHeaderTextSplitter`); `docling` for new docs; Postgres FTS + `pg_trgm` via a custom `BaseRetriever`; `PGVector` + `EnsembleRetriever` only at stage C |
 | DB | Postgres 16 (SQLAlchemy + Alembic); uploads on local disk, S3 later |
-| UI (MVP) | Streamlit multipage (portal + admin). React portal post-MVP; the API is unchanged. |
+| UI | React 19 + TypeScript + Vite (`web/`), Capillary console design tokens. Setup wizard, then chat. Admin pages to follow in React. |
 | Observability / evals | **LangSmith** (traces, datasets, experiments). If data must stay in-house, self-hosted Langfuse via its LangChain callback. |
 | Run | `docker-compose` (postgres, api, ui) |
 | Escalation | `Escalator` protocol. MVP: admin queue that resumes interrupts, plus optional Slack webhook. Jira/Freshdesk adapter later. |
@@ -442,7 +442,7 @@ app/
   escalation/{base,admin_queue,slack_webhook}.py
   llm.py                              # ChatAnthropic factory (Bedrock-ready), pinned settings
   db/{models.py,migrations/} · cli.py # `kb lint|index|propose|publish|eval`
-ui/portal.py · ui/pages/admin_*.py
+web/ (React portal: setup wizard, chat, details panel; admin pages later)
 evals/{golden_qa.yaml, scenarios/, run_evals.py}   # LangSmith datasets + evaluators
 tests/
 ```
@@ -464,7 +464,7 @@ tests/
 |---|---|
 | **1 Knowledge base** (most important) | `_template/platform.md`. Convert the docs with docling, then have Claude draft all 10 platform files and the `_shared` files. **SME review of the 2 demo files**, errata corrections, `prerequisites.yaml`. **Collect 20–30 real past issues** into `issues/`. ~40 golden Q&A. |
 | **2 KB tooling + LangChain spike + evals** | `kb lint`, the keyword retriever (FTS + trigram), placeholder renderer, symbol allowlist. **The §6.2 compatibility spike.** LangSmith dataset and evaluators. |
-| **3 Graph core + UI** | `OnboardingState`, router, agent ⇄ ToolNode, phase_transition, PostgresSaver, discovery + prerequisite tools, rules engine, validators, FastAPI SSE, Streamlit chat with the live profile/checklist panel. |
+| **3 Graph core + UI** | `OnboardingState`, router, agent ⇄ ToolNode, phase_transition, PostgresSaver, discovery + prerequisite tools, rules engine, validators, FastAPI SSE, React portal with the live profile/checklist panel. |
 | **4 Integration + troubleshooting** | Steps walker, Integration Pack, troubleshoot subgraph, guardrails node, `interrupt()` escalation + admin resume. |
 | **5 Learning + growth** | Issue drafting/approval (writes `.md`), Known Issues promotion, doc-gap report, `kb propose` + Knowledge Inbox, regression gate, simulated-client scenario evals. |
 | **6 Hardening + demo** | Cost and latency check, rehearsed demo, one-page results summary. |
@@ -514,7 +514,7 @@ tests/
 ---
 
 ## 11. Post-MVP roadmap
-1. React/Next.js portal with SSO.
+1. SSO for the React portal, plus admin pages (escalations, issue review, Knowledge Inbox).
 2. Server-side verification via Capillary telemetry (init, identify and token events for the account).
 3. SME verification of the remaining 8 files, and filling the documented gaps.
 4. Source connectors feeding `inbox/`.

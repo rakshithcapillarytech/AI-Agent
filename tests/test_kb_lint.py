@@ -64,3 +64,16 @@ def test_every_real_platform_file_passes(path):
 
 def test_all_ten_platform_files_exist():
     assert len(platform_files(KB_DIR)) == 10
+
+
+def test_corrections_must_say_what_to_use_and_avoid():
+    from app.kb.lint import callout_issues
+
+    good = "> ⚠️ Correction: ✅ Use `hydra_gamification_base_url`. ❌ Don't use `hydra_gamification_url`."
+    vague = "> ⚠️ Correction: the docs disagree about the key name."
+    legacy = "> ⚠️ Source doc correction: X vs Y. *Pending SME confirmation.*"
+    assert callout_issues(good) == ([], [])
+    assert callout_issues(vague)[0] == ["L1: correction must state '✅ Use …' and '❌ Don't use …'"]
+    assert callout_issues(legacy)[0] == [
+        "L1: old correction format; rewrite as '⚠️ Correction: ✅ Use … ❌ Don't use …'"
+    ]

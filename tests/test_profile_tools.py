@@ -27,3 +27,12 @@ def test_missing_required_lists_gaps():
         "region",
         "customer_id_type",
     ]
+
+
+def test_restating_known_facts_keeps_confirmation():
+    confirmed = IntegrationProfile(
+        platforms=[{"platform": "flutter", "config_mode": "firebase"}], region="IN", confirmed=True
+    )
+    restated = merge_profile(confirmed, ProfileUpdate(platforms=[{"platform": "flutter"}], region="IN"))
+    assert restated.confirmed is True
+    assert restated.platforms[0].config_mode == "firebase"

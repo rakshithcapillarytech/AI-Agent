@@ -40,8 +40,11 @@ def merge_profile(current: IntegrationProfile, updates: ProfileUpdate) -> Integr
         data["platforms"] = list(by_name.values())
 
     data.update(changes)
-    data["confirmed"] = False  # any change needs the client to re-confirm
-    return IntegrationProfile.model_validate(data)
+    merged = IntegrationProfile.model_validate(data)
+    # A real change needs the client to re-confirm; restating known facts doesn't.
+    unchanged = merged.model_dump(exclude={"confirmed"}) == current.model_dump(exclude={"confirmed"})
+    merged.confirmed = current.confirmed and unchanged
+    return merged
 
 
 def _summary(profile: IntegrationProfile) -> str:

@@ -3,7 +3,8 @@
 An AI agent that onboards clients onto Capillary's Hydra SDK (Experience+). It gathers requirements, tracks prerequisites, guides the integration, troubleshoots problems, and learns from resolved issues. The full design is in [PLAN.md](PLAN.md).
 
 **Stack:**
-- Python 3.12 · LangGraph + LangChain · FastAPI · Streamlit · Postgres
+- Python 3.12 · LangGraph + LangChain · FastAPI · Postgres
+- Frontend: React 19 + TypeScript + Vite (`web/`), styled with Capillary's console design tokens
 - **LLM in development:** Gemini (free key)
 - **LLM in production:** Claude Opus 5.5 / Haiku 5.5. Switching is one env var: `LLM_PROVIDER` (see [app/llm.py](app/llm.py)).
 
@@ -19,7 +20,7 @@ Working skeleton:
 - **System prompt.** A static block plus a phase/knowledge block, both cached. Knowledge files that aren't written yet are marked *missing*, so the agent escalates instead of guessing.
 - **Session persistence.** Sessions are LangGraph threads checkpointed in Postgres. The portal URL (`?session=…`) resumes a session.
 - **Input redaction.** Secrets (GitHub tokens, gamification keys, private keys) are redacted before reaching the LLM.
-- **Portal.** Streamlit chat with streaming replies and a live profile panel.
+- **Portal (React).** A 5-step setup wizard with plain-English choices: company, apps (+ Firebase yes/no/not sure), features, account details, then review. A complete profile starts the session already confirmed, with the right guides loaded. The chat streams replies as Markdown (with copy buttons on code), and a details panel shows progress, setup and the guides in use. Recent onboardings are listed in the sidebar.
 
 Knowledge base: **all 10 platform × mode files plus 3 shared files drafted** from the source docs, all `review_status: draft`. The SME review checklist (183 items) is in [knowledge_base/REVIEW.md](knowledge_base/REVIEW.md).
 
@@ -32,6 +33,14 @@ uv run python -m app.kb.review
 ```
 
 `kb lint` checks that every platform file follows the template. `kb review` regenerates REVIEW.md from the ⚠️ callouts.
+
+**Answer-quality tests (golden evals).** 18 questions with known answers in [evals/golden.yaml](evals/golden.yaml), checked automatically (required strings, forbidden strings, and yes/no checks by an AI grader). Run them after any change to the model, the prompts or the knowledge:
+
+```bash
+uv run python -m evals.run_evals
+```
+
+Add `--model gemini-3.5-flash-lite` to test a specific model, or `--case <id>` for a single case. Each run calls the real model, so it uses API quota. On the free Gemini tier, `gemini-3.8-flash` allows only 20 requests a day; when it runs out, the agent falls back to flash-lite automatically.
 
 Not built yet (see the PLAN.md §8 timeline):
 - SME review of the drafts, `prerequisites.yaml`, seeded issues and golden Q&A (week 1)
@@ -72,7 +81,7 @@ uv run pytest
 
 Commit the generated `uv.lock`. It pins the LangGraph/LangChain versions (PLAN.md §6.2).
 
-**4. Run everything.** Either use Docker Compose (Postgres, API on :8000, portal on :8501):
+**4. Run everything.** Either use Docker Compose (Postgres, API on :8000, portal on :8080):
 
 ```bash
 docker compose up --build
@@ -89,10 +98,14 @@ uv run uvicorn app.api.main:app --reload
 ```
 
 ```bash
-uv run streamlit run ui/portal.py
+npm --prefix web install
 ```
 
-Open http://localhost:8501.
+```bash
+npm --prefix web run dev
+```
+
+Open http://localhost:5173 (the dev server proxies `/api` to the API on :8000).
 
 ## Layout
 
@@ -105,6 +118,6 @@ app/
   tools/profile.py      discovery tools (update_profile, confirm_profile)
   kb/loader.py          profile → knowledge files, delimited loading
   llm.py                the only place models are constructed (Bedrock swap goes here)
-ui/portal.py            Streamlit client portal
+web/                    React portal (Vite): src/components, src/lib (API hooks, labels), styles/tokens.css
 tests/                  unit tests + graph smoke test
 ```

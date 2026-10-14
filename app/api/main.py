@@ -1,19 +1,23 @@
-"""HTTP API for the portal: create sessions, stream agent replies (SSE), read session state."""
+"""HTTP API for the portal: create and start sessions, stream agent replies (SSE), read state."""
 
 import json
 import logging
 import uuid
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from pydantic import BaseModel
 
+from app.api.setup import SETUP_HEADER, initial_state, setup_message
 from app.config import get_settings
 from app.graph.builder import build_graph
+from app.graph.messages import message_text
 from app.graph.nodes.guardrails import redact
+from app.graph.state import IntegrationProfile
 
 log = logging.getLogger(__name__)
 
@@ -34,23 +38,49 @@ class MessageIn(BaseModel):
     content: str
 
 
+class StartIn(BaseModel):
+    profile: IntegrationProfile
+
+
 def _config(session_id: str) -> dict:
     return {"configurable": {"thread_id": session_id}}
 
 
-def _text(content) -> str:
-    """Visible text of a message: plain str, or the text blocks of Anthropic content blocks."""
-    if isinstance(content, str):
-        return content
-    return "".join(
-        block.get("text", "")
-        for block in content
-        if isinstance(block, dict) and block.get("type") == "text"
-    )
-
-
 def _sse(event: dict) -> str:
     return f"data: {json.dumps(event)}\n\n"
+
+
+def _stream_turn(session_id: str, inputs: dict) -> StreamingResponse:
+    """Run one agent turn and stream its visible text as SSE `token` events, then `done`."""
+    graph = app.state.graph
+
+    async def events() -> AsyncIterator[str]:
+        last_message_id = None
+        try:
+            async for chunk, meta in graph.astream(
+                inputs, _config(session_id), stream_mode="messages"
+            ):
+                if meta.get("langgraph_node") != "agent" or not isinstance(chunk, AIMessageChunk):
+                    continue
+                text = message_text(chunk.content)
+                if not text:
+                    continue
+                # A turn can contain several agent calls (agent → tools → agent); separate them.
+                if last_message_id is not None and chunk.id != last_message_id:
+                    yield _sse({"type": "token", "text": "\n\n"})
+                last_message_id = chunk.id
+                yield _sse({"type": "token", "text": text})
+        except Exception:
+            log.exception("agent turn failed for session %s", session_id)
+            yield _sse({"type": "error", "text": "Something went wrong on our side. Please retry."})
+        yield _sse({"type": "done"})
+
+    return StreamingResponse(events(), media_type="text/event-stream")
+
+
+async def _values(session_id: str) -> dict:
+    snapshot = await app.state.graph.aget_state(_config(session_id))
+    return snapshot.values or {}
 
 
 @app.get("/health")
@@ -65,14 +95,15 @@ async def create_session() -> dict:
 
 @app.get("/sessions/{session_id}")
 async def get_session(session_id: str) -> dict:
-    snapshot = await app.state.graph.aget_state(_config(session_id))
-    values = snapshot.values or {}
+    values = await _values(session_id)
     history = []
     for message in values.get("messages", []):
         if isinstance(message, HumanMessage):
-            history.append({"role": "user", "text": _text(message.content)})
-        elif isinstance(message, AIMessage) and (text := _text(message.content)):
-            history.append({"role": "assistant", "text": text})
+            text = message_text(message.content)
+            kind = "setup" if text.startswith(SETUP_HEADER) else "chat"
+            history.append({"role": "user", "text": text, "kind": kind})
+        elif isinstance(message, AIMessage) and (text := message_text(message.content)):
+            history.append({"role": "assistant", "text": text, "kind": "chat"})
     return {
         "phase": values.get("phase", "discovery"),
         "profile": values.get("profile", {}),
@@ -82,30 +113,18 @@ async def get_session(session_id: str) -> dict:
     }
 
 
+@app.post("/sessions/{session_id}/start")
+async def start_session(session_id: str, body: StartIn) -> StreamingResponse:
+    """Begin a session from the setup wizard; the agent replies to the submitted profile."""
+    if (await _values(session_id)).get("messages"):
+        raise HTTPException(status_code=409, detail="This session has already started.")
+    inputs = {
+        **initial_state(body.profile),
+        "messages": [HumanMessage(content=redact(setup_message(body.profile)))],
+    }
+    return _stream_turn(session_id, inputs)
+
+
 @app.post("/sessions/{session_id}/messages")
 async def post_message(session_id: str, body: MessageIn) -> StreamingResponse:
-    graph = app.state.graph
-    inputs = {"messages": [HumanMessage(content=redact(body.content))]}
-
-    async def events():
-        last_message_id = None
-        try:
-            async for chunk, meta in graph.astream(
-                inputs, _config(session_id), stream_mode="messages"
-            ):
-                if meta.get("langgraph_node") != "agent" or not isinstance(chunk, AIMessageChunk):
-                    continue
-                text = _text(chunk.content)
-                if not text:
-                    continue
-                # A turn can contain several agent calls (agent → tools → agent); separate them.
-                if last_message_id is not None and chunk.id != last_message_id:
-                    yield _sse({"type": "token", "text": "\n\n"})
-                last_message_id = chunk.id
-                yield _sse({"type": "token", "text": text})
-        except Exception:
-            log.exception("agent turn failed for session %s", session_id)
-            yield _sse({"type": "error", "text": "Something went wrong on our side. Please retry."})
-        yield _sse({"type": "done"})
-
-    return StreamingResponse(events(), media_type="text/event-stream")
+    return _stream_turn(session_id, {"messages": [HumanMessage(content=redact(body.content))]})

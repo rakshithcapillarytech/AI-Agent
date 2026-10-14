@@ -9,3 +9,4 @@ data/
 # Client secrets must never land in this repo
 github.properties
 *.p8
+evals/results/

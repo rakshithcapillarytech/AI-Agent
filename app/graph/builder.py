@@ -20,15 +20,17 @@ from app.tools.profile import TOOLS
 
 
 def build_graph(
-    checkpointer: BaseCheckpointSaver | None = None, model: BaseChatModel | None = None
+    checkpointer: BaseCheckpointSaver | None = None,
+    model: BaseChatModel | None = None,
+    fallbacks: list[BaseChatModel] | None = None,
 ):
     if model is None:
-        from app.llm import main_model
+        from app.llm import fallback_models, main_model
 
-        model = main_model()
+        model, fallbacks = main_model(), fallback_models()
 
     graph = StateGraph(OnboardingState)
-    graph.add_node("agent", make_agent_node(model, TOOLS))
+    graph.add_node("agent", make_agent_node(model, TOOLS, fallbacks))
     graph.add_node("tools", ToolNode(TOOLS))
     graph.add_node("phase_transition", phase_transition)
 

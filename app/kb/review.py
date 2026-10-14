@@ -11,10 +11,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.config import get_settings
+from app.kb.lint import callouts as find_callouts
 
 SKIP_DIRS = {"_template", "source", "inbox"}
 SKIP_FILES = {"README.md", "CHANGELOG.md", "REVIEW.md"}
-KINDS = ("Source doc correction", "Gap", "Other")
+KINDS = ("Correction", "Gap", "Other")
 
 
 @dataclass
@@ -26,8 +27,8 @@ class Callout:
 
 
 def _kind(text: str) -> str:
-    if "Source doc correction" in text:
-        return "Source doc correction"
+    if "Correction" in text or "correction" in text:
+        return "Correction"
     if "Gap" in text:
         return "Gap"
     return "Other"
@@ -39,19 +40,8 @@ def collect(kb_dir: Path) -> list[Callout]:
         rel = path.relative_to(kb_dir)
         if rel.parts[0] in SKIP_DIRS or rel.name in SKIP_FILES:
             continue
-        lines = path.read_text(encoding="utf-8").splitlines()
-        for i, line in enumerate(lines):
-            if "⚠️" not in line:
-                continue
-            block = [line.strip().lstrip(">").strip()]
-            # A blockquote callout continues on following "> " lines.
-            if line.lstrip().startswith(">"):
-                j = i + 1
-                while j < len(lines) and lines[j].lstrip().startswith(">"):
-                    block.append(lines[j].strip().lstrip(">").strip())
-                    j += 1
-            text = " ".join(part for part in block if part)
-            callouts.append(Callout(str(rel), i + 1, _kind(text), text))
+        text = path.read_text(encoding="utf-8")
+        callouts += [Callout(str(rel), line, _kind(body), body) for line, body in find_callouts(text)]
     return callouts
 
 

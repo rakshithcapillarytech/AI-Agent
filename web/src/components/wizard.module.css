@@ -1,0 +1,235 @@
+.card {
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  box-shadow: var(--accent-glow), var(--shadow-3);
+  overflow: hidden;
+}
+
+/* ---------- Stepper ---------- */
+.stepper {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 14px 18px;
+  list-style: none;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--n-25);
+  overflow-x: auto;
+}
+
+.stepItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 4px;
+  border-radius: var(--radius-pill);
+  color: var(--faint);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+
+.stepDot {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--n-300);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+}
+
+.stepCurrent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.stepCurrent .stepDot {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.stepDone {
+  color: var(--ink-soft);
+}
+
+.stepDone .stepDot {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---------- Body ---------- */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 24px 28px;
+  min-height: 300px;
+  animation: enter var(--dur-3) var(--ease-out);
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.intro h2 {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.intro p {
+  margin-top: 2px;
+  color: var(--muted);
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.groupTitle {
+  margin-top: 6px;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+
+.groupHint {
+  margin-top: -10px;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.followUp {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--n-25);
+}
+
+.followUpHead {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.followUpHead h3 {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+
+.followUpHead p {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.followUpRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  font-weight: var(--weight-medium);
+}
+
+.followUpRow + .followUpRow {
+  border-top: 1px solid var(--line-soft);
+}
+
+/* ---------- Review ---------- */
+.review {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.reviewRow {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px 10px 16px;
+}
+
+.reviewRow + .reviewRow {
+  border-top: 1px solid var(--line-soft);
+}
+
+.reviewRow dt {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.reviewRow dd {
+  margin: 0;
+  font-weight: var(--weight-medium);
+}
+
+.note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--info-soft);
+  color: var(--info);
+  font-size: var(--text-sm);
+}
+
+/* ---------- Footer ---------- */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--n-25);
+}
+
+.progress {
+  font-size: var(--text-sm);
+  color: var(--faint);
+}
+
+.footerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.blocker {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .body {
+    padding: 18px 16px 22px;
+  }
+  .reviewRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .reviewRow dt {
+    grid-column: 1 / -1;
+  }
+  .blocker {
+    display: none;
+  }
+}

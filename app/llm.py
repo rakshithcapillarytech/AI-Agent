@@ -18,10 +18,14 @@ from app.config import get_settings
 
 DEFAULT_MODELS = {
     # provider: (main agent, helper for routing / extraction / drafting)
-    # Free-tier Flash models often return 503 "high demand"; flash-lite is reliably available.
-    # Set MAIN_MODEL=gemini-3.8-flash to try the stronger model.
-    "google": ("gemini-3.5-flash-lite", "gemini-3.5-flash-lite"),
+    "google": ("gemini-3.8-flash", "gemini-3.5-flash-lite"),
     "anthropic": ("claude-opus-5-5", "claude-haiku-5-5"),
+}
+# Tried in order when the main model errors. Free-tier Gemini Flash often returns 503 "high
+# demand"; flash-lite is weaker (it reversed a documented correction in testing) but available.
+FALLBACK_MODELS = {
+    "google": ["gemini-3.5-flash-lite"],
+    "anthropic": [],
 }
 ANTHROPIC_MAX_TOKENS = 16_000
 
@@ -58,6 +62,12 @@ def _build(model_id: str, effort: str | None = None) -> BaseChatModel:
 def main_model(effort: str | None = None) -> BaseChatModel:
     settings = get_settings()
     return _build(settings.main_model or DEFAULT_MODELS[settings.llm_provider][0], effort)
+
+
+def fallback_models() -> list[BaseChatModel]:
+    settings = get_settings()
+    main = settings.main_model or DEFAULT_MODELS[settings.llm_provider][0]
+    return [_build(m) for m in FALLBACK_MODELS[settings.llm_provider] if m != main]
 
 
 def helper_model() -> BaseChatModel:

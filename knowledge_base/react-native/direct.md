@@ -2,7 +2,7 @@
 platform: react-native
 config_mode: direct
 sdk_package: "@capillarytech/react-native-hydra-lib"
-sdk_version: null            # the source installs the npm `beta` tag and pins no version number (see Requirements)
+sdk_version: null            # the source installs the npm `beta` tag and pins no version number
 modules_covered: [core, gamification]
 modules_missing: [push, inapp, inbox_api, inbox_ui, visitor, multi_account]
 sources: ["Integration document _ Experience+ pp.72–87 (React Native Hydra SDK – Integration Guide, Firebase excluded)"]
@@ -13,72 +13,43 @@ review_status: draft   # drafted from the source doc; not yet SME-verified
 # React Native (without Firebase)
 
 ## Coverage
-| Module | Status in this mode |
+| Module | Status |
 |---|---|
-| Core: install, `hydra-config.json`, iOS init (Podfile + `AppDelegate`), Android init (`MainApplication`), SDK initialisation check, sign-in (`identify`), sign-out (`reset`) | Documented. For iOS, Objective-C `AppDelegate`s get only a method signature (Swift is complete). For Android, only Kotlin is shown. |
-| Gamification: screen reporting, Loyalty token, Banner / Embed / Loyalty views, analytics and deeplink callbacks, trigger on a custom event, enable / disable (suppress) | Documented |
-| Theme mode (`setThemeMode` / `getThemeMode`) | APIs documented; what the theme applies to isn't stated |
-| Log levels | Documented, but the config keys contradict the setup steps (see Verification) |
-| Push notifications | **Not documented.** The sample `hydra-config.json` sets `enable_push_notification` and `enable_hydra_sdk_firebase_registration` to `false`. |
-| In-App messaging | **Not documented.** The sample config sets `enable_in_app_messaging` and `enable_in_app_messaging_in_react_native` to `false`. |
-| Inbox API / Inbox UI | **Not documented.** The sample config sets `enable_inbox_api`, `enable_inbox_ui` and `use_default_inbox_ui_config` to `false`, and `max_notification_count` to `0`. |
-| Visitor flow, multi-account, sign-up and updating user details | **Not documented** |
+| Core: install, `hydra-config.json`, iOS init (Swift), Android init (Kotlin), init check, sign-in, sign-out | Documented (Objective-C: method signature only; no Java) |
+| Gamification: screen reporting, Loyalty token, Banner / Embed / Loyalty views, callbacks, custom-event trigger, theme mode, suppress | Documented |
+| Log levels | Documented, but the config keys conflict with the setup steps (see Verification) |
+| Push, In-App, Inbox, Visitor, multi-account, sign-up / update user | **Not documented** (the sample config turns push, in-app and inbox off) |
 
 ## Requirements
-- Package: `@capillarytech/react-native-hydra-lib`, installed with the npm `beta` tag (`@beta`).
-- npm or Yarn.
-- iOS: CocoaPods (`pod install`), and a Podfile whose main target calls `use_native_modules!`.
-- iOS `AppDelegate`: the full code is given in Swift only.
-- Android: a Kotlin `MainApplication` with an `onCreate` function.
-- The screen-reporting snippet (step 10) uses `useFocusEffect`, a React Navigation hook.
+- `@capillarytech/react-native-hydra-lib`, installed with the npm `beta` tag.
+- npm or Yarn; CocoaPods for iOS.
+- iOS: a Podfile whose main target calls `use_native_modules!`; a Swift `AppDelegate`.
+- Android: a Kotlin `MainApplication` with `onCreate`.
 
-> ⚠️ Gap: the source doesn't give an exact SDK version, or minimum React Native, Node, iOS deployment target, Android minSdk / compileSdk, Xcode, Gradle or Kotlin versions. Ask a Capillary engineer before giving numbers. The React Native gamification guide for Firebase mode (`react-native/firebase.md`) names a minimum version for gamification; this guide doesn't say whether it applies here, so don't quote it for this mode.
+> ⚠️ Gap: no exact SDK version, and no minimum React Native, Node, iOS, Android (minSdk / compileSdk), Xcode, Gradle or Kotlin versions. Don't reuse the `1.7.0-beta.7` minimum from the Firebase-mode gamification guide. Ask a Capillary engineer.
 
 ## Prerequisites
-See `_shared/prerequisites.md` for the common exchange. For this platform and mode:
+See `_shared/prerequisites.md` for the common exchange.
 
-**Client gives Capillary** (to register the app):
-| Credential | Platform |
-|---|---|
-| Bundle ID (`{{bundle_id}}`) | iOS |
-| Application ID (`{{application_id}}`) | Android |
-| App signature (SHA256), from your app signing report | Android |
+- **Client gives Capillary** (to register the app): Bundle ID `{{bundle_id}}` (iOS); Application ID `{{application_id}}` and App Signature SHA256 from the app signing report (Android).
+- **Capillary gives client:** Account ID `{{account_id}}`, Base URL `{{base_url}}`, SSL Public Key `{{ssl_public_key}}`, Org ID `{{org_id}}`, Gamification Base URL `{{gamification_base_url}}`, Gamification Key (writeKey) `{{gamification_key}}`, Gamification Region `{{gamification_region}}`.
+- **Also needed:** the Capillary B2B short-lived token (Loyalty View); entry-point IDs `{{banner_id}}`, `{{embed_id}}`, `{{loyalty_id}}`; a `customerId` matching the CRM Account Linking Identifier (step 8).
 
-**Capillary gives client** (after registration):
-| Value | Placeholder | Description in the source |
-|---|---|---|
-| Account ID | `{{account_id}}` | Your unique account identifier |
-| Base URL | `{{base_url}}` | API base endpoint |
-| SSL Public Key | `{{ssl_public_key}}` | Public key for secure communication |
-| Org ID | `{{org_id}}` | Your organization identifier |
-| Gamification Base URL | `{{gamification_base_url}}` | Base URL for gamification services |
-| Gamification Key | `{{gamification_key}}` | writeKey for gamification |
-| Gamification Region | `{{gamification_region}}` | region value |
-
-**Also needed:**
-- **Loyalty View:** a Capillary B2B short-lived token (see `_shared/prerequisites.md`).
-- **Banner / Embed / Loyalty views:** their entry-point IDs (`{{banner_id}}`, `{{embed_id}}`, `{{loyalty_id}}`).
-- **Capillary CRM:** the `customerId` sent at sign-in must match the Account Linking Identifier configured in the CRM (step 8).
-
-> ⚠️ Gap: the source describes Gamification Region only as "region value". It doesn't list the allowed values or their case, and doesn't say whether the Gamification Base URL is optional in this mode. `_shared/prerequisites.md` lists `IN`, `US` and `ME` and marks the base URL optional; confirm both for React Native. Ask a Capillary engineer.
+> ⚠️ Gap: allowed Gamification Region values (and case) and whether the Gamification Base URL is optional aren't stated for React Native. Ask a Capillary engineer.
 
 ## Steps
 
 ### 1. Install the package
-npm:
-
 ```bash
 npm install @capillarytech/react-native-hydra-lib@beta
 ```
-
-Yarn:
 
 ```bash
 yarn add @capillarytech/react-native-hydra-lib@beta
 ```
 
 ### 2. Add the Hydra configuration file
-Create `<PROJECT_ROOT>/capillary/hydra-config.json` with this content (the source's sample):
+Create `<PROJECT_ROOT>/capillary/hydra-config.json` (sample from the source):
 
 ```json file=capillary/hydra-config.json
 {
@@ -95,12 +66,10 @@ Create `<PROJECT_ROOT>/capillary/hydra-config.json` with this content (the sourc
 }
 ```
 
-> ⚠️ Gap: the source gives this file only as a sample. It doesn't explain the keys or say which are required, and it doesn't show how the iOS and Android builds pick the file up. Ask a Capillary engineer before changing the sample values.
+> ⚠️ Gap: the keys aren't explained and how the native builds pick up this file isn't shown. Ask a Capillary engineer before changing sample values.
 
 ### 3. iOS: update the Podfile
-In `ios/Podfile`, make two changes.
-
-a) Add these lines just below the existing `require` block for React Native:
+a) Just below the existing React Native `require` block:
 
 ```ruby file=ios/Podfile
 require Pod::Executable.execute_command('node', ['-p',
@@ -110,7 +79,7 @@ require Pod::Executable.execute_command('node', ['-p',
   )', __dir__]).strip
 ```
 
-b) In your main target, just below `config = use_native_modules!`, add:
+b) In your main target, just below `config = use_native_modules!`:
 
 ```ruby file=ios/Podfile
 hydra_pods
@@ -120,22 +89,19 @@ hydra_pods
 From the `ios` folder:
 
 ```bash
-cd ios
 pod install
 ```
 
 ### 5. iOS: initialise the SDK in `AppDelegate`
 Add the import at the top of your `AppDelegate`:
 
-```swift file=ios/<YourApp>/AppDelegate.swift
+```swift file=AppDelegate.swift
 import react_native_hydra_lib
 ```
 
-Then, in `application(_:didFinishLaunchingWithOptions:)`, replace the return statement as shown.
+Then, in `application(_:didFinishLaunchingWithOptions:)`, replace the return statement:
 
-Swift:
-
-```swift file=ios/<YourApp>/AppDelegate.swift
+```swift file=AppDelegate.swift
 func application(
   _ application: UIApplication,
   didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -147,7 +113,7 @@ func application(
     accountId: "{{account_id}}",
     baseUrl: "{{base_url}}",
     sslPublicKey: "{{ssl_public_key}}",
-    remoteLogLevel: 0,                  // 0–5, see "Log levels" under Verification
+    remoteLogLevel: 0,
     orgId: "{{org_id}}",
     gamificationKey: "{{gamification_key}}",
     gamificationRegion: "{{gamification_region}}",
@@ -167,9 +133,7 @@ func application(
 }
 ```
 
-> ⚠️ Source doc correction: the text (p.76) says to "replace the return statement" in your existing method, but the snippet shows the whole method. Pasting it as a second method won't compile. The consistent reading: keep your existing method declaration (including `override`, if it has one) and the code before the `return`. Replace the `return …` line with everything from `let result = super.application(…)` to `return result`. *Pending SME confirmation.*
-
-> ⚠️ Gap: the snippet calls `super.application(…)`, so it assumes your `AppDelegate` inherits that method from a superclass. The source doesn't say which React Native versions or `AppDelegate` templates this targets, and doesn't explain the `with: nil` argument. Ask a Capillary engineer.
+> ⚠️ Correction: ✅ Use the snippet's body (`let result = …` to `return result`) in place of your existing method's `return` line, keeping your own declaration (and `override`, if present). ❌ Don't use the full `func application(…)` as a second method; it won't compile (p.76 shows the whole method but says "replace the return statement"). *Pending SME confirmation.*
 
 Objective-C: the source gives only the equivalent method signature:
 
@@ -178,21 +142,21 @@ Objective-C: the source gives only the equivalent method signature:
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 ```
 
-> ⚠️ Gap: for Objective-C the source (p.77) shows only this signature. It doesn't show the import, the `HydraNativeRemoteConfig` construction or the `initialize` call in Objective-C. Don't improvise a translation of the Swift code. Ask a Capillary engineer.
+> ⚠️ Gap: no Objective-C import, config or `initialize` code (p.77); don't translate the Swift yourself. The Swift calls `super.application(…)`, so it assumes a superclass provides it; the targeted React Native `AppDelegate` template isn't stated. Ask a Capillary engineer.
 
-Replace every placeholder with the values Capillary gave you at registration.
+Replace every placeholder with the values from registration.
 
 ### 6. Android: initialise the SDK in `MainApplication`
-Add these imports to your `MainApplication` file:
+Add the imports to your `MainApplication`:
 
-```kotlin file=android/app/src/main/java/<your-package>/MainApplication.kt
+```kotlin file=MainApplication.kt
 import com.hydralib.nativeapis.Hydra
 import com.hydralib.nativeapis.HydraRemoteConfig
 ```
 
-Add this to `onCreate`, **after** the default React Native generated code:
+In `onCreate`, **after** the default React Native generated code:
 
-```kotlin file=android/app/src/main/java/<your-package>/MainApplication.kt
+```kotlin file=MainApplication.kt
 val config = HydraRemoteConfig(
   accountId = "{{account_id}}",
   baseURL = "{{base_url}}",
@@ -207,14 +171,12 @@ val config = HydraRemoteConfig(
 Hydra.initialize(this, remoteConfig = config)
 ```
 
-Replace every placeholder with the values Capillary gave you at registration.
+Replace every placeholder with the values from registration. Parameter names differ by platform: iOS `baseUrl` / `remoteLogLevel`, Android `baseURL` / `remoteDebugLevel`; copy each exactly.
 
-> ⚠️ Gap: some parameter names differ between platforms: iOS uses `baseUrl` and `remoteLogLevel`, Android uses `baseURL` and `remoteDebugLevel`. Copy each exactly as written for its platform. The source doesn't confirm that `remoteDebugLevel` takes the same 0–5 remote log level as iOS's `remoteLogLevel`. Ask a Capillary engineer.
-
-> ⚠️ Gap: only a Kotlin `MainApplication` is documented. There's no Java variant. Ask a Capillary engineer if the client's `MainApplication` is Java.
+> ⚠️ Gap: it isn't confirmed that `remoteDebugLevel` (Android) takes the same 0–5 level as `remoteLogLevel` (iOS); no Java `MainApplication` is documented. Ask a Capillary engineer.
 
 ### 7. Check that the SDK is initialised (JavaScript)
-Before using any API from the package, check that the Hydra SDK has initialised:
+Before using any API from the package:
 
 ```javascript
 HydraCore.isSdkInitialized()
@@ -237,12 +199,10 @@ HydraCore.isSdkInitialized()
   });
 ```
 
-> ⚠️ Gap: the source never shows the JavaScript `import` lines for `Hydra`, `HydraCore`, `HydraNativeEventEmitter`, `HydraUserDetails`, `ThemeMode`, `GamificationBannerView`, `GamificationEmbedView` or `GamificationLoyaltyView`. Ask a Capillary engineer which module paths to import them from.
-
-> ⚠️ Gap: the source doesn't describe the `result` and `message` values passed to `addHydraSdkInitializationResultListener`, or when to remove that subscription. Ask a Capillary engineer.
+> ⚠️ Gap: no JavaScript `import` lines are given for `Hydra`, `HydraCore`, `HydraNativeEventEmitter`, `HydraUserDetails`, `ThemeMode` or the `Gamification…View` components, and the `result` / `message` values aren't described. Ask a Capillary engineer.
 
 ### 8. Sign the user in (`identify`)
-Sign the user in with `identify` before using the rest of the SDK. `customerId` is required; the other user details are optional (see `HydraUserDetails` in the API Reference). `customerId` **must match the Account Linking Identifier configured in Capillary CRM** (see `_shared/prerequisites.md`).
+Sign in first. `customerId` is required; other details are optional (see `HydraUserDetails`). `customerId` must match the Account Linking Identifier in Capillary CRM.
 
 ```javascript
 const userDetails = new HydraUserDetails(customerId);
@@ -255,7 +215,7 @@ await Hydra.reset(customerId);
 ```
 
 ### 10. Report the current screen (required for campaigns)
-To display Floating Button, Popup and Bottom Sheet campaigns, report the current screen **after sign-in**:
+To display Floating Button, Popup and Bottom Sheet campaigns, report the current screen **after sign-in** with `Hydra.gamificationScreenAppeared(...)`, and call `Hydra.gamificationScreenDisappeared()` on cleanup:
 
 ```javascript
 useFocusEffect(
@@ -272,44 +232,38 @@ useFocusEffect(
 );
 ```
 
-The 500 ms delay is required so the screen animation can finish before the screen is reported.
+The 500 ms delay is required so the screen animation completes before reporting.
 
-> ⚠️ Gap: the source uses `'home'` as the example screen name. It doesn't say which names to pass or how they relate to campaign targeting, or how to report screens in an app that doesn't use React Navigation. Ask a Capillary engineer.
+> ⚠️ Gap: which screen names to pass (`'home'` is an example) and how to report screens without `useFocusEffect` aren't documented. Ask a Capillary engineer.
 
 ### 11. Set the Capillary token (for Loyalty View)
-To support the Loyalty View, set the Capillary B2B short-lived token:
+Set the Capillary B2B short-lived token (replace `'token'` with it):
 
 ```javascript
-Hydra.setCapToken(token); // the Capillary B2B short-lived token
+Hydra.setCapToken('token');
 ```
 
 ## Modules
 
 ### Push
-> ⚠️ Gap: not documented for this mode. The sample `hydra-config.json` sets `enable_push_notification` and `enable_hydra_sdk_firebase_registration` to `false`, and the source doesn't say whether push can work without Firebase. Ask a Capillary engineer.
+> ⚠️ Gap: not documented for this mode; the sample config sets `enable_push_notification` and `enable_hydra_sdk_firebase_registration` to `false`. Ask a Capillary engineer.
 
 ### In-App
-> ⚠️ Gap: not documented for this mode. The sample config has `enable_in_app_messaging` and `enable_in_app_messaging_in_react_native` set to `false`, but no setup steps are given. Ask a Capillary engineer.
+> ⚠️ Gap: not documented; the sample config sets `enable_in_app_messaging` and `enable_in_app_messaging_in_react_native` to `false`. Ask a Capillary engineer.
 
 ### Inbox
-> ⚠️ Gap: not documented for this mode. The sample config has `enable_inbox_api`, `enable_inbox_ui`, `use_default_inbox_ui_config` and `max_notification_count`, and the `removeListener` example names an `inboxUpdatedSubscription`, but no inbox APIs or listeners are documented. Ask a Capillary engineer.
+> ⚠️ Gap: not documented; the sample config turns the inbox keys off. Ask a Capillary engineer.
 
 ### Visitor
 > ⚠️ Gap: not documented for this mode. Ask a Capillary engineer.
 
 ### Gamification
-Gamification is configured in the native init calls (steps 5 and 6: `gamificationKey`, `gamificationRegion`, `gamificationBaseUrl`). Floating Button, Popup and Bottom Sheet campaigns are displayed once the current screen is reported after sign-in (step 10). The Loyalty View also needs the token from step 11.
-
-`BANNER_ID`, `EMBED_ID` and `LOYALTY_ID` below are the entry-point IDs. The source uses these constants without declaring them; the declaration in the Banner snippet is added here for clarity.
-
-> ⚠️ Gap: the source doesn't say where the client gets the Banner, Embed and Loyalty IDs, or their type (the declaration below assumes a string). `_shared/prerequisites.md` says they're configured in the gamification dashboard. Ask a Capillary engineer.
+Gamification values go into the native init (steps 5–6). Floating Button, Popup and Bottom Sheet campaigns show once the screen is reported after sign-in (step 10). `BANNER_ID`, `EMBED_ID` and `LOYALTY_ID` in the snippets are your entry-point IDs (`{{banner_id}}`, `{{embed_id}}`, `{{loyalty_id}}`); the source uses them without declaring them, so declare them yourself.
 
 #### Banner View
 Register a height listener and render the banner:
 
 ```javascript
-const BANNER_ID = '{{banner_id}}'; // declaration added; not in the source
-
 const [bannerHeight, setBannerHeight] = useState(300);
 
 useEffect(() => {
@@ -346,10 +300,8 @@ useEffect(() => {
 </ScrollView>
 ```
 
-`EMBED_ID` = `{{embed_id}}`.
-
 #### Loyalty View
-Needs the Capillary token (step 11).
+Needs the token from step 11.
 
 ```jsx
 <ScrollView style={styles.container}>
@@ -360,12 +312,10 @@ Needs the Capillary token (step 11).
 </ScrollView>
 ```
 
-`LOYALTY_ID` = `{{loyalty_id}}`.
-
-> ⚠️ Source doc correction: the Embed and Loyalty snippets (pp.80–81) use `embedHeight` and `loyaltyHeight`, but the guide never defines them. `bannerHeight`, by contrast, comes from `useState` plus the height listener. Copied as-is, these snippets fail because the variables don't exist, so define them before use. The source doesn't say whether `addGamificationViewHeightChangedListener` also reports Embed and Loyalty heights, or what initial height to use. *Pending SME confirmation.*
+> ⚠️ Gap: `embedHeight` and `loyaltyHeight` are used but never defined (pp.80–81), so these snippets fail as-is. The docs don't say whether `addGamificationViewHeightChangedListener` also reports Embed / Loyalty heights or what initial height to use. Ask a Capillary engineer.
 
 #### Callback for analytics events
-This listener fires for game events:
+Fires for game events:
 
 ```javascript
 useEffect(() => {
@@ -382,7 +332,7 @@ useEffect(() => {
 ```
 
 #### Callback for deeplinks
-This listener fires when a click in the game needs to redirect to a deeplink:
+Fires when a click in the game needs to redirect to a deeplink:
 
 ```javascript
 useEffect(() => {
@@ -398,17 +348,17 @@ useEffect(() => {
 }, []);
 ```
 
-> ⚠️ Gap: the source doesn't list the analytics event names or `payload` shape, or say whether the app must navigate to the deeplink `url` itself. Ask a Capillary engineer.
+> ⚠️ Gap: analytics event names, the `payload` shape, and whether the app must open the deeplink `url` itself aren't documented. Ask a Capillary engineer.
 
 #### Trigger a campaign on a custom event
 ```javascript
 Hydra.track('<YOUR_EVENT>');
 ```
 
-> ⚠️ Gap: the source shows `track` only with an event name. It doesn't document event attributes, or general custom-event tracking beyond campaign triggers. Ask a Capillary engineer.
+> ⚠️ Gap: event attributes for `track` aren't documented. Ask a Capillary engineer.
 
 #### Theme mode
-Set the theme mode (values are in the `ThemeMode` enum, see API Reference):
+Set (values in the `ThemeMode` enum):
 
 ```typescript
 Hydra.setThemeMode(ThemeMode.dark)
@@ -420,7 +370,7 @@ Hydra.setThemeMode(ThemeMode.dark)
   });
 ```
 
-Get the current theme mode:
+Get:
 
 ```typescript
 Hydra.getThemeMode()
@@ -432,10 +382,8 @@ Hydra.getThemeMode()
   });
 ```
 
-> ⚠️ Gap: the source doesn't say what the theme mode applies to, or what `none` and `auto` do. Ask a Capillary engineer.
-
 #### Enable or disable (suppress) gamification
-Pass `true` to disable (suppress) Hydra gamification, or `false` to enable it:
+Pass `true` to disable (suppress), `false` to enable:
 
 ```typescript
 Hydra.setGamificationSuppressed(true)
@@ -447,7 +395,7 @@ Hydra.setGamificationSuppressed(true)
   });
 ```
 
-Check whether gamification is disabled (suppressed):
+Check whether it's suppressed:
 
 ```typescript
 Hydra.isGamificationSuppressed()
@@ -460,102 +408,62 @@ Hydra.isGamificationSuppressed()
 ```
 
 ## Verification
-**SDK initialisation.** Run the check from step 7. `HydraCore.isSdkInitialized()` resolves to `true` once the SDK has initialised. If it resolves to `false`, the `addHydraSdkInitializationResultListener` callback reports the result later as `(result, message)`.
+- **Init:** `HydraCore.isSdkInitialized()` (step 7) resolves `true`; if `false`, the `addHydraSdkInitializationResultListener` callback reports the result later.
+- **Campaigns:** after `identify` (step 8) and screen reporting (step 10), Floating Button, Popup and Bottom Sheet campaigns can appear on the reported screen.
+- **Gamification:** `isGamificationSuppressed()` resolves `false` unless suppressed; the listener snippets log `gamificationAnalyticsEvent:` / `gamificationDeeplink:` (their own `console.log`).
 
-**Sign-in and campaigns.** After `Hydra.identify(...)` (step 8) and screen reporting (step 10), Floating Button, Popup and Bottom Sheet campaigns can display on the reported screen.
+**Log levels:** Console (Xcode console / Logcat) and Remote (saved to the Capillary backend), each an integer 0–5: 0 Off, 1 Error, 2 Warn, 3 Info, 4 Debug, 5 Verbose (each includes those below). The setup steps use `"console_log_level": 4` (step 2) and the native-init remote level (`0`, steps 5–6).
 
-**Gamification state.**
-- `Hydra.isGamificationSuppressed()` should resolve to `false` unless you suppressed gamification.
-- With the listeners from the Gamification module added, game events log `gamificationAnalyticsEvent:` and deeplink clicks log `gamificationDeeplink:`. These lines come from the snippets' own `console.log` calls, not from the SDK.
-- For the Banner View, the height listener fires with your `BANNER_ID` and a height above 0.
-
-**Log levels** (source: Log Configuration, p.84). There are two kinds of log level:
-
-| Log type | Where the logs go |
-|---|---|
-| Console Log Level | Xcode console (iOS) and Logcat (Android) |
-| Remote Log Level | Saved to the Capillary backend |
-
-Both must be an integer from 0 to 5 (each level includes the levels below it):
-
-| Level | Name | Logs |
-|---|---|---|
-| 0 | Off | Logging disabled |
-| 1 | Error | Error-level messages only |
-| 2 | Warn | Warnings and above |
-| 3 | Info | Informational messages and above |
-| 4 | Debug | Debug messages and above |
-| 5 | Verbose | All messages |
-
-The sample `hydra-config.json` (step 2) sets `"console_log_level": 4` (Debug). The remote level is passed in the native init call: `remoteLogLevel` on iOS (step 5), `remoteDebugLevel` on Android (step 6). Both are `0` (Off) in the samples.
-
-> ⚠️ Source doc correction: the Log Configuration section (p.84) says log levels are configured in `hydra-config.json` (Android) and `HydraConfig.plist` (iOS), using the key `log_levels` (Android) and `LOG_LEVELS` (iOS). That doesn't match the setup steps:
-> - the only `hydra-config.json` the guide creates is in `<PROJECT_ROOT>/capillary/` (not Android-only), and it uses `console_log_level` (p.74);
-> - no step creates a `HydraConfig.plist`;
-> - the remote level is passed in the native init call (pp.76–77).
->
-> The value format for `log_levels` / `LOG_LEVELS` is never shown. Until confirmed, use what the setup steps show: `console_log_level` in `capillary/hydra-config.json`, and the remote level in the native init. *Pending SME confirmation.*
-
-> ⚠️ Gap: the source has no formal verification procedure. It gives no expected SDK log lines, no meaning for the `result` / `message` initialisation values, and no dashboard checks to confirm sign-in, events or campaigns reached Capillary. Ask a Capillary engineer.
+> ⚠️ Gap: Log Configuration (p.84) says to set levels in `hydra-config.json` (Android) / `HydraConfig.plist` (iOS) with keys `log_levels` / `LOG_LEVELS` (format not shown), which conflicts with the setup steps (pp.74–77: `console_log_level` in `capillary/hydra-config.json`, no plist, remote level in native init). No expected SDK log lines or dashboard checks are documented either. Ask a Capillary engineer.
 
 ## Known Issues
 
-**Calling SDK APIs before the SDK has initialised**
-- From the source doc (p.78): check `HydraCore.isSdkInitialized()` before using any API from the package. If it's `false`, wait for `addHydraSdkInitializationResultListener` (step 7).
+**APIs fail or do nothing right after launch** → called before the SDK initialised → check `HydraCore.isSdkInitialized()` first and wait for `addHydraSdkInitializationResultListener` if `false` (step 7).
 
-**`customerId` must match the CRM Account Linking Identifier**
-- From the source doc (p.86): `customerId` can be mobile, email, InTouchUserId, externalId or FCMToken. Which one is determined by the Account Linking Identifier set in the Capillary CRM dashboard under *Organisation Settings > Omni Channel Settings > Channel Configurations > MAPP_SDK*. Pass the value of that identifier for the signed-in user.
+**User not matched to the CRM customer** → `customerId` isn't the CRM Account Linking Identifier → pass that identifier (see `HydraUserDetails`).
 
-**Floating Button, Popup or Bottom Sheet campaigns don't appear**
-- From the source doc (p.79): these campaigns need the current screen reported **after sign-in** (step 10).
-- Keep the 500 ms delay: it's required so the screen animation can finish before the screen is reported.
+**Floating Button / Popup / Bottom Sheet campaigns don't appear** → screen not reported, reported before sign-in, or reported without the delay → report after sign-in with the 500 ms delay (step 10).
 
-**Loyalty View content missing**
-- From the source doc (p.79): the Loyalty View needs the Capillary B2B short-lived token, set with `Hydra.setCapToken(...)` (step 11). `_shared/prerequisites.md` adds that it must be set before the Loyalty View is shown.
-
-**Placeholder values left in the native init**
-- From the source doc (pp.77–78): replace every placeholder in the `AppDelegate` and `MainApplication` code with the values Capillary gave you at registration.
+**Loyalty View empty** → Capillary token not set → call `Hydra.setCapToken(...)` before showing the view (step 11).
 
 ## API Reference
 
-### JavaScript: `Hydra` and `HydraCore`
+### `Hydra` / `HydraCore`
 | API | Purpose |
 |---|---|
-| `HydraCore.isSdkInitialized()` | Promise that resolves to whether the SDK has initialised |
-| `Hydra.identify(userDetails: HydraUserDetails)` | Signs the user in (awaitable) |
-| `Hydra.reset(customerId)` | Signs the user out (awaitable) |
-| `Hydra.gamificationScreenAppeared(screenName)` | Reports that a screen appeared (call after sign-in, with the 500 ms delay) |
-| `Hydra.gamificationScreenDisappeared()` | Reports that the current screen went away |
-| `Hydra.setCapToken(token)` | Sets the Capillary B2B short-lived token for the Loyalty View |
-| `Hydra.track(eventName)` | Triggers a campaign on a custom event |
-| `Hydra.setThemeMode(mode: ThemeMode)` | Sets the theme mode (Promise) |
-| `Hydra.getThemeMode()` | Promise that resolves to the current theme mode |
-| `Hydra.setGamificationSuppressed(suppressed: boolean)` | `true` disables (suppresses) gamification, `false` enables it (Promise) |
-| `Hydra.isGamificationSuppressed()` | Promise that resolves to whether gamification is suppressed |
+| `HydraCore.isSdkInitialized()` | Promise → whether the SDK is initialised |
+| `Hydra.identify(userDetails)` | Sign in (awaitable) |
+| `Hydra.reset(customerId)` | Sign out (awaitable) |
+| `Hydra.gamificationScreenAppeared(screenName)` | Report screen shown (after sign-in, 500 ms delay) |
+| `Hydra.gamificationScreenDisappeared()` | Report screen gone |
+| `Hydra.setCapToken(token)` | Set B2B short-lived token (Loyalty View) |
+| `Hydra.track(eventName)` | Trigger a campaign on a custom event |
+| `Hydra.setThemeMode(mode)` / `Hydra.getThemeMode()` | Set / get `ThemeMode` (Promise) |
+| `Hydra.setGamificationSuppressed(bool)` / `Hydra.isGamificationSuppressed()` | `true` disables, `false` enables / Promise → state |
 
-### JavaScript: `HydraNativeEventEmitter`
+### `HydraNativeEventEmitter`
 | API | Purpose |
 |---|---|
-| `static getInstance(): HydraNativeEventEmitter` | Returns the singleton used to call all other emitter methods |
-| `removeListener(emitterSubscription: EmitterSubscription): void` | Removes a listener. `emitterSubscription` (required) is the object returned when the listener was added. |
-| `addHydraSdkInitializationResultListener((result, message) => …)` | Fires with the SDK initialisation result; returns a subscription |
-| `addGamificationViewHeightChangedListener((height, entryPointId) => …)` | Fires when a gamification view's height changes; returns a subscription |
-| `addGamificationAnalyticsEventListener((name, payload) => …)` | Fires for game events; returns a subscription |
-| `addGamificationDeeplinkListener((url) => …)` | Fires when a game click needs to redirect to a deeplink; returns a subscription |
+| `static getInstance(): HydraNativeEventEmitter` | Singleton used to call all other methods |
+| `removeListener(emitterSubscription: EmitterSubscription): void` | Remove a listener; pass the subscription returned when it was added (required) |
+| `addHydraSdkInitializationResultListener((result, message) => …)` | SDK init result |
+| `addGamificationViewHeightChangedListener((height, entryPointId) => …)` | Gamification view height changed |
+| `addGamificationAnalyticsEventListener((name, payload) => …)` | Game events |
+| `addGamificationDeeplinkListener((url) => …)` | Game click needs a deeplink redirect |
 
-Example: `HydraNativeEventEmitter.getInstance().removeListener(subscription);`
+Each `add…Listener` returns a subscription.
 
-> ⚠️ Source doc correction: the reference (p.85) writes the signature as `HydraNativeEventEmitter.removeListener(…)`, like a static method. Its own example, and every snippet, call it on the singleton instead: `HydraNativeEventEmitter.getInstance().removeListener(subscription)`. *Pending SME confirmation.*
+> ⚠️ Correction: ✅ Use `HydraNativeEventEmitter.getInstance().removeListener(subscription)`, as in the source's own example and every snippet. ❌ Don't use `HydraNativeEventEmitter.removeListener(…)` as a static call (signature in the API Reference, p.85). *Pending SME confirmation.*
 
-### JavaScript: components
-| Component | Props shown in the source |
+### Components
+| Component | Props |
 |---|---|
-| `GamificationBannerView` | `bannerId`, `style` (height from the height listener) |
+| `GamificationBannerView` | `bannerId`, `style` |
 | `GamificationEmbedView` | `embedId`, `style` |
 | `GamificationLoyaltyView` | `loyaltyId`, `style` |
 
-### JavaScript: `HydraUserDetails`
-A model class used for signing up, signing in and updating user details. Only sign-in (`identify`) is documented.
+### `HydraUserDetails`
+Model for sign-up, sign-in and updating user details (only sign-in is documented).
 
 ```typescript
 new HydraUserDetails(
@@ -567,15 +475,7 @@ new HydraUserDetails(
 ): HydraUserDetails
 ```
 
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `customerId` | string | Yes | Can be mobile, email, InTouchUserId, externalId or FCMToken. Determined by the Account Linking Identifier configured in the Capillary CRM dashboard under *Organisation Settings > Omni Channel Settings > Channel Configurations > MAPP_SDK*. |
-| `firstName` | string | No | First name of the user |
-| `lastName` | string | No | Last name of the user |
-| `email` | string | No | Email address of the user |
-| `phone` | string | No | Phone number of the user |
-
-Example from the source:
+Only `customerId` is required: mobile, email, InTouchUserId, externalId or FCMToken, as set by the CRM Account Linking Identifier (*Organisation Settings > Omni Channel Settings > Channel Configurations > MAPP_SDK*). Example:
 
 ```javascript
 const userDetails = new HydraUserDetails(
@@ -587,7 +487,9 @@ const userDetails = new HydraUserDetails(
 );
 ```
 
-### JavaScript: enums
+### Enums
+`HydraLogLevel`: console and remote log levels; each higher level includes those below.
+
 ```typescript
 enum HydraLogLevel {
   off     = 0,
@@ -606,27 +508,7 @@ export enum ThemeMode {
 }
 ```
 
-`HydraLogLevel` holds the constants for the console and remote log levels; each higher level includes all the levels below it. The source doesn't show an API that takes a `HydraLogLevel`.
-
-### Native initialisation
-| Platform | API | Notes |
-|---|---|---|
-| iOS (Swift) | `HydraNativeRemoteConfig(accountId:baseUrl:sslPublicKey:remoteLogLevel:orgId:gamificationKey:gamificationRegion:gamificationBaseUrl:)` | `remoteLogLevel` is an integer 0–5. Requires `import react_native_hydra_lib`. |
-| iOS (Swift) | `Hydra.sharedInstance().initialize(_:didFinishLaunchingWithOptions:with:withHydraRemoteConfig:)` | Called in `application(_:didFinishLaunchingWithOptions:)` with `launchOptions ?? [:]`, `with: nil` and the config |
-| Android (Kotlin) | `HydraRemoteConfig(accountId, baseURL, sslPublicKey, remoteDebugLevel, orgId, gamificationKey, gamificationRegion, gamificationBaseUrl)` | `com.hydralib.nativeapis.HydraRemoteConfig` |
-| Android (Kotlin) | `Hydra.initialize(this, remoteConfig = config)` | `com.hydralib.nativeapis.Hydra`. Called in `MainApplication.onCreate`, after the generated React Native code. |
-| iOS (Podfile) | `HydraPods.rb` (via `require.resolve`) and `hydra_pods` | See step 3 |
-
-### Config file: `capillary/hydra-config.json`
-| Key | Sample value | Meaning in the source |
-|---|---|---|
-| `console_log_level` | `4` | Not described; matches "Console Log Level" (see the log-level correction under Verification) |
-| `enable_in_app_messaging` | `false` | Not described |
-| `enable_inbox_api` | `false` | Not described |
-| `enable_inbox_ui` | `false` | Not described |
-| `use_default_inbox_ui_config` | `false` | Not described |
-| `max_notification_count` | `0` | Not described |
-| `enable_push_notification` | `false` | Not described |
-| `enable_hydra_sdk_firebase_registration` | `false` | Not described |
-| `hydra_notification_color` | `"#FF03DAC5"` | Not described |
-| `enable_in_app_messaging_in_react_native` | `false` | Not described |
+### Native and config
+- iOS: `HydraNativeRemoteConfig(...)` + `Hydra.sharedInstance().initialize(...)` (step 5); Podfile `HydraPods.rb` + `hydra_pods` (step 3).
+- Android: `HydraRemoteConfig(...)` + `Hydra.initialize(this, remoteConfig = config)` (step 6).
+- `capillary/hydra-config.json`: keys and sample values in step 2 (none described in the source).

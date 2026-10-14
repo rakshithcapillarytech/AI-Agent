@@ -1,0 +1,108 @@
+/* Design tokens, matching Capillary's internal console design language (TamAegis). */
+:root {
+  /* Neutrals */
+  --n-0: #ffffff;
+  --n-25: #fcfcfd;
+  --n-50: #f8f9fb;
+  --n-100: #f1f3f7;
+  --n-150: #e8ebf1;
+  --n-200: #dde1e9;
+  --n-300: #b0b6c2;
+  --n-400: #868e9e;
+  --n-500: #697284;
+  --n-600: #545d6a;
+  --n-700: #414855;
+  --n-800: #2b3140;
+  --n-900: #181c26;
+
+  /* Brand */
+  --brand-green: #2f9e4f;
+  --brand-green-deep: #17784a;
+  --brand-green-lift: #45b862;
+  --brand-blue: #2081c4;
+  --brand-magenta: #b3418f;
+  --brand-orange: #e25226;
+
+  /* Semantic */
+  --ink: #171b24;
+  --ink-soft: var(--n-700);
+  --muted: var(--n-600);
+  --faint: var(--n-500);
+  --canvas: var(--n-50);
+  --surface: var(--n-0);
+  --surface-soft: var(--n-100);
+  --line: var(--n-200);
+  --line-soft: var(--n-150);
+  --link: #1e6fb8;
+
+  --accent: var(--brand-green-deep);
+  --accent-hover: #14653f;
+  --accent-soft: rgba(47, 158, 79, 0.1);
+  --accent-line: rgba(47, 158, 79, 0.32);
+  --accent-glow: 0 0 0 4px rgba(47, 158, 79, 0.11);
+  --accent-gradient: linear-gradient(135deg, var(--brand-green-lift), var(--brand-green-deep) 78%);
+  --mark-tile: linear-gradient(145deg, #4cc062 0%, #1f9d8a 52%, #1d6fd1 100%);
+  --mark-tile-edge: inset 0 1px 0 rgba(255, 255, 255, 0.38), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  --mark-tile-glow: 0 6px 16px -6px rgba(31, 157, 138, 0.65);
+
+  --ok: #00793d;
+  --ok-soft: rgba(31, 146, 84, 0.11);
+  --warn: #945c00;
+  --warn-soft: rgba(224, 163, 37, 0.13);
+  --warn-line: rgba(224, 163, 37, 0.34);
+  --danger: #ce1f46;
+  --danger-soft: rgba(217, 45, 78, 0.09);
+  --info: #1e6fb8;
+  --info-soft: rgba(30, 111, 184, 0.1);
+  --magenta-soft: rgba(179, 65, 143, 0.1);
+  --orange-soft: rgba(226, 82, 38, 0.1);
+
+  /* Dark chrome */
+  --rail-bg: linear-gradient(180deg, #14181f 0%, #0e1116 100%);
+  --sidebar-bg: #171b23;
+  --sidebar-hover: rgba(255, 255, 255, 0.07);
+  --sidebar-active: rgba(69, 184, 98, 0.16);
+  --sidebar-line: rgba(255, 255, 255, 0.08);
+  --sidebar-text: rgba(255, 255, 255, 0.72);
+  --sidebar-text-dim: rgba(255, 255, 255, 0.46);
+  --sidebar-text-strong: #ffffff;
+
+  /* Type */
+  --font: "Inter Variable", "Inter var", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 16.5px;
+  --text-xl: 19px;
+  --text-2xl: 22px;
+  --text-4xl: 34px;
+  --weight-normal: 450;
+  --weight-medium: 530;
+  --weight-semibold: 620;
+  --weight-bold: 700;
+  --tracking-tight: -0.014em;
+  --tracking-caps: 0.06em;
+
+  /* Shape & depth */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 9px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+  --shadow-1: 0 1px 1px rgba(16, 19, 27, 0.04), 0 1px 3px -1px rgba(16, 19, 27, 0.07);
+  --shadow-2: 0 2px 3px -1px rgba(16, 19, 27, 0.05), 0 4px 10px -3px rgba(16, 19, 27, 0.09);
+  --shadow-3: 0 4px 6px -2px rgba(16, 19, 27, 0.06), 0 10px 24px -6px rgba(16, 19, 27, 0.11);
+  --shadow-4: 0 8px 12px -4px rgba(16, 19, 27, 0.07), 0 22px 48px -12px rgba(16, 19, 27, 0.15);
+
+  /* Motion */
+  --dur-1: 90ms;
+  --dur-2: 0.14s;
+  --dur-3: 0.22s;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --thread-max: 820px;
+}
