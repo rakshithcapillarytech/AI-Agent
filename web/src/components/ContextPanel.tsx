@@ -2,9 +2,11 @@ import { BookOpen, Check } from "lucide-react";
 import { MODULES, PHASES, guideLabel, labelOf, phaseIndex, platformShort } from "../lib/catalog";
 import type { SessionState } from "../types";
 import { ui } from "./controls";
+import { GuideDownload } from "./GuideDownload";
+import { PromptCopy } from "./PromptCopy";
 import styles from "./session.module.css";
 
-export function ContextPanel({ session }: { session: SessionState }) {
+export function ContextPanel({ sessionId, session }: { sessionId: string; session: SessionState }) {
   const current = phaseIndex(session.phase);
   const profile = session.profile;
 
@@ -26,6 +28,16 @@ export function ContextPanel({ session }: { session: SessionState }) {
             );
           })}
         </ol>
+      </section>
+
+      <section className={styles.guideCard}>
+        <h3 className={styles.contextTitle}>Use with your own AI</h3>
+        <p>
+          <b>First</b>, download the documentation for your exact setup as one file, and attach it in Claude, Cursor
+          or ChatGPT.
+        </p>
+        <GuideDownload sessionId={sessionId} ready={session.guide_ready} variant="panel" />
+        <PromptCopy profile={profile} ready={session.guide_ready} />
       </section>
 
       <section>

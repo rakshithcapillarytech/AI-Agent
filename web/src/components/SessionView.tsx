@@ -1,11 +1,13 @@
 import { Check, Link2, PanelRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PHASES, phaseIndex } from "../lib/catalog";
+import { copyText } from "../lib/clipboard";
 import { useConversation } from "../lib/useConversation";
 import type { Profile } from "../types";
 import { Composer, type ComposerHandle } from "./Composer";
 import { ContextPanel } from "./ContextPanel";
 import { EnvPill, ui } from "./controls";
+import { GuideDownload } from "./GuideDownload";
 import { Message } from "./Message";
 import { PageHeader } from "./PageHeader";
 import styles from "./session.module.css";
@@ -20,7 +22,7 @@ interface SessionViewProps {
 function CopyLinkButton() {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
-    await navigator.clipboard.writeText(window.location.href);
+    if (!(await copyText(window.location.href))) return;
     setCopied(true);
     setTimeout(() => setCopied(false), 1600);
   };
@@ -102,6 +104,7 @@ export function SessionView({ id, startProfile, onHome }: SessionViewProps) {
         actions={
           <>
             <EnvPill environment={session.profile.environment} />
+            <GuideDownload sessionId={id} ready={session.guide_ready} variant="header" />
             <CopyLinkButton />
             <button
               type="button"
@@ -143,7 +146,7 @@ export function SessionView({ id, startProfile, onHome }: SessionViewProps) {
           </div>
         </div>
         <div className={`${styles.contextWrap} ${showDetails ? styles.contextOpen : ""}`}>
-          <ContextPanel session={session} />
+          <ContextPanel sessionId={id} session={session} />
         </div>
       </div>
     </>

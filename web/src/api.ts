@@ -59,6 +59,9 @@ async function streamTurn(
 }
 
 export const api = {
+  /** Same-origin URL of the session's downloadable Markdown guide (served as an attachment). */
+  guideUrl: (id: string) => `${BASE}/sessions/${encodeURIComponent(id)}/guide`,
+
   createSession: () =>
     fetch(`${BASE}/sessions`, { method: "POST" }).then((r) => json<{ session_id: string }>(r)),
 

@@ -47,4 +47,6 @@ export interface SessionState {
   profile: Partial<Profile>;
   loaded_files: string[];
   messages: ChatMessage[];
+  /** True once every app's config mode is known, so the downloadable guide can be built. */
+  guide_ready: boolean;
 }

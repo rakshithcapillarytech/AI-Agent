@@ -21,6 +21,7 @@ Working skeleton:
 - **Session persistence.** Sessions are LangGraph threads checkpointed in Postgres. The portal URL (`?session=…`) resumes a session.
 - **Input redaction.** Secrets (GitHub tokens, gamification keys, private keys) are redacted before reaching the LLM.
 - **Portal (React).** A 5-step setup wizard with plain-English choices: company, apps (+ Firebase yes/no/not sure), features, account details, then review. A complete profile starts the session already confirmed, with the right guides loaded. The chat streams replies as Markdown (with copy buttons on code), and a details panel shows progress, setup and the guides in use. Recent onboardings are listed in the sidebar.
+- **Downloadable AI guide.** Once every app's Firebase question is answered, the client can download one Markdown file with only the documentation for their setup, plus rules for their AI assistant, and attach it to Claude, Cursor or ChatGPT (`GET /sessions/{id}/guide`, built by `app/kb/guide.py`).
 
 Knowledge base: **all 10 platform × mode files plus 3 shared files drafted** from the source docs, all `review_status: draft`. The SME review checklist (183 items) is in [knowledge_base/REVIEW.md](knowledge_base/REVIEW.md).
 

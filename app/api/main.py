@@ -7,7 +7,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from pydantic import BaseModel
@@ -18,6 +18,7 @@ from app.graph.builder import build_graph
 from app.graph.messages import message_text
 from app.graph.nodes.guardrails import redact
 from app.graph.state import IntegrationProfile
+from app.kb.guide import GuideNotReady, build_guide, guide_filename
 
 log = logging.getLogger(__name__)
 
@@ -104,9 +105,12 @@ async def get_session(session_id: str) -> dict:
             history.append({"role": "user", "text": text, "kind": kind})
         elif isinstance(message, AIMessage) and (text := message_text(message.content)):
             history.append({"role": "assistant", "text": text, "kind": "chat"})
+    profile = IntegrationProfile.model_validate(values.get("profile") or {})
     return {
         "phase": values.get("phase", "discovery"),
         "profile": values.get("profile", {}),
+        # The downloadable guide needs every app's config mode (Firebase or not).
+        "guide_ready": bool(profile.platforms) and all(p.config_mode for p in profile.platforms),
         "prerequisites": values.get("prerequisites", []),
         "loaded_files": values.get("loaded_files", []),
         "messages": history,
@@ -128,3 +132,21 @@ async def start_session(session_id: str, body: StartIn) -> StreamingResponse:
 @app.post("/sessions/{session_id}/messages")
 async def post_message(session_id: str, body: MessageIn) -> StreamingResponse:
     return _stream_turn(session_id, {"messages": [HumanMessage(content=redact(body.content))]})
+
+
+@app.get("/sessions/{session_id}/guide")
+async def download_guide(session_id: str) -> Response:
+    """The client's integration guide as one Markdown file, for their own AI assistant."""
+    values = await _values(session_id)
+    if not values.get("messages"):
+        raise HTTPException(status_code=404, detail="This onboarding hasn't started.")
+    profile = IntegrationProfile.model_validate(values.get("profile") or {})
+    try:
+        markdown = build_guide(profile, get_settings().knowledge_base_dir)
+    except GuideNotReady as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return Response(
+        markdown,
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{guide_filename(profile)}"'},
+    )

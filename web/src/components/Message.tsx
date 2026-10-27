@@ -1,6 +1,7 @@
 import { Check, ClipboardCheck, Copy, RotateCcw } from "lucide-react";
 import { type ComponentPropsWithoutRef, useRef, useState } from "react";
 import Markdown from "react-markdown";
+import { copyText } from "../lib/clipboard";
 import remarkGfm from "remark-gfm";
 import { CUSTOMER_IDS, ENVIRONMENTS, MODULES, REGIONS, labelOf, platformShort } from "../lib/catalog";
 import type { ChatMessage, Profile } from "../types";
@@ -11,7 +12,7 @@ function CodeBlock(props: ComponentPropsWithoutRef<"pre">) {
   const ref = useRef<HTMLPreElement>(null);
   const [copied, setCopied] = useState(false);
   const copy = async () => {
-    await navigator.clipboard.writeText(ref.current?.innerText ?? "");
+    if (!(await copyText(ref.current?.innerText ?? ""))) return;
     setCopied(true);
     setTimeout(() => setCopied(false), 1600);
   };
