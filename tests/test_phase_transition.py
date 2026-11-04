@@ -46,3 +46,35 @@ def test_leaving_discovery_loads_the_profile_files():
 
 def test_no_change_returns_empty_update():
     assert phase_transition({"messages": [], "phase": "discovery", "profile": {}}) == {}
+
+
+def test_leaving_discovery_builds_the_checklist():
+    update = phase_transition({"messages": [], "phase": "discovery", "profile": CONFIRMED.model_dump()})
+    ids = {p["id"] for p in update["prerequisites"]}
+    assert {"android_application_id", "android_repo_access", "gamification_key"} <= ids
+
+
+def test_profile_changes_after_discovery_update_files_and_checklist():
+    start = phase_transition({"messages": [], "phase": "discovery", "profile": CONFIRMED.model_dump()})
+    for item in start["prerequisites"]:
+        if item["id"] == "android_application_id":
+            item["status"] = "provided"
+    with_ios = IntegrationProfile.model_validate(
+        {**CONFIRMED.model_dump(), "platforms": [*CONFIRMED.model_dump()["platforms"], {"platform": "ios", "config_mode": "direct"}]}
+    )
+    update = phase_transition({"messages": [], "phase": "prerequisites", **start, "profile": with_ios.model_dump()})
+    assert "ios/direct.md" in update["loaded_files"]
+    by_id = {p["id"]: p for p in update["prerequisites"]}
+    assert by_id["ios_bundle_id"]["status"] == "pending"
+    assert by_id["android_application_id"]["status"] == "provided"
+
+
+def test_prerequisites_complete_once_client_blocking_items_are_done():
+    start = phase_transition({"messages": [], "phase": "discovery", "profile": CONFIRMED.model_dump()})
+    state = {"messages": [], "phase": "prerequisites", "profile": CONFIRMED.model_dump(), **start}
+    state["phase"] = "prerequisites"
+    assert "phase" not in phase_transition(state)
+    for item in state["prerequisites"]:
+        if item["owner"] == "client" and item["blocking"]:
+            item["status"] = "provided"
+    assert phase_transition(state)["phase"] == "integration"

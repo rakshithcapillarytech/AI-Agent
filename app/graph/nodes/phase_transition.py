@@ -1,7 +1,9 @@
 """Deterministic phase transitions: the LLM never decides when a phase is complete."""
 
+from app.config import get_settings
 from app.graph.state import IntegrationProfile, OnboardingState, Phase, PrereqItem
 from app.kb.loader import files_for_profile
+from app.rules.prereq_engine import build_checklist, load_rules
 
 DONE_STATUSES = {"provided", "verified", "not_applicable"}
 
@@ -27,17 +29,24 @@ def next_phase(
 def phase_transition(state: OnboardingState) -> dict:
     phase = state.get("phase") or "discovery"
     profile = IntegrationProfile.model_validate(state.get("profile") or {})
+    checklist = [PrereqItem.model_validate(p) for p in state.get("prerequisites") or []]
+    update: dict = {}
+
+    # From the moment discovery ends, the knowledge files and the checklist follow the profile,
+    # so a platform or module added later (e.g. "we also have an iOS app") is picked up.
+    if phase != "discovery" or profile.confirmed:
+        files = files_for_profile(profile)
+        if files != (state.get("loaded_files") or []):
+            update["loaded_files"] = files
+        rules = load_rules(get_settings().knowledge_base_dir)
+        rebuilt = build_checklist(profile, rules, existing=checklist)
+        if rebuilt != checklist:
+            update["prerequisites"] = [item.model_dump() for item in rebuilt]
+        checklist = rebuilt
+
     new_phase = next_phase(
-        phase,
-        profile,
-        [PrereqItem.model_validate(p) for p in state.get("prerequisites") or []],
-        state.get("plan_steps") or [],
-        state.get("current_step") or 0,
+        phase, profile, checklist, state.get("plan_steps") or [], state.get("current_step") or 0
     )
-    if new_phase == phase:
-        return {}
-    update: dict = {"phase": new_phase}
-    if phase == "discovery":
-        # Knowledge for this client's platforms × config modes, loaded whole from here on.
-        update["loaded_files"] = files_for_profile(profile)
+    if new_phase != phase:
+        update["phase"] = new_phase
     return update

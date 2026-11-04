@@ -1,6 +1,7 @@
 import { BookOpen, Check } from "lucide-react";
 import { MODULES, PHASES, guideLabel, labelOf, phaseIndex, platformShort } from "../lib/catalog";
 import type { SessionState } from "../types";
+import { Checklist } from "./Checklist";
 import { ui } from "./controls";
 import { GuideDownload } from "./GuideDownload";
 import { PromptCopy } from "./PromptCopy";
@@ -28,6 +29,11 @@ export function ContextPanel({ sessionId, session }: { sessionId: string; sessio
             );
           })}
         </ol>
+      </section>
+
+      <section>
+        <h3 className={styles.contextTitle}>Your checklist</h3>
+        <Checklist items={session.prerequisites ?? []} />
       </section>
 
       <section className={styles.guideCard}>

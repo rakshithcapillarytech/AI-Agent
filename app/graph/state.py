@@ -52,13 +52,20 @@ class IntegrationProfile(BaseModel):
         return missing
 
 
+PrereqStatus = Literal["pending", "provided", "verified", "not_applicable"]
+
+
 class PrereqItem(BaseModel):
+    """One checklist entry, built from knowledge_base/prerequisites.yaml (app/rules)."""
+
     id: str
     title: str
     owner: Literal["client", "capillary"]
-    status: Literal["pending", "provided", "verified", "not_applicable"] = "pending"
+    status: PrereqStatus = "pending"
     blocking: bool = True
-    value: str | None = None
+    value: str | None = None  # only for non-secret identifiers the client states (e.g. bundle ID)
+    how: str = ""
+    source: str = ""
 
 
 class OnboardingState(MessagesState):

@@ -1,0 +1,239 @@
+# Prerequisite rules: the client's profile → their personalised checklist (PLAN.md §4 ②).
+#
+# Each item applies when ANY entry in `when` matches (an item with no `when` always applies).
+# Inside one entry, every key must match:
+#   platforms  the client has at least one of these apps. "android" matches any mode;
+#              "ios/direct" matches only that platform in that config mode.
+#   modules    the client wants at least one of these modules.
+#
+# owner     client = the client does or provides it; capillary = Capillary provides it.
+# blocking  must be done before integration starts. Only blocking CLIENT items gate the phase
+#           change; Capillary values can arrive later (code uses {{placeholders}} until then).
+# value     the agent may record what the client states, checked against `format`. Only for
+#           identifiers that aren't secrets. Never use it for keys or tokens.
+# source    where the fact comes from (file › heading). Every item must trace to the knowledge
+#           base; `tests/test_prereq_engine.py` checks the files exist. Edit with SME review.
+#
+# {customer_id_type} in a title is replaced with the client's chosen identifier.
+
+items:
+  # ── The client gives Capillary (to register the app) ──────────────────────────────────────
+  - id: android_application_id
+    title: Send Capillary your Android application ID (package name)
+    owner: client
+    blocking: true
+    value: true
+    format: android_application_id
+    how: It's the `applicationId` in your app's `build.gradle`. Capillary's apps team uses it to register the app.
+    when:
+      - platforms: [android, react-native, flutter]
+    source: _shared/prerequisites.md › The client gives Capillary
+
+  - id: ios_bundle_id
+    title: Send Capillary your iOS bundle ID
+    owner: client
+    blocking: true
+    value: true
+    format: ios_bundle_id
+    how: It's the Bundle Identifier in Xcode (target → General). Capillary's apps team uses it to register the app.
+    when:
+      - platforms: [ios, react-native, flutter]
+    source: _shared/prerequisites.md › The client gives Capillary
+
+  - id: android_sha256
+    title: Send Capillary your Android app signature (SHA256)
+    owner: client
+    blocking: true
+    value: true
+    format: sha256_fingerprint
+    how: Copy the SHA256 fingerprint from your Android app signing report.
+    when:
+      - platforms: [react-native, flutter]
+    source: _shared/prerequisites.md › The client gives Capillary
+
+  # ── SDK repository access (native direct mode) ────────────────────────────────────────────
+  - id: android_repo_access
+    title: Get access to the Android SDK repository
+    owner: client
+    blocking: true
+    how: >-
+      Ask Capillary's access team for read access to https://github.com/Capillary/hydra-sdk-android-maven,
+      then create a GitHub Personal Access Token with the `read:packages` scope. Keep the token on your
+      machine (e.g. a git-ignored `github.properties`); never share it in chat.
+    when:
+      - platforms: [android/direct]
+    source: _shared/prerequisites.md › SDK repository access
+
+  - id: ios_repo_access
+    title: Get access to the iOS SDK repository
+    owner: client
+    blocking: true
+    how: >-
+      Ask Capillary's access team for access to https://github.com/Capillary/hydra-sdk-ios-packages,
+      then add your GitHub account in Xcode (or use a username + Personal Access Token). The token
+      stays on your machine.
+    when:
+      - platforms: [ios/direct]
+    source: _shared/prerequisites.md › SDK repository access
+
+  # ── Firebase (Firebase mode only) ─────────────────────────────────────────────────────────
+  - id: firebase_project
+    title: Create a Firebase project and register your app(s)
+    owner: client
+    blocking: true
+    how: Firebase Console → Add project, then register each app. Skip the project step if you already have one.
+    when:
+      - platforms: [android/firebase, ios/firebase, react-native/firebase, flutter/firebase, web/firebase]
+      - platforms: [flutter/direct, web/direct]  # direct mode still uses Firebase for push
+        modules: [push]
+    source: _shared/firebase-setup.md › 1. Create a Firebase project
+
+  - id: google_services_json
+    title: Download google-services.json for your Android app
+    owner: client
+    blocking: true
+    how: Download it while registering the Android app in Firebase. Don't make the code changes Firebase suggests.
+    when:
+      - platforms: [android/firebase, react-native/firebase, flutter/firebase]
+      - platforms: [flutter/direct]
+        modules: [push]
+    source: _shared/firebase-setup.md › 2. Register each app
+
+  - id: google_service_info_plist
+    title: Download GoogleService-Info.plist for your iOS app
+    owner: client
+    blocking: true
+    how: Download it while registering the iOS app in Firebase. Don't make the code changes Firebase suggests.
+    when:
+      - platforms: [ios/firebase, react-native/firebase, flutter/firebase]
+      - platforms: [flutter/direct]
+        modules: [push]
+    source: _shared/firebase-setup.md › 2. Register each app
+
+  - id: web_firebase_config
+    title: Register your web app in Firebase and copy its config object
+    owner: client
+    blocking: true
+    how: Project dashboard → Web icon (`</>`) → enter a nickname → Register app, then copy the Firebase configuration object.
+    when:
+      - platforms: [web/firebase]
+      - platforms: [web/direct]
+        modules: [push]
+    source: _shared/firebase-setup.md › 2. Register each app
+
+  - id: remote_config_values
+    title: Add Capillary's values to Firebase Remote Config and publish
+    owner: client
+    blocking: false
+    how: >-
+      Once Capillary sends the values, add them as Remote Config parameters with the exact names in your
+      platform guide, then click Publish changes.
+    when:
+      - platforms: [android/firebase, ios/firebase, react-native/firebase, flutter/firebase, web/firebase]
+    source: _shared/firebase-setup.md › 3. Remote Config
+
+  # ── CRM ───────────────────────────────────────────────────────────────────────────────────
+  - id: crm_account_linking
+    title: "Set the CRM Account Linking Identifier to {customer_id_type}"
+    owner: client
+    blocking: false
+    how: >-
+      The customerId your app sends at sign-in must match it. Capillary CRM → Organisation Settings →
+      Omni Channel Settings → Channel Configurations → MAPP_SDK → Account Linking Identifier.
+    when:
+      - platforms: [android, ios, react-native, flutter]
+    source: "_shared/prerequisites.md › Capillary CRM: Account Linking Identifier"
+
+  # ── Web push ──────────────────────────────────────────────────────────────────────────────
+  - id: web_vapid_key
+    title: Generate a VAPID key for web push
+    owner: client
+    blocking: false
+    how: Firebase project settings → Cloud Messaging → Web configuration → Web Push certificates → Generate key pair.
+    when:
+      - platforms: [web]
+        modules: [push]
+    source: "_shared/firebase-setup.md › 4. Web push: VAPID key"
+
+  # ── Loyalty View ──────────────────────────────────────────────────────────────────────────
+  - id: cap_token
+    title: Plan how your app gets the Capillary B2B short-lived token (Loyalty View only)
+    owner: client
+    blocking: false
+    how: >-
+      The app passes it with setCapToken after the user logs in, before the Loyalty View is shown.
+      How to obtain the token isn't documented yet; confirm it with your Capillary contact.
+    when:
+      - modules: [gamification]
+    source: "_shared/prerequisites.md › Loyalty View: Capillary token"
+
+  # ── Capillary gives the client ────────────────────────────────────────────────────────────
+  - id: account_id
+    title: Account Id
+    owner: capillary
+    blocking: true
+    how: Capillary sends it once your app is registered.
+    source: _shared/prerequisites.md › Capillary gives the client
+
+  - id: base_url
+    title: Base URL
+    owner: capillary
+    blocking: true
+    how: Capillary sends it once your app is registered.
+    source: _shared/prerequisites.md › Capillary gives the client
+
+  - id: ssl_public_key
+    title: SSL Public Key
+    owner: capillary
+    blocking: true
+    how: Capillary sends it once your app is registered (mobile apps only).
+    when:
+      - platforms: [android, ios, react-native, flutter]
+    source: _shared/prerequisites.md › Capillary gives the client
+
+  - id: org_id
+    title: Org Id
+    owner: capillary
+    blocking: true
+    how: Capillary sends it once your app is registered.
+    when:
+      - platforms: [web, android, react-native, ios/direct]
+      - platforms: [flutter]
+        modules: [visitor]
+    source: _shared/prerequisites.md › Capillary gives the client
+
+  - id: gamification_key
+    title: Gamification Key (write key)
+    owner: capillary
+    blocking: true
+    how: Capillary sends it for gamification.
+    when:
+      - modules: [gamification]
+    source: _shared/prerequisites.md › Capillary gives the client
+
+  - id: gamification_region
+    title: Gamification Region
+    owner: capillary
+    blocking: true
+    how: One of IN, US or ME (web examples use lower case). Capillary confirms which.
+    when:
+      - modules: [gamification]
+    source: _shared/prerequisites.md › Capillary gives the client
+
+  - id: gamification_base_url
+    title: Gamification Base URL
+    owner: capillary
+    blocking: false
+    how: Optional on most platforms; your platform guide says whether you need it.
+    when:
+      - modules: [gamification]
+    source: _shared/prerequisites.md › Capillary gives the client
+
+  - id: gamification_view_ids
+    title: Banner / Embedded / Loyalty view IDs (only for the views you use)
+    owner: capillary
+    blocking: false
+    how: Banner and Embedded IDs come from the gamification dashboard's entry-point settings; the Loyalty ID from the Capillary team.
+    when:
+      - modules: [gamification]
+    source: _shared/prerequisites.md › Capillary gives the client

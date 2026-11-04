@@ -16,7 +16,10 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from app.graph.nodes.agent import make_agent_node
 from app.graph.nodes.phase_transition import phase_transition
 from app.graph.state import OnboardingState
-from app.tools.profile import TOOLS
+from app.tools import prereqs, profile
+
+# Bound once for every phase: a fixed tool list keeps the prompt cache stable (PLAN.md §6.2).
+TOOLS = [*profile.TOOLS, *prereqs.TOOLS]
 
 
 def build_graph(

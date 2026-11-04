@@ -42,10 +42,24 @@ export interface ChatMessage {
   status?: "streaming" | "error";
 }
 
+/** One prerequisites checklist entry (app/graph/state.py PrereqItem). */
+export interface PrereqItem {
+  id: string;
+  title: string;
+  owner: "client" | "capillary";
+  status: "pending" | "provided" | "verified" | "not_applicable";
+  /** Client items marked blocking must be done before integration starts. */
+  blocking: boolean;
+  value: string | null;
+  how: string;
+  source: string;
+}
+
 export interface SessionState {
   phase: Phase;
   profile: Partial<Profile>;
   loaded_files: string[];
+  prerequisites: PrereqItem[];
   messages: ChatMessage[];
   /** True once every app's config mode is known, so the downloadable guide can be built. */
   guide_ready: boolean;

@@ -708,6 +708,122 @@
   flex: none;
 }
 
+.checklistMeter {
+  height: 6px;
+  margin-bottom: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--surface-soft);
+}
+
+.checklistMeter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent-gradient);
+  transition: width 0.3s ease;
+}
+
+.checklistCount {
+  margin: 0 0 10px;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.checklistGroup {
+  margin: 12px 0 6px;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.checklistItems {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.checklistItems summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.checklistItems summary::-webkit-details-marker {
+  display: none;
+}
+
+.checklistItems summary:hover {
+  background: var(--surface-soft);
+}
+
+.checkIcon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border-radius: 50%;
+  border: 1.5px solid var(--n-300);
+  color: var(--n-300);
+}
+
+.checkDone .checkIcon {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.checkDone .checkTitle {
+  color: var(--muted);
+}
+
+.checkTitle {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.checkValue {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-soft);
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+}
+
+.checkTag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 7px;
+  border-radius: var(--radius-pill);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+.checkHow {
+  margin: 0 6px 8px 32px;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
 .detailsToggle {
   display: none;
 }

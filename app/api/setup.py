@@ -6,8 +6,10 @@ knowledge files loaded. An incomplete one (e.g. "not sure" whether the app uses 
 in discovery, and the agent asks for what's missing.
 """
 
+from app.config import get_settings
 from app.graph.state import IntegrationProfile
 from app.kb.loader import files_for_profile
+from app.rules.prereq_engine import build_checklist, load_rules
 
 # History entries starting with this are rendered as a setup card rather than a chat bubble.
 SETUP_HEADER = "Here are our setup details from the onboarding form:"
@@ -51,4 +53,9 @@ def initial_state(profile: IntegrationProfile) -> dict:
         "profile": profile.model_dump(),
         "phase": "prerequisites" if profile.confirmed else "discovery",
         "loaded_files": files_for_profile(profile) if profile.confirmed else [],
+        "prerequisites": (
+            [i.model_dump() for i in build_checklist(profile, load_rules(get_settings().knowledge_base_dir))]
+            if profile.confirmed
+            else []
+        ),
     }

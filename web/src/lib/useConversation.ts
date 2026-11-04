@@ -58,7 +58,14 @@ export function useConversation(id: string, startProfile?: Profile) {
     if (startProfile) {
       if (startedSessions.has(id)) return;
       startedSessions.add(id);
-      setSession({ phase: "discovery", profile: startProfile, loaded_files: [], messages: [], guide_ready: false });
+      setSession({
+        phase: "discovery",
+        profile: startProfile,
+        loaded_files: [],
+        prerequisites: [],
+        messages: [],
+        guide_ready: false,
+      });
       void runTurn({ role: "user", text: "", kind: "setup" }, (h) => api.start(id, startProfile, h));
       return;
     }

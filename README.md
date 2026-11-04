@@ -10,7 +10,7 @@ An AI agent that onboards clients onto Capillary's Hydra SDK (Experience+). It g
 
 > ⚠️ On the free Gemini tier, Google may use prompts to improve its products. Use **synthetic test data only** until the project switches to Claude.
 
-## Status: scaffold (end of plan step 1)
+## Status: discovery + prerequisites (plan week 3)
 
 Working skeleton:
 - **Discovery phase.**
@@ -21,6 +21,7 @@ Working skeleton:
 - **Session persistence.** Sessions are LangGraph threads checkpointed in Postgres. The portal URL (`?session=…`) resumes a session.
 - **Input redaction.** Secrets (GitHub tokens, gamification keys, private keys) are redacted before reaching the LLM.
 - **Portal (React).** A 5-step setup wizard with plain-English choices: company, apps (+ Firebase yes/no/not sure), features, account details, then review. A complete profile starts the session already confirmed, with the right guides loaded. The chat streams replies as Markdown (with copy buttons on code), and a details panel shows progress, setup and the guides in use. Recent onboardings are listed in the sidebar.
+- **Prerequisites checklist.** `knowledge_base/prerequisites.yaml` turns the profile into a personalised checklist (rules engine in `app/rules/prereq_engine.py`; every item cites its knowledge file). The agent reads it with `get_checklist` and records progress with `record_prerequisite`, which format-checks identifiers (application ID, bundle ID, SHA256) and never stores secrets. Once every blocking client item is done, the session moves to integration on its own. The checklist follows later profile changes, keeping progress, and shows in the portal's details panel.
 - **Downloadable AI guide.** Once every app's Firebase question is answered, the client can download one Markdown file with only the documentation for their setup, plus rules for their AI assistant, and attach it to Claude, Cursor or ChatGPT (`GET /sessions/{id}/guide`, built by `app/kb/guide.py`).
 
 Knowledge base: **all 10 platform × mode files plus 3 shared files drafted** from the source docs, all `review_status: draft`. The SME review checklist (183 items) is in [knowledge_base/REVIEW.md](knowledge_base/REVIEW.md).
@@ -46,7 +47,7 @@ Add `--model gemini-3.5-flash-lite` to test a specific model, or `--case <id>` f
 Not built yet (see the PLAN.md §8 timeline):
 - SME review of the drafts, `prerequisites.yaml`, seeded issues and golden Q&A (week 1)
 - keyword search (week 2)
-- the prerequisites checklist (week 3)
+- file validators for the checklist (`validate_file`: `google-services.json` package name, plist bundle ID) (week 3)
 - integration steps, troubleshooting and escalation (week 4)
 - the learning loop and new-doc ingestion (week 5)
 
