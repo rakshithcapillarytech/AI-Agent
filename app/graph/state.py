@@ -66,6 +66,7 @@ class PrereqItem(BaseModel):
     value: str | None = None  # only for non-secret identifiers the client states (e.g. bundle ID)
     how: str = ""
     source: str = ""
+    validator: Literal["google_services_json", "google_service_info_plist"] | None = None  # uploadable file
 
 
 class OnboardingState(MessagesState):
@@ -73,5 +74,8 @@ class OnboardingState(MessagesState):
     profile: dict  # IntegrationProfile.model_dump()
     prerequisites: list[dict]  # PrereqItem.model_dump() each
     loaded_files: list[str]  # knowledge_base-relative paths loaded into the prompt
-    plan_steps: list[str]
+    plan_steps: list[str]  # "file › step heading", built when integration starts
     current_step: int
+    verified: bool  # the client confirmed every verification check
+    open_issue: dict | None  # {"problem", "attempts", "tried"} while troubleshooting
+    resolved_issues: list[dict]  # kept for the learning loop (week 5)

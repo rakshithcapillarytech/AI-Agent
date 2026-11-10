@@ -6,6 +6,7 @@ import type { ChatMessage, Profile, SessionState } from "../types";
 // double-mount can't start the same session twice.
 const startedSessions = new Set<string>();
 
+const ESCALATION_POLL_MS = 8000;
 const CONNECTION_ERROR = "We couldn't reach the assistant. Check your connection, then try again.";
 
 /**
@@ -65,6 +66,9 @@ export function useConversation(id: string, startProfile?: Profile) {
         prerequisites: [],
         messages: [],
         guide_ready: false,
+        plan_steps: [],
+        current_step: 0,
+        escalation: null,
       });
       void runTurn({ role: "user", text: "", kind: "setup" }, (h) => api.start(id, startProfile, h));
       return;
@@ -86,8 +90,33 @@ export function useConversation(id: string, startProfile?: Profile) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // While an engineer is working on it, check for their reply (it arrives as a new message).
+  const waiting = session?.escalation?.status === "open";
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = setInterval(() => {
+      api
+        .getSession(id)
+        .then((fresh) => {
+          setSession(fresh);
+          if (!fresh.escalation) setMessages(fresh.messages);
+        })
+        .catch(() => undefined);
+    }, ESCALATION_POLL_MS);
+    return () => clearInterval(timer);
+  }, [waiting, id]);
+
   const send = useCallback(
     (text: string) => runTurn({ role: "user", text, kind: "chat" }, (h) => api.send(id, text, h)),
+    [id, runTurn],
+  );
+
+  /** Send a checklist file for checking; the agent replies to the result. */
+  const upload = useCallback(
+    (file: File) =>
+      runTurn({ role: "user", text: `Uploaded file: ${file.name}`, kind: "upload" }, (h) =>
+        api.uploadFile(id, file, h),
+      ),
     [id, runTurn],
   );
 
@@ -95,9 +124,14 @@ export function useConversation(id: string, startProfile?: Profile) {
   const retry = useCallback(() => {
     const lastUser = [...messages].reverse().find((m) => m.role === "user");
     setMessages((current) => current.slice(0, -2)); // drop the failed exchange; send() re-adds it
-    const text = lastUser?.kind === "chat" ? lastUser.text : "Please start our onboarding.";
+    const text =
+      lastUser?.kind === "chat"
+        ? lastUser.text
+        : lastUser?.kind === "upload"
+          ? "Please continue from my last upload."
+          : "Please start our onboarding.";
     void send(text);
   }, [messages, send]);
 
-  return { session, messages, busy, loadError, send, retry };
+  return { session, messages, busy, loadError, send, upload, retry };
 }

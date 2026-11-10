@@ -5,9 +5,17 @@ import { Checklist } from "./Checklist";
 import { ui } from "./controls";
 import { GuideDownload } from "./GuideDownload";
 import { PromptCopy } from "./PromptCopy";
+import { Steps } from "./Steps";
 import styles from "./session.module.css";
 
-export function ContextPanel({ sessionId, session }: { sessionId: string; session: SessionState }) {
+interface ContextPanelProps {
+  sessionId: string;
+  session: SessionState;
+  busy: boolean;
+  onUpload: (file: File) => void;
+}
+
+export function ContextPanel({ sessionId, session, busy, onUpload }: ContextPanelProps) {
   const current = phaseIndex(session.phase);
   const profile = session.profile;
 
@@ -33,8 +41,15 @@ export function ContextPanel({ sessionId, session }: { sessionId: string; sessio
 
       <section>
         <h3 className={styles.contextTitle}>Your checklist</h3>
-        <Checklist items={session.prerequisites ?? []} />
+        <Checklist items={session.prerequisites ?? []} busy={busy} onUpload={onUpload} />
       </section>
+
+      {(session.plan_steps ?? []).length > 0 && (
+        <section>
+          <h3 className={styles.contextTitle}>Your integration steps</h3>
+          <Steps steps={session.plan_steps} current={session.current_step} />
+        </section>
+      )}
 
       <section className={styles.guideCard}>
         <h3 className={styles.contextTitle}>Use with your own AI</h3>

@@ -10,7 +10,7 @@ An AI agent that onboards clients onto Capillary's Hydra SDK (Experience+). It g
 
 > ⚠️ On the free Gemini tier, Google may use prompts to improve its products. Use **synthetic test data only** until the project switches to Claude.
 
-## Status: discovery + prerequisites (plan week 3)
+## Status: discovery → verification, with troubleshooting and escalation (plan weeks 3–4)
 
 Working skeleton:
 - **Discovery phase.**
@@ -22,6 +22,11 @@ Working skeleton:
 - **Input redaction.** Secrets (GitHub tokens, gamification keys, private keys) are redacted before reaching the LLM.
 - **Portal (React).** A 5-step setup wizard with plain-English choices: company, apps (+ Firebase yes/no/not sure), features, account details, then review. A complete profile starts the session already confirmed, with the right guides loaded. The chat streams replies as Markdown (with copy buttons on code), and a details panel shows progress, setup and the guides in use. Recent onboardings are listed in the sidebar.
 - **Prerequisites checklist.** `knowledge_base/prerequisites.yaml` turns the profile into a personalised checklist (rules engine in `app/rules/prereq_engine.py`; every item cites its knowledge file). The agent reads it with `get_checklist` and records progress with `record_prerequisite`, which format-checks identifiers (application ID, bundle ID, SHA256) and never stores secrets. Once every blocking client item is done, the session moves to integration on its own. The checklist follows later profile changes, keeping progress, and shows in the portal's details panel.
+- **Guided integration.** When the prerequisites are done, the system builds the step plan from the `## Steps` of each loaded platform file (`app/kb/steps.py`). The agent walks it one step at a time with `get_integration_plan` / `complete_step`, with the client's own application ID and bundle ID filled into the code. After the last step the session moves to verification, and `confirm_verification` marks it done. The portal shows the steps in the details panel.
+- **Keyword search.** `search_knowledge` and `search_issues` (`app/kb/search.py`) find sections by error text or API name, in memory with TF-IDF. Approved files in `knowledge_base/issues/` (front-matter `platform`, `config_mode`, `status: approved`, `error_signature`, `root_cause`, `fix`) rank first.
+- **Troubleshooting and escalation.** The agent searches past issues and the Known Issues section, logs each fix it proposes (`log_fix_attempt`), and records a resolution (`resolve_issue`). After 3 failed fixes, a gap in the docs or a request for a person, `escalate_to_human` pauses the thread with LangGraph `interrupt()`. The portal tells the client an engineer was asked and polls for the reply. Engineers answer at **`/?admin=1`** (no login yet); the answer resumes the thread and the agent relays it. The queue is the `escalations` table in Postgres.
+- **Output guardrail.** After each reply, code-like names (`HydraConfig.Builder`) that appear nowhere in the loaded knowledge or the conversation get a visible note telling the client to double-check them.
+- **File checks.** The client uploads `google-services.json` or `GoogleService-Info.plist` from the checklist panel (`POST /sessions/{id}/files`). The system checks the package name or bundle ID inside against the one the client stated (`app/validators/`), marks the item verified on a match, and tells the agent only the result. The agent never sees the file, because it holds API keys.
 - **Downloadable AI guide.** Once every app's Firebase question is answered, the client can download one Markdown file with only the documentation for their setup, plus rules for their AI assistant, and attach it to Claude, Cursor or ChatGPT (`GET /sessions/{id}/guide`, built by `app/kb/guide.py`).
 
 Knowledge base: **all 10 platform × mode files plus 3 shared files drafted** from the source docs, all `review_status: draft`. The SME review checklist (183 items) is in [knowledge_base/REVIEW.md](knowledge_base/REVIEW.md).
@@ -46,9 +51,6 @@ Add `--model gemini-3.5-flash-lite` to test a specific model, or `--case <id>` f
 
 Not built yet (see the PLAN.md §8 timeline):
 - SME review of the drafts, `prerequisites.yaml`, seeded issues and golden Q&A (week 1)
-- keyword search (week 2)
-- file validators for the checklist (`validate_file`: `google-services.json` package name, plist bundle ID) (week 3)
-- integration steps, troubleshooting and escalation (week 4)
 - the learning loop and new-doc ingestion (week 5)
 
 ## Setup
@@ -118,6 +120,9 @@ app/
   api/main.py           FastAPI: sessions, SSE streaming, session state
   graph/                LangGraph: state, builder, nodes (agent, phase_transition, guardrails), prompts
   tools/profile.py      discovery tools (update_profile, confirm_profile)
+  validators/           uploaded-file checks (Firebase config files) and the upload handler
+  escalation/store.py   the engineers' queue (Postgres; in memory in tests)
+  kb/search.py, steps.py  keyword search; the integration plan from the Steps sections
   kb/loader.py          profile → knowledge files, delimited loading
   llm.py                the only place models are constructed (Bedrock swap goes here)
 web/                    React portal (Vite): src/components, src/lib (API hooks, labels), styles/tokens.css

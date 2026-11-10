@@ -38,7 +38,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   text: string;
   /** "setup" is the opening message generated from the setup wizard. */
-  kind: "setup" | "chat";
+  kind: "setup" | "chat" | "upload";
   status?: "streaming" | "error";
 }
 
@@ -53,6 +53,8 @@ export interface PrereqItem {
   value: string | null;
   how: string;
   source: string;
+  /** Set when the client can upload this file and the system checks it. */
+  validator: "google_services_json" | "google_service_info_plist" | null;
 }
 
 export interface SessionState {
@@ -63,4 +65,28 @@ export interface SessionState {
   messages: ChatMessage[];
   /** True once every app's config mode is known, so the downloadable guide can be built. */
   guide_ready: boolean;
+  /** "file › step" entries built when integration starts; `current_step` is the index in progress. */
+  plan_steps: string[];
+  current_step: number;
+  /** Set while an engineer has been asked to help: the thread is paused until they answer. */
+  escalation: { status: "open" } | null;
+}
+
+/** One hand-off waiting for an engineer (app/escalation/store.py). */
+export interface Escalation {
+  id: string;
+  session_id: string;
+  summary: string;
+  status: "open" | "answered";
+  created_at: string;
+  context: {
+    company: string | null;
+    apps: string[];
+    environment: string | null;
+    region: string | null;
+    phase: string | null;
+    step: string | null;
+    tried: string[];
+    recent_messages: { role: "client" | "assistant"; text: string }[];
+  };
 }

@@ -27,7 +27,17 @@ def render_versions(text: str) -> str:
     return text.replace("{{sdk_version}}", str(version)) if version else text
 
 
-def read_files(rel_paths: list[str], kb_dir: Path) -> str:
+def render_values(text: str, values: dict[str, str]) -> str:
+    """Fill placeholders for the client's own identifiers ({{application_id}}, {{bundle_id}}).
+
+    Capillary-side values (account ID, keys…) stay as placeholders; the client gets them later.
+    """
+    for name, value in values.items():
+        text = text.replace("{{" + name + "}}", value)
+    return text
+
+
+def read_files(rel_paths: list[str], kb_dir: Path, values: dict[str, str] | None = None) -> str:
     """Concatenate files with clear delimiters so content from different platforms never blurs.
 
     A file that doesn't exist yet is reported as missing, so the agent escalates instead of
@@ -37,7 +47,7 @@ def read_files(rel_paths: list[str], kb_dir: Path) -> str:
     for rel in rel_paths:
         path = kb_dir / rel
         if path.is_file():
-            text = render_versions(path.read_text(encoding="utf-8"))
+            text = render_values(render_versions(path.read_text(encoding="utf-8")), values or {})
             parts.append(f'<file path="{rel}">\n{text}\n</file>')
         else:
             parts.append(

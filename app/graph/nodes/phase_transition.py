@@ -3,6 +3,7 @@
 from app.config import get_settings
 from app.graph.state import IntegrationProfile, OnboardingState, Phase, PrereqItem
 from app.kb.loader import files_for_profile
+from app.kb.steps import steps_for_files
 from app.rules.prereq_engine import build_checklist, load_rules
 
 DONE_STATUSES = {"provided", "verified", "not_applicable"}
@@ -14,6 +15,7 @@ def next_phase(
     prerequisites: list[PrereqItem],
     plan_steps: list[str],
     current_step: int,
+    verified: bool = False,
 ) -> Phase:
     if phase == "discovery" and profile.confirmed:
         return "prerequisites"
@@ -23,6 +25,8 @@ def next_phase(
             return "integration"
     if phase == "integration" and plan_steps and current_step >= len(plan_steps):
         return "verification"
+    if phase == "verification" and verified:
+        return "done"
     return phase
 
 
@@ -44,9 +48,16 @@ def phase_transition(state: OnboardingState) -> dict:
             update["prerequisites"] = [item.model_dump() for item in rebuilt]
         checklist = rebuilt
 
-    new_phase = next_phase(
-        phase, profile, checklist, state.get("plan_steps") or [], state.get("current_step") or 0
-    )
+    plan = state.get("plan_steps") or []
+    step = state.get("current_step") or 0
+    new_phase = next_phase(phase, profile, checklist, plan, step, bool(state.get("verified")))
     if new_phase != phase:
         update["phase"] = new_phase
+
+    # The integration plan comes from the Steps sections of the loaded files, built once when the
+    # phase starts (not at every change, so the client's progress through it is never reset).
+    if new_phase == "integration" and not plan:
+        files = update.get("loaded_files", state.get("loaded_files") or [])
+        update["plan_steps"] = steps_for_files(files, get_settings().knowledge_base_dir)
+        update["current_step"] = 0
     return update

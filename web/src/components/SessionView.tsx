@@ -1,4 +1,4 @@
-import { Check, Link2, PanelRight } from "lucide-react";
+import { Check, LifeBuoy, Link2, PanelRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PHASES, phaseIndex } from "../lib/catalog";
 import { copyText } from "../lib/clipboard";
@@ -35,7 +35,7 @@ function CopyLinkButton() {
 }
 
 export function SessionView({ id, startProfile, onHome }: SessionViewProps) {
-  const { session, messages, busy, loadError, send, retry } = useConversation(id, startProfile);
+  const { session, messages, busy, loadError, send, upload, retry } = useConversation(id, startProfile);
   const [draft, setDraft] = useState("");
   const [showDetails, setShowDetails] = useState(false);
   const composer = useRef<ComposerHandle>(null);
@@ -82,6 +82,7 @@ export function SessionView({ id, startProfile, onHome }: SessionViewProps) {
   }
 
   const current = phaseIndex(session.phase);
+  const waitingForEngineer = session.escalation?.status === "open";
   const hasAskedSomething = messages.some((m) => m.role === "user" && m.kind === "chat");
 
   const submit = () => {
@@ -135,18 +136,24 @@ export function SessionView({ id, startProfile, onHome }: SessionViewProps) {
             </div>
           </div>
           <div className={styles.composerDock}>
+            {waitingForEngineer && (
+              <p className={styles.escalationNotice} role="status">
+                <LifeBuoy size={15} /> A Capillary engineer has been asked to help. Their reply will appear here, and you
+                can close this page and come back.
+              </p>
+            )}
             <Composer
               ref={composer}
               value={draft}
               onChange={setDraft}
               onSend={submit}
-              disabled={busy}
+              disabled={busy || waitingForEngineer}
               profile={session.profile}
             />
           </div>
         </div>
         <div className={`${styles.contextWrap} ${showDetails ? styles.contextOpen : ""}`}>
-          <ContextPanel sessionId={id} session={session} />
+          <ContextPanel sessionId={id} session={session} busy={busy} onUpload={(file) => { stickToBottom.current = true; void upload(file); }} />
         </div>
       </div>
     </>

@@ -1,0 +1,103 @@
+.page {
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line, #e3e7e5);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  font-size: var(--text-sm);
+}
+
+.cardHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+}
+
+.meta,
+.label {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.label {
+  font-weight: var(--weight-semibold);
+}
+
+.summary {
+  margin: 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.tried,
+.thread {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.thread {
+  list-style: none;
+  padding-left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  white-space: pre-wrap;
+}
+
+.card textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line, #d5dbd8);
+  border-radius: 8px;
+  font: inherit;
+  resize: vertical;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.link {
+  font-size: var(--text-xs);
+  color: var(--accent);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--text-xs);
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 60px auto;
+  color: var(--muted);
+}

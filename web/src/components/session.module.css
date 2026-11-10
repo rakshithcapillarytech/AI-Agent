@@ -817,6 +817,56 @@
   white-space: nowrap;
 }
 
+.checkTagOk {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 7px;
+  border-radius: var(--radius-pill);
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+.checkUpload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 6px 10px 32px;
+}
+
+.checkUploadButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--accent-line);
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.checkUploadButton:hover:not(:disabled) {
+  background: var(--accent-line);
+}
+
+.checkUploadButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.checkUploadError {
+  font-size: var(--text-xs);
+  color: var(--danger, #b42318);
+}
+
 .checkHow {
   margin: 0 6px 8px 32px;
   font-size: var(--text-xs);
@@ -859,4 +909,74 @@
   .composerHint {
     display: none;
   }
+}
+
+.escalationNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--accent-line);
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+}
+
+.stepList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stepList li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.stepDot {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  border: 1.5px solid var(--n-300);
+  border-radius: 50%;
+  color: #fff;
+}
+
+.step_done .stepDot {
+  border-color: var(--ok);
+  background: var(--ok);
+}
+
+.step_done {
+  color: var(--muted);
+}
+
+.step_current {
+  background: var(--accent-soft);
+  font-weight: var(--weight-semibold);
+}
+
+.step_current .stepDot {
+  border-color: var(--accent);
+}
+
+.stepGuide {
+  display: block;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-regular, 400);
+  color: var(--faint);
 }

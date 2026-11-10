@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
+import { AdminView } from "./components/AdminView";
 import { Home } from "./components/Home";
 import styles from "./components/layout.module.css";
 import { Rail } from "./components/Rail";
@@ -9,11 +10,13 @@ import { platformShort } from "./lib/catalog";
 import { recentSessions, userName as storedName } from "./lib/recent";
 import type { Profile } from "./types";
 
-type View = { kind: "home" } | { kind: "session"; id: string; startProfile?: Profile };
+type View = { kind: "home" } | { kind: "admin" } | { kind: "session"; id: string; startProfile?: Profile };
 
 /** The session id lives in the URL (?session=…), so a link reopens that onboarding. */
 function viewFromUrl(): View {
-  const id = new URLSearchParams(window.location.search).get("session");
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("admin")) return { kind: "admin" };
+  const id = params.get("session");
   return id ? { kind: "session", id } : { kind: "home" };
 }
 
@@ -29,7 +32,12 @@ export default function App() {
   }, []);
 
   const navigate = useCallback((next: View) => {
-    const url = next.kind === "session" ? `?session=${encodeURIComponent(next.id)}` : window.location.pathname;
+    const url =
+      next.kind === "session"
+        ? `?session=${encodeURIComponent(next.id)}`
+        : next.kind === "admin"
+          ? "?admin=1"
+          : window.location.pathname;
     window.history.pushState(null, "", url);
     setView(next);
   }, []);
@@ -68,7 +76,9 @@ export default function App() {
         onOpen={openSession}
       />
       <main className={styles.main}>
-        {view.kind === "home" ? (
+        {view.kind === "admin" ? (
+          <AdminView />
+        ) : view.kind === "home" ? (
           <Home userName={name} recent={recent} onStart={startOnboarding} onOpen={openSession} />
         ) : (
           <SessionView key={view.id} id={view.id} startProfile={view.startProfile} onHome={goHome} />

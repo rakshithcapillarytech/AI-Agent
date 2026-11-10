@@ -11,6 +11,8 @@
 #           change; Capillary values can arrive later (code uses {{placeholders}} until then).
 # value     the agent may record what the client states, checked against `format`. Only for
 #           identifiers that aren't secrets. Never use it for keys or tokens.
+# validator the client can upload the file in the portal and the system checks it
+#           (app/validators/firebase_files.py): google_services_json | google_service_info_plist.
 # source    where the fact comes from (file › heading). Every item must trace to the knowledge
 #           base; `tests/test_prereq_engine.py` checks the files exist. Edit with SME review.
 #
@@ -92,7 +94,8 @@ items:
     title: Download google-services.json for your Android app
     owner: client
     blocking: true
-    how: Download it while registering the Android app in Firebase. Don't make the code changes Firebase suggests.
+    validator: google_services_json
+    how: Download it while registering the Android app in Firebase. Don't make the code changes Firebase suggests. Then upload it with the button in the checklist panel and we'll check it belongs to your app.
     when:
       - platforms: [android/firebase, react-native/firebase, flutter/firebase]
       - platforms: [flutter/direct]
@@ -103,7 +106,8 @@ items:
     title: Download GoogleService-Info.plist for your iOS app
     owner: client
     blocking: true
-    how: Download it while registering the iOS app in Firebase. Don't make the code changes Firebase suggests.
+    validator: google_service_info_plist
+    how: Download it while registering the iOS app in Firebase. Don't make the code changes Firebase suggests. Then upload it with the button in the checklist panel and we'll check it belongs to your app.
     when:
       - platforms: [ios/firebase, react-native/firebase, flutter/firebase]
       - platforms: [flutter/direct]

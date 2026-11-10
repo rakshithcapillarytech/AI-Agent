@@ -16,6 +16,8 @@ from app.graph.state import OnboardingState
 from app.kb.loader import read_files
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
+# Checklist items whose recorded value fills a placeholder in the knowledge files.
+VALUE_PLACEHOLDERS = {"android_application_id": "application_id", "ios_bundle_id": "bundle_id"}
 _CACHE = {"type": "ephemeral"}
 
 
@@ -26,8 +28,13 @@ def build_system_message(state: OnboardingState) -> SystemMessage:
     phase_instructions = (PROMPTS_DIR / "phases" / f"{phase}.md").read_text(encoding="utf-8")
 
     loaded = state.get("loaded_files") or []
+    values = {
+        VALUE_PLACEHOLDERS[p["id"]]: p["value"]
+        for p in state.get("prerequisites") or []
+        if p.get("id") in VALUE_PLACEHOLDERS and p.get("value")
+    }
     knowledge = (
-        read_files(loaded, settings.knowledge_base_dir)
+        read_files(loaded, settings.knowledge_base_dir, values)
         if loaded
         else "No platform files loaded yet; they load once the client confirms their profile."
     )

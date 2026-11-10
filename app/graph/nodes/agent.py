@@ -39,7 +39,9 @@ def make_agent_node(
         bound = bound.with_fallbacks([f.bind_tools(tools) for f in fallbacks])
 
     async def agent(state: OnboardingState) -> dict:
-        messages = [build_system_message(state), *state["messages"]]
+        # Guardrail notes are shown to the client but were never said by the model.
+        history = [m for m in state["messages"] if not m.additional_kwargs.get("guardrail")]
+        messages = [build_system_message(state), *history]
         response = await bound.ainvoke(messages)
         # Only Gemini needs the retry. On Claude, thinking blocks are tied to the exact
         # conversation, so a reply produced with an unstored extra message must not be kept.

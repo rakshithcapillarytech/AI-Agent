@@ -34,6 +34,8 @@ FORMAT_HINTS = {
 }
 
 Format = Literal["android_application_id", "ios_bundle_id", "sha256_fingerprint"]
+# Uploadable files the system can check (app/validators/firebase_files.py).
+Validator = Literal["google_services_json", "google_service_info_plist"]
 
 
 class Condition(BaseModel):
@@ -61,6 +63,7 @@ class PrereqRule(BaseModel):
     source: str
     value: bool = False
     format: Format | None = None
+    validator: Validator | None = None
     when: list[Condition] = Field(default_factory=list)
 
     def applies(self, profile: IntegrationProfile) -> bool:
@@ -100,6 +103,7 @@ def build_checklist(
             blocking=rule.blocking,
             how=rule.how,
             source=rule.source,
+            validator=rule.validator,
         )
         if old := previous.get(rule.id):
             item.status, item.value = old.status, old.value
