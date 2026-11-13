@@ -10,7 +10,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from app.api import main
 from app.escalation.store import InMemoryEscalationStore
 from app.graph.builder import build_graph
-from app.tools.troubleshoot import MAX_ATTEMPTS, escalate_to_human, log_fix_attempt, resolve_issue
+from app.tools.troubleshoot import MAX_ATTEMPTS, escalate_to_human, log_fix_attempt, report_doc_gap, resolve_issue
 from tests.test_graph_smoke import ScriptedModel
 
 
@@ -28,13 +28,26 @@ def test_third_failed_fix_tells_the_agent_to_escalate():
     assert "escalate_to_human" not in call(log_fix_attempt, {}, problem="p", fix="f").update["messages"][0].content
 
 
-def test_resolving_records_the_issue_for_the_learning_loop():
-    state = {"open_issue": {"attempts": 2, "tried": ["a", "b"]}, "plan_steps": ["f › 1. x"], "current_step": 0,
-             "profile": {"platforms": [{"platform": "android", "config_mode": "direct"}]}}
-    update = call(resolve_issue, state, problem="401", resolution="new PAT").update
+def test_resolving_records_a_generic_draft_for_review():
+    state = {
+        "open_issue": {"attempts": 2, "tried": ["a", "b"]},
+        "plan_steps": ["f › 1. x"],
+        "current_step": 0,
+        "profile": {"platforms": [{"platform": "android", "config_mode": "direct"}]},
+    }
+    update = call(
+        resolve_issue, state, error_signature="Gradle 401", root_cause="PAT scope", fix="new PAT ghp_abcdefghijklmnopqrstuvwxyz0123"
+    ).update
     assert update["open_issue"] is None
     record = update["resolved_issues"][0]
-    assert record["tried"] == ["a", "b"] and record["step"] == "f › 1. x" and record["apps"] == ["android/direct"]
+    assert record["tried"] == ["a", "b"] and record["step"] == "f › 1. x"
+    assert (record["platform"], record["config_mode"]) == ("android", "direct")  # filled in: one app
+    assert "ghp_" not in record["fix"]  # secrets never reach the review queue
+
+
+def test_report_doc_gap_is_redacted_and_kept():
+    update = call(report_doc_gap, {"doc_gaps": [{"question": "old", "step": None}]}, question="iOS push for key wk_live_abc123").update
+    assert [g["question"] for g in update["doc_gaps"]][0] == "old" and "wk_live_" not in update["doc_gaps"][1]["question"]
 
 
 @pytest.fixture

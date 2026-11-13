@@ -1,4 +1,4 @@
-"""The escalation queue: one record per hand-off to a Capillary engineer (PLAN.md §4 ⑥).
+"""The escalation queue: one record per hand-off to a Capillary engineer (chat assistant, PLAN.md §14).
 
 The paused thread itself lives in the LangGraph checkpoint; this table is only the admin's
 worklist. Postgres in the app, in memory for tests. Both give the same methods.

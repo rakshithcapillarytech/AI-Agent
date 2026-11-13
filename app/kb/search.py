@@ -1,4 +1,4 @@
-"""Keyword search over the knowledge base (PLAN.md §5.4 stage B).
+"""Keyword search over the knowledge base (an authoring and review tool, PLAN.md §2.3).
 
 Pure Python and in memory: the whole corpus is ~35k tokens, so there is no index to maintain.
 It indexes every platform and shared file by section, plus approved issue files, which rank
@@ -129,6 +129,11 @@ def _build(kb_dir: Path) -> Index:
             if section.body:
                 docs.append(_make_doc(rel.as_posix(), section.heading, section.body, post.metadata, False))
     return Index(docs)
+
+
+def clear_index() -> None:
+    """Forget the cached index, e.g. after an issue file is published."""
+    _build.cache_clear()
 
 
 def load_index(kb_dir: Path) -> Index:

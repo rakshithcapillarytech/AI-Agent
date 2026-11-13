@@ -1,0 +1,454 @@
+# Deep evaluation questions for android/firebase (Hydra SDK with Firebase: FCM push, Remote Config gamification keys).
+# Format: see evals/golden.yaml. Every `contains` string is present in the kit for this profile.
+
+- id: android-firebase-version-catalog-androidx
+  profile: android/firebase
+  category: gap
+  question: >-
+    We're on Gradle 7.2 and want the recommended install path with the Hydra version catalog.
+    What goes into settings.gradle, and which versions should we put for the androidx libraries
+    that the sample shows as xxx?
+  expect:
+    contains: ["enableFeaturePreview", "hydra-catalog"]
+    judge:
+      - q: "Does the answer state specific version numbers for androidx.core, appcompat or lifecycle-process as the ones to use?"
+        want: "no"
+      - q: "Does the answer say the androidx versions aren't documented / suggest asking a Capillary engineer?"
+        want: "yes"
+  source: android/firebase.md › Steps › 2 and 3 (AndroidX Gap)
+
+- id: android-firebase-deps-and-min-version
+  profile: android/firebase
+  category: correction
+  question: >-
+    Give us the exact Gradle lines for core plus push without the version catalog. We also want
+    gamification. Our integration PDF mentions 1.9.22-beta01 as the gamification minimum, so
+    that's the version we'll use, right?
+  expect:
+    contains: ["hydra-pushbase", "hydra-firebase", "1.9.22-beta02"]
+    judge:
+      - q: "Does the answer recommend 1.9.22-beta01 as the SDK version to use?"
+        want: "no"
+      - q: "Does the answer say gamification needs no extra dependency because it is bundled within HydraCore?"
+        want: "yes"
+  source: android/firebase.md › Requirements (Correction) and Steps › 3
+
+- id: android-firebase-maven-401
+  profile: android/firebase
+  category: known-issue
+  question: >-
+    Gradle sync fails: `Received status code 401 from server: Unauthorized` for
+    maven.pkg.github.com/Capillary/hydra-sdk-android-maven. Our github.properties sits in the app/
+    module folder. What do we check?
+  expect:
+    contains: ["read:packages", "settings.gradle"]
+    judge:
+      - q: "Does the answer say github.properties belongs at the project root next to settings.gradle?"
+        want: "yes"
+  source: android/firebase.md › Known Issues (Gradle can't resolve hydra-core)
+
+- id: android-firebase-init-account-id-exception
+  profile: android/firebase
+  category: known-issue
+  question: >-
+    Our app crashes inside MyApplication.onCreate as soon as Hydra initialises. We set baseURL and
+    sslPublicKey on HydraConfig.Builder and nothing else. What did we forget?
+  expect:
+    contains: ["accountId"]
+    judge:
+      - q: "Does the answer say the SDK throws an exception when accountId isn't provided?"
+        want: "yes"
+  source: android/firebase.md › Steps › 5 and Known Issues
+
+- id: android-firebase-init-vs-initialize-gap
+  profile: android/firebase
+  category: gap
+  question: >-
+    With gamification enabled, should we call `HydraAPI.initialize(applicationContext, hydraConfig)`
+    as the gamification page does, or `HydraAPI.instanceWithConfig(...)` as the init page does?
+    Which one is the right one?
+  expect:
+    contains: ["instanceWithConfig"]
+    judge:
+      - q: "Does the answer state definitively that only one of the two calls is correct when gamification is enabled?"
+        want: "no"
+      - q: "Does the answer say the docs use both and suggest asking a Capillary engineer?"
+        want: "yes"
+  source: android/firebase.md › Steps › 14 (Gap)
+
+- id: android-firebase-init-options-manifest
+  profile: android/firebase
+  category: init
+  question: >-
+    We want verbose SDK logs locally, remote debug logs, ViewPort capture, and to make sure Android
+    actually instantiates our MyApplication class. Show us the HydraConfig.Builder options and the
+    manifest part.
+  expect:
+    contains: [".debugLevel", ".remoteDebugLevel", "android:name"]
+    judge:
+      - q: "Does the answer say the SDK instance is created once, in Application.onCreate()?"
+        want: "yes"
+  source: android/firebase.md › Steps › 5 and 6
+
+- id: android-firebase-signin-cuid
+  profile: android/firebase
+  category: identity
+  question: >-
+    A user logs in with only a phone number, no name or email. How do we call the sign-in API?
+    Our backend primary key is a UUID, but Capillary CRM matches customers on email.
+  expect:
+    contains: ["pushUserSignin", "emptyMap()"]
+    judge:
+      - q: "Does the answer say the cuid / customer identifier must match the Account Linking Identifier configured in Capillary CRM (not an arbitrary internal id)?"
+        want: "yes"
+  source: android/firebase.md › Steps › 7
+
+- id: android-firebase-signout-preferences
+  profile: android/firebase
+  category: identity
+  question: >-
+    On logout we want to clear the previously logged user, and we also need to record that this
+    user opted out of promotional push but still wants transactional push. What do we call?
+  expect:
+    contains: ["pushUserSignOut", "passUserPreferences"]
+    judge:
+      - q: "Does the answer use UserPreferences with promPushOpted / transPushOpted (or promOpted / transOpted) for the opt-in flags?"
+        want: "yes"
+  source: android/firebase.md › Steps › 7 and API Reference
+
+- id: android-firebase-events-before-signin
+  profile: android/firebase
+  category: edge-case
+  question: >-
+    We call `hydraAPI?.pushEvent("button Click", mapOf("Username" to "Henry"))` right after app
+    launch for a logged-out user and the event never appears in Capillary. What's going on?
+  expect:
+    contains: ["pushEvent"]
+    judge:
+      - q: "Does the answer say events are valid only after a sign-in or sign-up (and invalid after sign-out)?"
+        want: "yes"
+      - q: "Does the answer say the behavioural event must be created in Capillary first?"
+        want: "yes"
+  source: android/firebase.md › Steps › 8 and Known Issues
+
+- id: android-firebase-permission-and-drawer
+  profile: android/firebase
+  category: known-issue
+  question: >-
+    Two push complaints from QA. A Pixel on Android 14 gets no notifications at all after a fresh
+    install, and on other devices only the newest notification stays in the drawer. We also
+    want a custom small icon. What do we change?
+  expect:
+    contains: ["requestPushPermission", "isMultipleNotificationInDrawerEnabled"]
+    judge:
+      - q: "Does the answer say notifications are disabled by default from Android 13 so the app must request the permission?"
+        want: "yes"
+      - q: "Does the answer mention NotificationConfig with smallIcon?"
+        want: "yes"
+  source: android/firebase.md › Steps › 9, 11 and Known Issues
+
+- id: android-firebase-own-messaging-service
+  profile: android/firebase
+  category: known-issue
+  question: >-
+    We already have our own FirebaseMessagingService for chat. Since adding Hydra, its pushes get
+    mishandled, and some of our chat payloads end up in Hydra's handling. How should we wire it?
+  expect:
+    contains: ["FcmConfig(false)", "isFromHydraPlatform", "passPushPayload"]
+    judge:
+      - q: "Does the answer say to opt out of SDK token registration with FcmConfig(false) and pass tokens (passPushToken) and Hydra payloads from the app's own service?"
+        want: "yes"
+  source: android/firebase.md › Steps › 10 B and Known Issues
+
+- id: android-firebase-token-refresh-passfcmtoken-trap
+  profile: android/firebase
+  category: trap
+  question: >-
+    Users who reinstall or restore to a new phone stop receiving pushes. We own our messaging
+    service. In our React Native app we solved this with passFCMToken. What's the native Android
+    equivalent here?
+  expect:
+    contains: ["passPushToken", "onNewToken"]
+    judge:
+      - q: "Does the answer recommend passFCMToken as the call to use in this native Android app?"
+        want: "no"
+      - q: "Does the answer say to pass every new token (whenever it changes: new device, reinstall, cleared data) to the SDK?"
+        want: "yes"
+  source: android/firebase.md › Steps › 10 B and Known Issues; _shared/push.md
+
+- id: android-firebase-sdk-handles-push
+  profile: android/firebase
+  category: push
+  question: >-
+    We want Hydra to register the FCM token by itself. What config and manifest entry do we need,
+    and how can we get notified when a token is registered or refreshed?
+  expect:
+    contains: ["FcmConfig(true)", "HydraFirebaseMessagingService", "addTokenListener"]
+    judge:
+      - q: "Does the answer mention TokenAvailableListener with onTokenAvailable?"
+        want: "yes"
+  source: android/firebase.md › Steps › 10 A and 12
+
+- id: android-firebase-listener-callbacks-click
+  profile: android/firebase
+  category: known-issue
+  question: >-
+    Push callbacks (shown, clicked, dismissed) aren't delivered while the app is in the background.
+    Separately, we return false from onNotificationClick because we want to handle the tap
+    ourselves, but the SDK opens the CTA anyway. What are we doing wrong?
+  expect:
+    contains: ["registerPushNotificationListener"]
+    judge:
+      - q: "Does the answer say to return true from onNotificationClick when the app handles the click itself?"
+        want: "yes"
+      - q: "Does the answer say the listener must be registered in Application.onCreate after HydraAPI is initialised?"
+        want: "yes"
+  source: android/firebase.md › Steps › 12 and Known Issues
+
+- id: android-firebase-cta-deeplink-launcher
+  profile: android/firebase
+  category: known-issue
+  question: >-
+    Tapping our push opens the app's home screen instead of the offer page. The campaign deep
+    link is `cap://offers/summer`, and a custom-scheme link doesn't open our target activity at
+    all. What's missing?
+  expect:
+    contains: ["intent-filter", "launcher"]
+    judge:
+      - q: "Does the answer say the launcher activity opens when no primary CTA URI / deep link is configured on the campaign?"
+        want: "yes"
+  source: android/firebase.md › Steps › 13 and Known Issues
+
+- id: android-firebase-late-push-ttl
+  profile: android/firebase
+  category: edge-case
+  question: >-
+    A tester received a push for a campaign that ended three days ago, and only when they opened
+    the app. Is that a bug in our integration?
+  expect:
+    contains: ["15 days"]
+    judge:
+      - q: "Does the answer say this is expected behaviour (the SDK pulls the push on app open within the campaign TTL)?"
+        want: "yes"
+      - q: "Does the answer say the TTL is configurable per organisation?"
+        want: "yes"
+  source: android/firebase.md › Modules › Push and Known Issues
+
+- id: android-firebase-rich-push-ios-trap
+  profile: android/firebase
+  category: trap
+  question: >-
+    We want carousel rich push on Android. What dependencies do we need? Also, like on iOS, do we
+    need a Notification Service Extension and an App Group shared with it?
+  expect:
+    contains: ["hydra-richnotification", "AlarmPermissionUtils"]
+    judge:
+      - q: "Does the answer say a Notification Service Extension or an App Group is required for Android rich push?"
+        want: "no"
+      - q: "Does the answer mention checking and requesting the exact-alarm permission on Android 12+ for carousel timing?"
+        want: "yes"
+  source: android/firebase.md › Steps › 13
+
+- id: android-firebase-inapp-never-shows-config-gap
+  profile: android/firebase
+  category: gap
+  question: >-
+    In-app messages never show, though we added hydra-inapp and registered a click listener. Also,
+    how exactly do we hand our InAppConfig fallback image to HydraConfig.Builder?
+  expect:
+    judge:
+      - q: "Does the answer say the push module must already be integrated because in-app messages are delivered through Hydra's push mechanism?"
+        want: "yes"
+      - q: "Does the answer state a specific HydraConfig.Builder method for passing InAppConfig as documented fact?"
+        want: "no"
+      - q: "Does the answer say how InAppConfig is passed isn't documented / suggest asking a Capillary engineer?"
+        want: "yes"
+  source: android/firebase.md › Modules › In-App (Gap) and Known Issues
+
+- id: android-firebase-inbox-ui-images
+  profile: android/firebase
+  category: inbox
+  question: >-
+    Inbox rows show a blank image whenever the download fails. We want the stock Notification
+    Center screen, and the unread rows in our brand colour. How?
+  expect:
+    contains: ["NotificationCenterConfig", "InboxActivity", "hydra_unread_message_background_color"]
+    judge:
+      - q: "Does the answer say the fallback image is set on HydraConfig.Builder during SDK initialisation?"
+        want: "yes"
+  source: android/firebase.md › Modules › Inbox and Known Issues
+
+- id: android-firebase-inbox-api-click
+  profile: android/firebase
+  category: inbox
+  question: >-
+    We're building a custom inbox badge: we need the unread message count, and we need our own
+    handling when a user clicks an inbox message. What APIs do we use?
+  expect:
+    contains: ["getUnReadMessagesCount", "registerOnMessageClickListener"]
+    judge:
+      - q: "Does the answer mention HydraInboxCoreApi.getInstance() and the UnReadCountListener callback onCountAvailable?"
+        want: "yes"
+      - q: "Does the answer say the click listener returns true when the app handles the click?"
+        want: "yes"
+  source: android/firebase.md › Modules › Inbox
+
+- id: android-firebase-gamification-remote-config-keys
+  profile: android/firebase
+  category: correction
+  question: >-
+    What should we name the Firebase Remote Config parameters for gamification, especially the
+    base URL one? We were going to call it hydra_gamification_url. Do we also have to apply these
+    values conditionally when building HydraConfig?
+  expect:
+    contains: ["hydra_gamification_base_url", "hydra_gamification_key", "hydra_gamification_region"]
+    judge:
+      - q: "Does the answer recommend hydra_gamification_url as the Remote Config key name?"
+        want: "no"
+      - q: "Does the answer say the values are applied conditionally because Remote Config may not have loaded yet?"
+        want: "yes"
+  source: _shared/firebase-setup.md › Gamification keys (Correction) and android/firebase.md › Steps › 14
+
+- id: android-firebase-gamification-callback-fields-gap
+  profile: android/firebase
+  category: gap
+  question: >-
+    We want a GamificationCallback that logs the error code from onInitFailure's GamificationError
+    and the ids of the entry points reported by onEntryPointsLoaded. Show us the callback and
+    the fields of those two types.
+  expect:
+    contains: ["onInitFailure", "onEntryPointsLoaded", "onCampaignOpened"]
+    judge:
+      - q: "Does the answer list specific field names of GamificationError or EntryPointData as documented fact?"
+        want: "no"
+      - q: "Does the answer say the fields of those types aren't documented / suggest asking a Capillary engineer?"
+        want: "yes"
+  source: android/firebase.md › Modules › Gamification (callback, Gap)
+
+- id: android-firebase-wire-gamification-manager
+  profile: android/firebase
+  category: gamification
+  question: >-
+    Where exactly do we create GamificationUIManager, and where do we attach our GamificationCallback?
+    We call getGamificationManager() but don't know in which class this belongs.
+  expect:
+    contains: ["GamificationUIManager", "getGamificationManager"]
+    judge:
+      - q: "Does the answer say to create it in the Application class right after SDK initialisation, and assign the callback at the same time?"
+        want: "yes"
+  source: android/firebase.md › Steps › 15
+
+- id: android-firebase-screen-reporting-rn-trap
+  profile: android/firebase
+  category: trap
+  question: >-
+    Our Popup campaigns targeted at specific screens never show, and LeakCanary flags activities
+    that were left behind. In React Native we call gamificationScreenAppeared. What's the native
+    Android way, and how do we tell the SDK the app went to the background and foreground?
+  expect:
+    contains: ["onScreenChanged", "onActivityDestroyed", "ProcessLifecycleOwner"]
+    judge:
+      - q: "Does the answer recommend gamificationScreenAppeared as the call to use in this native Android app?"
+        want: "no"
+      - q: "Does the answer say onActivityDestroyed must be called to prevent memory leaks from attached entry-point views?"
+        want: "yes"
+  source: android/firebase.md › Steps › 16 and 17 and Known Issues
+
+- id: android-firebase-late-remote-config
+  profile: android/firebase
+  category: edge-case
+  question: >-
+    Our Firebase Remote Config values for gamification arrive a few seconds after Hydra has
+    already been initialised, so gamification never starts. How do we handle values that come late?
+  expect:
+    contains: ["updateRemoteConfig"]
+    judge:
+      - q: "Does the answer say to wire GamificationUIManager afterwards if it hasn't been created yet?"
+        want: "yes"
+      - q: "Does the answer say updateRemoteConfig returns a Boolean indicating success?"
+        want: "yes"
+  source: android/firebase.md › Steps › 18 and Known Issues
+
+- id: android-firebase-loyalty-token-order
+  profile: android/firebase
+  category: edge-case
+  question: >-
+    Our LoyaltyEmbedView renders empty. We fetch the B2B token after the screen's onResume has
+    already reported the screen, then call setCapToken. Also, how do we obtain that token and
+    the embedId in the first place?
+  expect:
+    contains: ["setCapToken"]
+    judge:
+      - q: "Does the answer say the token must be set before the Loyalty View renders (before the screen is reported)?"
+        want: "yes"
+      - q: "Does the answer state a specific way to obtain the Capillary B2B token or the embedId as documented fact?"
+        want: "no"
+  source: android/firebase.md › Steps › 19 and Modules › Gamification (Gap); _shared/prerequisites.md
+
+- id: android-firebase-embed-bind-trap
+  profile: android/firebase
+  category: trap
+  question: >-
+    A developer from our no-Firebase app says each EmbedWebView needs an explicit
+    bindEmbedView(...) call. Do we need that here, and how do the Banner, Embedded and Loyalty
+    views get rendered in this setup?
+  expect:
+    contains: ["EmbedWebView", "onScreenChanged"]
+    judge:
+      - q: "Does the answer tell the client to call bindEmbedView in this (Firebase) mode?"
+        want: "no"
+      - q: "Does the answer say all three views are bound and rendered automatically by GamificationUIManager once the screen is reported?"
+        want: "yes"
+  source: android/firebase.md › Modules › Gamification
+
+- id: android-firebase-core-remote-config-keys-gap
+  profile: android/firebase
+  category: gap
+  question: >-
+    We want to rotate our SSL public key without shipping a new release, so we'll put it, plus the
+    account id and base URL, in Remote Config. Flutter uses hydra_account_id, hydra_base_url and
+    hydra_ssl_public_key. Are those the Remote Config key names for native Android too?
+  expect:
+    contains: ["9 months"]
+    judge:
+      - q: "Does the answer confirm the Flutter key names (hydra_account_id, hydra_base_url, hydra_ssl_public_key) as the documented Android Remote Config keys for the core values?"
+        want: "no"
+      - q: "Does the answer say the Android Remote Config key names for the core values aren't documented / suggest asking a Capillary engineer?"
+        want: "yes"
+      - q: "Does the answer say the SSL public key expires about every 9 months and shouldn't be hard-coded?"
+        want: "yes"
+  source: android/firebase.md › Coverage (Gap); _shared/prerequisites.md › SSL public key; _shared/firebase-setup.md › Core keys
+
+- id: android-firebase-client-credentials-failed
+  profile: android/firebase
+  category: prerequisites
+  question: >-
+    On a dev flavor (applicationId ends in .dev) the SDK log prints `Client Credentials Generation
+    Failed` with `{"error":"source not found","status":400}`. Which things must match what
+    Capillary registered, and what do we have to send them for registration?
+  expect:
+    contains: ["App Signature", "Bundle Name"]
+    judge:
+      - q: "Does the answer say a build variant with a different application ID is a different app to Capillary and must be registered?"
+        want: "yes"
+      - q: "Does the answer say to compare the build's SHA256 signature with the registered App Signature and ask Capillary to update it?"
+        want: "yes"
+  source: android/firebase.md › Known Issues; _shared/troubleshooting.md › 1 and 2; _shared/push.md
+
+- id: android-firebase-push-never-arrives-skipped-reason
+  profile: android/firebase
+  category: troubleshooting
+  question: >-
+    Sign-in works and we see a token in the logs, but campaign pushes never arrive. Capillary's
+    campaign report shows `Request Entity Not Found` for our test user and `Profile Not Found`
+    for another. What do these mean and how do we narrow down whether it's our app or Capillary?
+  expect:
+    contains: ["FCM Project ID", "Firebase console"]
+    judge:
+      - q: "Does the answer say Request Entity Not Found means the FCM token expired and the user should log out and log in again?"
+        want: "yes"
+      - q: "Does the answer say to send a test message from the Firebase console to the same token to separate app/Firebase problems from Capillary registration problems?"
+        want: "yes"
+      - q: "Does the answer say the Firebase project in the app must match the FCM Project ID registered at Capillary?"
+        want: "yes"
+  source: android/firebase.md › Known Issues; _shared/push.md › Why Capillary skipped a message, Test the push flow

@@ -1,6 +1,6 @@
 """Guardrails: redact secrets from client input, and flag identifiers the knowledge doesn't contain.
 
-Output check (PLAN.md §6.1, simplified): code-like names in the agent's reply (`HydraConfig.Builder`,
+Output check (chat assistant, PLAN.md §14; the same rule also lives in the kit): code-like names in the agent's reply (`HydraConfig.Builder`,
 `onScreenChanged`) must appear in the loaded knowledge or in what the client and tools said. If
 one doesn't, a note is appended so the client double-checks it. History is never edited: the
 note is a separate message, hidden from the model on later turns (see agent node).

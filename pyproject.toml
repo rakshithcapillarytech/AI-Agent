@@ -1,7 +1,7 @@
 [project]
 name = "hydra-onboarding-agent"
 version = "0.1.0"
-description = "Experience+ Integration Copilot: an AI agent that onboards clients onto the Hydra SDK"
+description = "Experience+ Integration Copilot: a portal that builds a per-client Integration Kit (guide + prompts) for the client's own AI assistant"
 requires-python = ">=3.12"
 # Lower bounds only here; exact versions are pinned in uv.lock (run `uv lock`).
 # Upgrade LangGraph/LangChain deliberately and re-run the evals (see PLAN.md §6.2).
@@ -10,7 +10,7 @@ dependencies = [
     "langgraph-checkpoint-postgres",
     "langchain-core>=1.0",
     "langchain-anthropic>=1.0",
-    "langchain-google-genai",  # dev provider (free Gemini key); needs Gemini 3 thought-signature support
+    "langchain-google-genai",  # dev provider for evals and the chat assistant (free Gemini key)
     "langchain-text-splitters",
     "psycopg[binary,pool]",
     "fastapi",

@@ -1,0 +1,517 @@
+# Deep question bank: Flutter, Firebase mode (settings read from Firebase Remote Config).
+# Every `contains` string is verified against the kit (flutter/firebase.md + _shared/*.md).
+
+- id: flutter-firebase-install-package-source
+  profile: flutter/firebase
+  category: correction
+  question: >-
+    We're adding the Hydra SDK to our Flutter app. The only guide our team has is a PDF
+    from 2024 that pins a specific beta build, and someone also found a GitHub repository
+    for the Flutter lib. What do we actually put in the project to install it?
+  expect:
+    contains: ["flutter pub add capillary_hydra capillary_hydra_platform_interface", "pub.dev"]
+    judge:
+      - q: "Does the answer recommend pinning the 2024 guide's beta version (1.1.1-beta.6)?"
+        want: "no"
+      - q: "Does the answer recommend installing from the GitHub repository flutter-hydra-lib?"
+        want: "no"
+      - q: "Does the answer say the two packages should be kept on the same version?"
+        want: "yes"
+  source: flutter/firebase.md › Requirements, Steps › 2 (Corrections)
+
+- id: flutter-firebase-remote-config-keys-and-json
+  profile: flutter/firebase
+  category: setup
+  question: >-
+    We just got our account values from Capillary. Which parameters do we publish in Firebase
+    Remote Config for a basic integration with visitor flow, what is the remote log level
+    parameter, and which JSON file do we create in the project for the other SDK switches
+    (how do we turn off certificate pinning in a dev build)?
+  expect:
+    contains: ["hydra_account_id", "hydra_remote_log_level", "enable_ssl_pinning"]
+    judge:
+      - q: "Does the answer list hydra_base_url and hydra_ssl_public_key as Remote Config parameters, and hydra_org_id for the visitor flow?"
+        want: "yes"
+      - q: "Does the answer say the parameter names must be exactly as documented?"
+        want: "yes"
+      - q: "Does the answer mention capillary/hydra-config.json with enable_ssl_pinning set to false to turn pinning off?"
+        want: "yes"
+  source: flutter/firebase.md › Steps › 1, 3
+
+- id: flutter-firebase-init-main-assets
+  profile: flutter/firebase
+  category: init
+  question: >-
+    Where do we start the Hydra SDK in our Flutter app, does it matter whether it's before
+    runApp, and how do we make the icon images in capillary/icons available as assets?
+  expect:
+    contains: ["HydraInitializer.initialize", "capillary/icons/", "WidgetsFlutterBinding.ensureInitialized"]
+    judge:
+      - q: "Does the answer say to call HydraInitializer.initialize() in main() before runApp?"
+        want: "yes"
+      - q: "Does the answer say the Dart HydraInitializer is different from the native Android HydraInitializer?"
+        want: "yes"
+  source: flutter/firebase.md › Steps › 4, 6
+
+- id: flutter-firebase-ios-uiscene-no-appdelegate
+  profile: flutter/firebase
+  category: edge-case
+  question: >-
+    Our iOS Flutter app moved to the UIScene lifecycle (FlutterSceneDelegate). We use CocoaPods
+    and keep our account values in Remote Config. What do we add to the Podfile, and do we have to
+    write any Hydra initialisation code in AppDelegate.swift?
+  expect:
+    contains: ["hydra_pods", "GoogleService-Info.plist"]
+    judge:
+      - q: "Does the answer say no Hydra code is needed in AppDelegate.swift because the plugin starts the SDK itself from the default Remote Config keys?"
+        want: "yes"
+      - q: "Does the answer say both the app-delegate and UIScene lifecycles are supported?"
+        want: "yes"
+      - q: "Does the answer tell the developer to call HydraNativeAPI.shared.initApplication with a HydraRemoteConfig containing the account values?"
+        want: "no"
+  source: flutter/firebase.md › Steps › 7, 8, 9
+
+- id: flutter-firebase-android-native-side
+  profile: flutter/firebase
+  category: edge-case
+  question: >-
+    Android side of our Flutter app: we already have our own Application class, and the plugin
+    complains about our app theme. Where do we put google-services.json and which Gradle plugin
+    do we add, how do we wire the Application class so Hydra initialises, and what theme?
+  expect:
+    contains: ["initializeUsingFirebaseRemoteConfig", "com.google.gms.google-services", "Theme.AppCompat.DayNight.NoActionBar"]
+    judge:
+      - q: "Does the answer say the existing Application class must extend HydraApplication, be registered by its fully qualified name in android:name, and call the initializer right after super.onCreate()?"
+        want: "yes"
+      - q: "Does the answer say google-services.json goes in the android/app folder and the Google Services plugin version is 4.4.2?"
+        want: "yes"
+      - q: "Does the answer say that only an Application class that is exactly HydraApplication initialises automatically?"
+        want: "yes"
+  source: flutter/firebase.md › Steps › 10, 11, 12; Known Issues
+
+- id: flutter-firebase-event-handler-extends
+  profile: flutter/firebase
+  category: events
+  question: >-
+    Our handler is `class MyHandler implements HydraNativeEventHandler`. It compiled fine until
+    we upgraded capillary_hydra, now it doesn't. Also, how do we know the SDK is ready before
+    we call any Hydra API?
+  expect:
+    contains: ["extends", "HydraNativeEvents.addEventHandler", "onHydraSdkInitializationResult"]
+    judge:
+      - q: "Does the answer recommend extending HydraNativeEventHandler rather than implementing it?"
+        want: "yes"
+  source: flutter/firebase.md › Steps › 13; Known Issues
+
+- id: flutter-firebase-identify-track-reset
+  profile: flutter/firebase
+  category: identity
+  question: >-
+    How do we log a user in, track an event and log out? We call identify with customerId set
+    to the user's email, it returns true, but the customer never shows up linked in Capillary CRM.
+  expect:
+    contains: ["Hydra.identify", "Hydra.reset", "Account Linking Identifier"]
+    judge:
+      - q: "Does the answer say customerId must match the Account Linking Identifier configured in Capillary CRM?"
+        want: "yes"
+      - q: "Does the answer claim that a true result proves Capillary has processed the user?"
+        want: "no"
+  source: flutter/firebase.md › Steps › 14; Known Issues (User not linked in CRM)
+
+- id: flutter-firebase-push-ios-android
+  profile: flutter/firebase
+  category: push
+  question: >-
+    Walk me through the native side of enabling push in our Flutter app: what do we configure
+    for iOS in Xcode and on the Apple developer portal (including the rich notification part),
+    and what do we add for the Android notification icon?
+  expect:
+    contains: ["Background Modes", "HydraRemoteNotificationService", "hydra_notification_small_icon"]
+    judge:
+      - q: "Does the answer say to add the App Groups capability to both the main target and the Notification Service Extension with the same group?"
+        want: "yes"
+      - q: "Does the answer give the App Group name in the form group.<bundle ID>.hydra?"
+        want: "yes"
+      - q: "Does the answer say to enable Remote notifications (and Background fetch) under Background Modes?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Push (items 2, 4, 5)
+
+- id: flutter-firebase-push-token
+  profile: flutter/firebase
+  category: push
+  question: >-
+    `HydraPushNotification.getFCMToken()` throws right after install on a test device. And on
+    Android we call firebase_messaging ourselves; Hydra seems to have no token. What do we do?
+  expect:
+    contains: ["onTokenAvailable", "passFCMToken"]
+    judge:
+      - q: "Does the answer say getFCMToken throws when no token is available yet and suggest catching it or using onTokenAvailable?"
+        want: "yes"
+      - q: "Does the answer say passFCMToken does nothing on iOS so it is safe to call on both platforms?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Push (items 6, 7); Known Issues
+
+- id: flutter-firebase-inapp
+  profile: flutter/firebase
+  category: inapp
+  question: >-
+    We want in-app messages. Which flag and image asset do we need, is there anything on iOS,
+    and should we also enable the enable_in_app_messaging_in_flutter flag we saw in the JSON?
+  expect:
+    contains: ["enable_in_app_messaging", "hydra_in_app_placeholder", "didReceiveRemoteNotification"]
+    judge:
+      - q: "Does the answer recommend enabling enable_in_app_messaging_in_flutter?"
+        want: "no"
+      - q: "Does the answer say enable_in_app_messaging_in_flutter is currently non-functional and should stay false?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › In-App; Known Issues
+
+- id: flutter-firebase-inbox-api-and-ui
+  profile: flutter/firebase
+  category: inbox
+  question: >-
+    We want both our own notification list and the SDK's built-in notification center. Which flags
+    and calls do we need? Our custom list also doesn't refresh when a push arrives: is there an
+    inbox-updated event?
+  expect:
+    contains: ["enable_inbox_api", "enable_inbox_ui", "showNotificationCenter"]
+    judge:
+      - q: "Does the answer state that the SDK offers an inbox-updated event?"
+        want: "no"
+      - q: "Does the answer suggest refreshing from onHydraNotificationReceived or onNotificationCenterDismissed, or calling HydraInbox on demand?"
+        want: "yes"
+      - q: "Does the answer mention the hydra_inbox_ui_placeholder image for the notification center and the iOS Notification Service Extension / App Group requirement?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Inbox; Known Issues
+
+- id: flutter-firebase-visitor
+  profile: flutter/firebase
+  category: visitor
+  question: >-
+    We want anonymous visitors tracked before login. How do we configure the visitor flow when
+    settings come from Remote Config, and which APIs and callbacks report the state?
+  expect:
+    contains: ["hydra_org_id", "isVisitorFlowEnabled", "onUserStateChanged"]
+    judge:
+      - q: "Does the answer say that with custom prefixed key names the org key is passed as keyForOrgId?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Visitor
+
+- id: flutter-firebase-multi-account-option-a
+  profile: flutter/firebase
+  category: multi-account
+  question: >-
+    We publish ind_hydra_account_id, ind_hydra_base_url and the rest in Remote Config and call
+    `HydraCore.setFirebaseRemoteConfigKeys(hydraFirebaseRemoteConfigKeys: {'keyForAccountId':
+    'ind_hydra_account_id', ...})` with a Map, copied from the API sample. On Android it returns
+    true but the account doesn't switch. What are we doing wrong?
+  expect:
+    contains: ["HydraFirebaseRemoteConfigKeys", "keyForAccountId"]
+    judge:
+      - q: "Does the answer recommend passing a Map to setFirebaseRemoteConfigKeys?"
+        want: "no"
+      - q: "Does the answer say to pass a single HydraFirebaseRemoteConfigKeys object built with the key names?"
+        want: "yes"
+      - q: "Does the answer explain that on Android the call still returns true when the prefixed keys aren't published or fetched (only logging a failure), while iOS returns false?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Multi-account (Option A, Correction); Known Issues
+
+- id: flutter-firebase-multi-account-native-start
+  profile: flutter/firebase
+  category: edge-case
+  question: >-
+    Our UIScene-based iOS app and Android app should launch on the India account (ind_ prefixed
+    Remote Config keys) by default. Where do we call the native initializer with custom key names,
+    and what order must we follow with identify? We also changed the key names after release and
+    the old devices ignore them.
+  expect:
+    contains: ["initApplicationWithFirebaseRemoteConfig", "didInitializeImplicitFlutterEngine", "onHydraSdkInitializationResult"]
+    judge:
+      - q: "Does the answer say to call the initializer after GeneratedPluginRegistrant.register(...) (in didInitializeImplicitFlutterEngine for UIScene, with UIApplication.shared and nil launch options)?"
+        want: "yes"
+      - q: "Does the answer say the sequence is: wait for onHydraSdkInitializationResult, await the set call, then identify?"
+        want: "yes"
+      - q: "Does the answer explain that a previously chosen account (or its key names) persists on the device and native init only decides the account on a fresh install?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Multi-account; Known Issues
+
+- id: flutter-firebase-gamification-keys
+  profile: flutter/firebase
+  category: correction
+  question: >-
+    The SDK logs that the Gamification Base URL isn't recognised. We only published the key and
+    region, since the integration PDF says the base URL is optional, and for the base URL we used
+    hydra_gamification_url. What exactly should the Remote Config gamification parameters be?
+  expect:
+    contains: ["hydra_gamification_base_url", "hydra_gamification_key", "hydra_gamification_region"]
+    judge:
+      - q: "Does the answer recommend hydra_gamification_url as the key name?"
+        want: "no"
+      - q: "Does the answer say the Gamification Base URL is optional?"
+        want: "no"
+      - q: "Does the answer say gamification stays disabled if the key or region is missing?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Gamification (1, Corrections); Known Issues
+
+- id: flutter-firebase-gamification-screens-routeaware
+  profile: flutter/firebase
+  category: correction
+  question: >-
+    Following the Integration doc sample we call `Hydra.gamificationScreenDisappeared()` with no
+    arguments from dispose(). Campaigns never appear on our Home tab, which stays mounted under
+    pushed routes. How do we report screens correctly?
+  expect:
+    contains: ["screenName", "RouteAware", "gamificationScreenAppeared"]
+    judge:
+      - q: "Does the answer recommend calling gamificationScreenDisappeared with no argument?"
+        want: "no"
+      - q: "Does the answer say to pass the same screenName to gamificationScreenAppeared and gamificationScreenDisappeared?"
+        want: "yes"
+      - q: "Does the answer mention RouteObserver with RouteAware (and observing app lifecycle) for a screen that stays mounted?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Gamification (2, Corrections); Known Issues
+
+- id: flutter-firebase-loyalty-cap-token
+  profile: flutter/firebase
+  category: gamification
+  question: >-
+    Our Loyalty View is blank. We call Hydra.setCapToken inside the widget's initState after building
+    GamificationLoyaltyView, and an older guide told us the loyalty view never reports its height so we
+    wrapped it in a fixed-height box. What's wrong?
+  expect:
+    contains: ["setCapToken", "onHeightChanged", "loyaltyId"]
+    judge:
+      - q: "Does the answer say the cap token must be set before the Loyalty View is mounted?"
+        want: "yes"
+      - q: "Does the answer recommend a fixed-height parent on the grounds that the Loyalty View never reports a height?"
+        want: "no"
+  source: flutter/firebase.md › Modules › Gamification (3, 4, Correction); Known Issues
+
+- id: flutter-firebase-widget-height-zero
+  profile: flutter/firebase
+  category: known-issue
+  question: >-
+    We have `GamificationEmbedView(embedId: 'e1', onHeightChanged: (h) { if (h > 0) setState(() => _h = h); })`
+    inside a SizedBox. When the campaign closes the empty space stays. Why, and what's the fix?
+  expect:
+    contains: [">= 0", "onHeightChanged"]
+    judge:
+      - q: "Does the answer recommend keeping the `> 0` check?"
+        want: "no"
+      - q: "Does the answer say a height of 0 is meaningful (nothing to show) and the widget should collapse to it?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Gamification (4, Correction); Known Issues
+
+- id: flutter-firebase-suppress-theme-events
+  profile: flutter/firebase
+  category: edge-case
+  question: >-
+    In our first screen's initState we call `await Hydra.setGamificationSuppressed(suppressed: true)`
+    and `Hydra.setThemeMode(mode: HydraThemeMode.dark)`; on cold start they throw. Why, and when is it
+    safe? Also, which handler callbacks give us campaign deep links and analytics events?
+  expect:
+    contains: ["onHydraSdkInitializationResult", "onGamificationDeeplink", "onGamificationAnalyticsEvent"]
+    judge:
+      - q: "Does the answer say these calls throw when the SDK is not initialised yet, so they should run after onHydraSdkInitializationResult reports success?"
+        want: "yes"
+      - q: "Does the answer say an exception from isGamificationSuppressed means the value is false?"
+        want: "no"
+  source: flutter/firebase.md › Modules › Gamification (5, 6, 7); Known Issues
+
+- id: flutter-firebase-troubleshoot-credentials-push
+  profile: flutter/firebase
+  category: troubleshooting
+  question: >-
+    Our Android release build logs `HYDRA CAPILLARY SDK: Client Credentials Generation Failed
+    {"error":"source not found","status":400}`, while the debug build was fine. Separately, a push
+    campaign never reaches a test phone although sign-in works. What do we check?
+  expect:
+    contains: ["SHA256", "App Signature", "FCM Project ID"]
+    judge:
+      - q: "Does the answer say to compare the build's signing SHA256 with the App Signature registered at Capillary and ask Capillary to update it if it differs?"
+        want: "yes"
+      - q: "Does the answer say the Firebase project in the app's config files must match the FCM Project ID registered at Capillary?"
+        want: "yes"
+  source: flutter/firebase.md › Known Issues; _shared/push.md › What must match; _shared/troubleshooting.md › 2
+
+- id: flutter-firebase-prereq-send-capillary
+  profile: flutter/firebase
+  category: prerequisites
+  question: >-
+    Before coding: what do we have to send Capillary so the app gets registered, what do they give
+    us back, and can I paste the Firebase service-account JSON into the support ticket?
+  expect:
+    contains: ["SHA256", "service account", "Account Id"]
+    judge:
+      - q: "Does the answer list the Android application ID and iOS bundle ID among the things to send?"
+        want: "yes"
+      - q: "Does the answer tell the developer to paste the service-account file into chat, email, a ticket or git?"
+        want: "no"
+  source: flutter/firebase.md › Prerequisites; _shared/prerequisites.md
+
+- id: flutter-firebase-prereq-ssl-expiry
+  profile: flutter/firebase
+  category: prerequisites
+  question: >-
+    After months of working, the SDK now logs a certificate pinning failure and stops talking to
+    Capillary. What happened, and how should we have set things up so it doesn't need an app release?
+  expect:
+    contains: ["Certificate pinning failure", "Remote Config"]
+    judge:
+      - q: "Does the answer say the SSL public key expires (about every 9 months) and a new key must be obtained from Capillary?"
+        want: "yes"
+      - q: "Does the answer say the key should be kept in Firebase Remote Config rather than compiled into the app, so it can be replaced without a release?"
+        want: "yes"
+  source: "_shared/prerequisites.md › SSL public key: it expires"
+
+- id: flutter-firebase-gap-spm
+  profile: flutter/firebase
+  category: gap
+  question: >-
+    We use Swift Package Manager on iOS rather than CocoaPods. What are the exact SPM steps to add
+    Hydra, and how does the Notification Service Extension target get HydraPushNotificationServiceExtension?
+  expect:
+    contains: ["Swift Package Manager"]
+    judge:
+      - q: "Does the answer state a specific SPM package URL or step-by-step SPM procedure as documented fact?"
+        want: "no"
+      - q: "Does the answer say the SPM steps aren't documented or suggest asking Capillary?"
+        want: "yes"
+  source: flutter/firebase.md › Steps › 7 (Gap)
+
+- id: flutter-firebase-gap-remote-config-types
+  profile: flutter/firebase
+  category: gap
+  question: >-
+    In the Firebase console, should hydra_remote_log_level be a Number parameter or a String one,
+    and what about the other hydra_* parameters?
+  expect:
+    contains: ["hydra_remote_log_level"]
+    judge:
+      - q: "Does the answer state definitively that the parameter value type is Number (or String) as documented fact?"
+        want: "no"
+      - q: "Does the answer say the Remote Config value type isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: flutter/firebase.md › Steps › 1 (Gap)
+
+- id: flutter-firebase-gap-inbox-ui-config
+  profile: flutter/firebase
+  category: gap
+  question: >-
+    What does use_default_inbox_ui_config set to false change, and how can we restyle the built-in
+    notification center from Flutter?
+  expect:
+    contains: ["use_default_inbox_ui_config"]
+    judge:
+      - q: "Does the answer state specific customisation options or behaviour of use_default_inbox_ui_config set to false as fact?"
+        want: "no"
+      - q: "Does the answer say this isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Inbox (Gap)
+
+- id: flutter-firebase-gap-visitor-states
+  profile: flutter/firebase
+  category: gap
+  question: >-
+    What's the real difference between the legacyRegistered and merged user states, and when does
+    onLegacyFlowReady fire instead of onVisitorSessionReady? What should the app do in each?
+  expect:
+    contains: ["legacyRegistered"]
+    judge:
+      - q: "Does the answer explain precisely when onLegacyFlowReady fires instead of onVisitorSessionReady, as fact?"
+        want: "no"
+      - q: "Does the answer say this isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Visitor (Gap)
+
+- id: flutter-firebase-gap-verification-logs
+  profile: flutter/firebase
+  category: gap
+  question: >-
+    Which exact log lines or dashboard checks prove a fresh Hydra integration works, and if we add our
+    event handler after init has completed, do we still get onHydraSdkInitializationResult?
+  expect:
+    contains: ["onHydraSdkInitializationResult"]
+    judge:
+      - q: "Does the answer state that a handler registered late still receives onHydraSdkInitializationResult, as fact?"
+        want: "no"
+      - q: "Does the answer say expected log lines, dashboard checks or late-handler behaviour aren't documented, or suggest asking Capillary?"
+        want: "yes"
+  source: flutter/firebase.md › Verification (Gap)
+
+- id: flutter-firebase-gap-reset-before-switch
+  profile: flutter/firebase
+  category: gap
+  question: >-
+    A signed-in user changes region and we switch accounts with setFirebaseRemoteConfigKeys. Should
+    we call Hydra.reset first to clear the previous account's session?
+  expect:
+    contains: ["Hydra.reset"]
+    judge:
+      - q: "Does the answer state definitively that Hydra.reset must (or must not) be called before switching accounts?"
+        want: "no"
+      - q: "Does the answer say this isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Multi-account (Gap)
+
+- id: flutter-firebase-trap-values-in-code
+  profile: flutter/firebase
+  category: trap
+  question: >-
+    We'd rather not publish the account id, base URL and SSL key in Remote Config. Can we just build
+    a HydraRemoteConfig with HydraRemoteConfig.Builder in our Android Application class and call
+    HydraNativeAPI.shared.initApplication on iOS with the values hardcoded?
+  expect:
+    contains: ["Remote Config"]
+    judge:
+      - q: "Does the answer give HydraRemoteConfig.Builder or HydraNativeAPI.shared.initApplication code with hardcoded values as the solution?"
+        want: "no"
+      - q: "Does the answer say that passing values without Remote Config uses different native initializers (the direct-mode setup) that this guide doesn't cover, or that this setup reads Remote Config?"
+        want: "yes"
+  source: flutter/firebase.md › Coverage
+
+- id: flutter-firebase-trap-web-json-param
+  profile: flutter/firebase
+  category: trap
+  question: >-
+    Our web team keeps all Hydra settings in one Remote Config parameter, hydra_sdk_config, holding
+    a JSON object with camelCase fields. Should the Flutter app do the same?
+  expect:
+    contains: ["hydra_account_id", "hydra_base_url"]
+    judge:
+      - q: "Does the answer recommend a single JSON parameter such as hydra_sdk_config for the Flutter app?"
+        want: "no"
+      - q: "Does the answer say Flutter uses one Remote Config parameter per value with the exact hydra_* names?"
+        want: "yes"
+  source: _shared/firebase-setup.md › 3. Remote Config; flutter/firebase.md › Steps › 1
+
+- id: flutter-firebase-trap-native-fcm-config
+  profile: flutter/firebase
+  category: trap
+  question: >-
+    The native Android docs say that an app with its own FirebaseMessagingService should use
+    FcmConfig(false) and pass tokens with passPushToken and passPushPayload. Our Flutter app has its
+    own messaging setup via firebase_messaging; do we do the same?
+  expect:
+    contains: ["passFCMToken"]
+    judge:
+      - q: "Does the answer give FcmConfig(false), passPushToken or passPushPayload as the way to do this in the Flutter app?"
+        want: "no"
+      - q: "Does the answer say to call HydraPushNotification.passFCMToken for each new token (Android, no-op on iOS)?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Push (7); _shared/push.md › Late pushes
+
+- id: flutter-firebase-trap-react-native-package
+  profile: flutter/firebase
+  category: trap
+  question: >-
+    Our React Native app installs the SDK with `npm install @capillarytech/react-native-hydra-lib`.
+    Does the Flutter app use the same package and calls, or what's the equivalent?
+  expect:
+    contains: ["flutter pub add", "package:capillary_hydra/hydra.dart"]
+    judge:
+      - q: "Does the answer recommend installing the npm package @capillarytech/react-native-hydra-lib for the Flutter app?"
+        want: "no"
+      - q: "Does the answer say Flutter uses the pub.dev packages capillary_hydra and capillary_hydra_platform_interface?"
+        want: "yes"
+  source: flutter/firebase.md › Steps › 2; _shared/prerequisites.md › SDK package access

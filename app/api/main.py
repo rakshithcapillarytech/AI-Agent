@@ -22,6 +22,8 @@ from app.graph.nodes.guardrails import redact
 from app.graph.nodes.phase_transition import phase_transition
 from app.graph.state import IntegrationProfile
 from app.kb.guide import GuideNotReady, build_guide, guide_filename
+from app.learning.issues import clean, lint_issue, publish_issue
+from app.learning.store import DOC_GAP, ISSUE_DRAFT, PostgresLearningStore
 from app.validators.upload import MAX_UPLOAD_BYTES, UPLOAD_HEADER, process_upload, safe_filename
 
 log = logging.getLogger(__name__)
@@ -35,6 +37,8 @@ async def lifespan(app: FastAPI):
         app.state.graph = build_graph(checkpointer=checkpointer)
         app.state.escalations = PostgresEscalationStore(get_settings().database_url)
         await app.state.escalations.setup()
+        app.state.learning = PostgresLearningStore(get_settings().database_url)
+        await app.state.learning.setup()
         yield
 
 
@@ -51,6 +55,20 @@ class StartIn(BaseModel):
 
 class AnswerIn(BaseModel):
     answer: str
+
+
+class IssueEdit(BaseModel):
+    """What the reviewer may change before approving; omitted fields keep the draft's value."""
+
+    error_signature: str | None = None
+    root_cause: str | None = None
+    fix: str | None = None
+    platform: str | None = None
+    config_mode: str | None = None
+
+
+class HandleGaps(BaseModel):
+    ids: list[str]
 
 
 def _config(session_id: str) -> dict:
@@ -86,6 +104,7 @@ def _stream_turn(session_id: str, inputs: dict) -> StreamingResponse:
             last = (values.get("messages") or [None])[-1]
             if last is not None and last.additional_kwargs.get("guardrail"):
                 yield _sse({"type": "token", "text": "\n\n" + message_text(last.content)})
+            await _sync_learning(session_id)
             if await _sync_escalation(session_id):
                 yield _sse({"type": "escalated"})
         except Exception:
@@ -140,6 +159,24 @@ async def _sync_escalation(session_id: str):
     return await app.state.escalations.open_for_session(
         session_id, str(payload.get("summary", "")), context
     )
+
+
+async def _sync_learning(session_id: str) -> None:
+    """Copy fixes the client confirmed and gaps the agent reported into the review queue.
+
+    Idempotent (items are keyed by content), and it never breaks the chat: it only logs.
+    """
+    store = getattr(app.state, "learning", None)
+    if store is None:
+        return
+    try:
+        values = await _values(session_id)
+        for record in values.get("resolved_issues") or []:
+            await store.add_if_absent(ISSUE_DRAFT, session_id, record)
+        for gap in values.get("doc_gaps") or []:
+            await store.add_if_absent(DOC_GAP, session_id, gap)
+    except Exception:
+        log.exception("syncing learning items for session %s failed", session_id)
 
 
 @app.get("/health")
@@ -281,5 +318,71 @@ async def answer_escalation(escalation_id: str, body: AnswerIn) -> dict:
         log.exception("resuming session %s failed", row.session_id)
         raise HTTPException(status_code=502, detail="Couldn't resume the session; try again.") from error
     await app.state.escalations.mark_answered(row.id, answer)
+    await _sync_learning(row.session_id)
     await _sync_escalation(row.session_id)  # the agent may have escalated again
+    return {"ok": True}
+
+
+# ── Admin: what the system learned (reviewed before it reaches the knowledge base) ────────────
+
+
+@app.get("/admin/issue-drafts")
+async def list_issue_drafts(status: str | None = Query(default="pending")) -> list[dict]:
+    return [row.to_dict() for row in await app.state.learning.list(ISSUE_DRAFT, status or None)]
+
+
+async def _pending_draft(draft_id: str):
+    row = await app.state.learning.get(draft_id)
+    if row is None or row.kind != ISSUE_DRAFT:
+        raise HTTPException(status_code=404, detail="No such draft.")
+    if row.status != "pending":
+        raise HTTPException(status_code=409, detail=f"Already {row.status}.")
+    return row
+
+
+@app.post("/admin/issue-drafts/{draft_id}/approve")
+async def approve_issue_draft(draft_id: str, edits: IssueEdit) -> dict:
+    """Publish the draft (after the reviewer's edits) as knowledge_base/issues/<platform>-<slug>.md."""
+    row = await _pending_draft(draft_id)
+    payload = {**row.payload, **{k: v for k, v in edits.model_dump().items() if v is not None}}
+    kb_dir = get_settings().knowledge_base_dir
+    if errors := lint_issue(payload, kb_dir):
+        raise HTTPException(status_code=422, detail=errors)
+    path = publish_issue(payload, kb_dir, row.session_id)
+    await app.state.learning.update(row.id, "approved", {**row.payload, **clean(payload)})
+    return {"file": f"issues/{path.name}"}
+
+
+@app.post("/admin/issue-drafts/{draft_id}/reject")
+async def reject_issue_draft(draft_id: str) -> dict:
+    row = await _pending_draft(draft_id)
+    await app.state.learning.update(row.id, "rejected")
+    return {"ok": True}
+
+
+@app.get("/admin/doc-gaps")
+async def list_doc_gaps() -> list[dict]:
+    """Open gaps, grouped by question so a gap many clients hit shows up as one line with a count."""
+    groups: dict[str, dict] = {}
+    for row in await app.state.learning.list(DOC_GAP, "pending"):
+        question = row.payload.get("question", "")
+        group = groups.setdefault(
+            " ".join(question.lower().split()),
+            {"question": question, "count": 0, "sessions": set(), "ids": [], "last_seen": row.created_at},
+        )
+        group["count"] += 1
+        group["sessions"].add(row.session_id)
+        group["ids"].append(row.id)
+        group["last_seen"] = max(group["last_seen"], row.created_at)
+    ranked = sorted(groups.values(), key=lambda g: (-len(g["sessions"]), g["last_seen"]))
+    return [{**g, "sessions": len(g["sessions"])} for g in ranked]
+
+
+@app.post("/admin/doc-gaps/handle")
+async def handle_doc_gaps(body: HandleGaps) -> dict:
+    """Mark gaps handled once the documentation has been written."""
+    for item_id in body.ids:
+        row = await app.state.learning.get(item_id)
+        if row is not None and row.kind == DOC_GAP:
+            await app.state.learning.update(item_id, "handled")
     return {"ok": True}

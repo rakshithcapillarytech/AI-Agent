@@ -1,4 +1,4 @@
-"""Checks on the Firebase config files a client uploads (PLAN.md §4 ②).
+"""Checks on the Firebase config files a client uploads (chat assistant; the kit has the client's local AI do this check, PLAN.md §4 ③).
 
 `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) must belong to the app the
 client registered with Capillary: the package name or bundle ID inside the file has to equal the

@@ -1,10 +1,13 @@
 """The only place that constructs chat models. Swap providers here, nowhere else.
 
+Not used by the Integration Kit (the client's own AI assistant does the work). It serves the evals and
+the optional hosted chat assistant (kept, unchanged); see PLAN.md §14.
+
 Providers (LLM_PROVIDER):
 - google: Gemini via langchain-google-genai, for development on the free key. The free tier
   lets Google use prompts to improve its products, so use synthetic data only, never real
   client details or logs.
-- anthropic: Claude, the production target (PLAN.md §6.2). Thinking is always on with Opus 5.5
+- anthropic: Claude (the chat assistant's production target; PLAN.md §14). Thinking is always on with Opus 5.5
   (don't send a `thinking` param); never force tool use; effort defaults to `medium`.
 - bedrock: post-MVP.
 

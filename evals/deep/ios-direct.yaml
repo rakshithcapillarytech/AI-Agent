@@ -1,0 +1,523 @@
+# Deep evaluation cases for ios/direct (iOS, settings passed in code). See evals/golden.yaml for the format.
+
+- id: ios-direct-spm-version-from-110
+  profile: ios/direct
+  category: correction
+  question: >-
+    I'm adding the Hydra SDK to our Package.swift. The install page shows
+    `.package(url: "https://github.com/Capillary/hydra-sdk-ios-packages", .upToNextMajor(from: "1.1.0"))`.
+    Can I copy that as it is? SPM seems to resolve some really old build for us.
+  expect:
+    contains: ["1.7.5-preprod.12", "upToNextMajor"]
+    judge:
+      - q: "Does the answer recommend using from: \"1.1.0\" as the version?"
+        want: "no"
+      - q: "Does the answer say to use 1.7.5-preprod.12 as the version?"
+        want: "yes"
+  source: "ios/direct.md › Steps › 2. Install the SDK › Option A (Correction) and Known Issues"
+
+- id: ios-direct-spm-repo-and-preprod10
+  profile: ios/direct
+  category: correction
+  question: >-
+    Our Gamification iOS guide PDF says to add the package from the hydra-ios-sdk-spm repo and to use
+    a minimum of 1.7.5-preprod.10. Our React Native teammates use that same repo. Which repo URL and
+    which minimum version should our native iOS app use?
+  expect:
+    contains: ["hydra-sdk-ios-packages", "1.7.5-preprod.12"]
+    judge:
+      - q: "Does the answer recommend https://github.com/Capillary/hydra-ios-sdk-spm.git as the package URL for this app?"
+        want: "no"
+      - q: "Does the answer recommend 1.7.5-preprod.10 as the version to use?"
+        want: "no"
+  source: "ios/direct.md › Steps › 2. Install the SDK › Option A (Correction 2)"
+
+- id: ios-direct-podfile-two-bugs
+  profile: ios/direct
+  category: correction
+  question: >-
+    `pod install` for our app + Notification Service Extension fails. Our Podfile is a copy of the
+    install page: platform :ios, '13.0'; use_frameworks!; then `target 'MyApp' do` with the line
+    `private_repo = 'https://<user>:<token>@github.com/Capillary/hydra-sdk-ios-packages.git'` as its first line,
+    the pod lines, and a second target for the extension that also uses private_repo. There is also a bare line
+    `Ensure you are using the correct source or git URL` above the targets. What should the Podfile look like?
+  expect:
+    contains: ["private_repo", "pod 'HydraPushNotificationServiceExtension', :git => private_repo"]
+    judge:
+      - q: "Does the answer say private_repo should be defined above (outside) both target blocks?"
+        want: "yes"
+      - q: "Does the answer recommend keeping private_repo defined inside the target 'YourAppTargetName' block?"
+        want: "no"
+      - q: "Does the answer tell the developer to remove the line 'Ensure you are using the correct source or git URL' or turn it into a comment, rather than keep it as active text?"
+        want: "yes"
+  source: "ios/direct.md › Steps › 2. Install the SDK › Option C: CocoaPods (two Corrections)"
+
+- id: ios-direct-swiftui-screen-modifier
+  profile: ios/direct
+  category: correction
+  question: >-
+    We use SwiftUI. For gamification screen reporting I saw an example where the modifier is chained on a
+    HydraGamificationUI() object. How do I report the screen "HomeScreen" for my HomeView?
+  expect:
+    contains: [".gamificationScreen("]
+    judge:
+      - q: "Does the answer recommend chaining the modifier on HydraGamificationUI(), as in HydraGamificationUI().gamificationScreen(...)?"
+        want: "no"
+      - q: "Does the answer apply the .gamificationScreen modifier directly to the screen's own view?"
+        want: "yes"
+  source: "ios/direct.md › Steps › 9. Report the current screen (Correction)"
+
+- id: ios-direct-gamification-config-not-remote-config
+  profile: ios/direct
+  category: correction
+  question: >-
+    The gamification checklist in the docs talks about hydra_gamification_key and hydra_gamification_region
+    values. We pass our settings in code, we don't use Firebase Remote Config. Where do the gamification
+    values go in our app?
+  expect:
+    contains: ["gamificationWriteKey", "gamificationRegion", "HydraConfiguration"]
+    judge:
+      - q: "Does the answer tell the developer to add hydra_gamification_key / hydra_gamification_region keys to Firebase Remote Config for this setup?"
+        want: "no"
+  source: "ios/direct.md › Verification (Correction)"
+
+- id: ios-direct-fetch-private-repo-fails
+  profile: ios/direct
+  category: known-issue
+  question: >-
+    Xcode says it can't fetch the package at github.com/Capillary/hydra-sdk-ios-packages (authentication
+    failed). Same thing from SPM on CI. What's wrong and how do I fix it?
+  expect:
+    contains: ["hydra-sdk-ios-packages", "Accounts"]
+    judge:
+      - q: "Does the answer say the repo is private and that access must be requested from Capillary's access team?"
+        want: "yes"
+      - q: "Does the answer offer both options: adding a GitHub account in Xcode, or using a username plus Personal Access Token in the package URL?"
+        want: "yes"
+      - q: "Does the answer ask the developer to paste or share their token in the chat?"
+        want: "no"
+  source: "ios/direct.md › Steps › 1. Authenticate to the private repo and Known Issues"
+
+- id: ios-direct-objc-init
+  profile: ios/direct
+  category: known-issue
+  question: >-
+    Our app is still all Objective-C. I tried to call HydraConfiguration and Hydra.generate from
+    AppDelegate.m and the compiler can't see them. How do we initialise the SDK?
+  expect:
+    contains: ["Swift-only", "Swift file"]
+    judge:
+      - q: "Does the answer say to put the initialisation in a small Swift file that runs once, with Objective-C code running after it?"
+        want: "yes"
+  source: "ios/direct.md › Steps › 3. Initialise the SDK (Objective-C) and Known Issues"
+
+- id: ios-direct-rich-push-no-image
+  profile: ios/direct
+  category: known-issue
+  question: >-
+    Push notifications reach our iOS app but the image and action buttons from the campaign never show,
+    only plain text. What do we check?
+  expect:
+    contains: ["HydraPushNotificationServiceExtension", "mutable-content"]
+    judge:
+      - q: "Does the answer mention that the framework must be added to the Notification Service Extension target (not only the app target)?"
+        want: "yes"
+      - q: "Does the answer mention the same App Group should be enabled on the extension?"
+        want: "yes"
+  source: "ios/direct.md › Modules › Push › 5. Notification Service Extension and Known Issues"
+
+- id: ios-direct-cta-buttons-do-nothing
+  profile: ios/direct
+  category: known-issue
+  question: >-
+    A push has two CTA buttons: one opens a web page and works, the other is a deep link into our app
+    and nothing happens when it's tapped. Why, and what do we write to handle it?
+  expect:
+    contains: ["HydraNotificationCallbackDelegate", "setNotificationCallbackDelagte"]
+    judge:
+      - q: "Does the answer explain that without a callback delegate the SDK only handles external-type CTAs itself?"
+        want: "yes"
+      - q: "Does the answer mention implementing process(cta:notificationPayload:) and returning true when the app handled the action?"
+        want: "yes"
+  source: "ios/direct.md › Modules › Push › 6. Handle CTA buttons and Known Issues"
+
+- id: ios-direct-inbox-empty-app-group
+  profile: ios/direct
+  category: known-issue
+  question: >-
+    We integrated the Notification Center but it's always empty, even though pushes arrive on the device.
+    Where should I look?
+  expect:
+    contains: ["App Group"]
+    judge:
+      - q: "Does the answer say the same App Group ID must be enabled on the app target and on the Notification Service Extension (every SDK target)?"
+        want: "yes"
+      - q: "Does the answer mention that push (HydraPushNotification / NotificationCore) must be initialised and Inbox initialised after HydraCore and NotificationCore?"
+        want: "yes"
+  source: "ios/direct.md › Modules › Inbox and Known Issues"
+
+- id: ios-direct-screen-campaigns-missing
+  profile: ios/direct
+  category: known-issue
+  question: >-
+    A gamification popup campaign targeted at our Offers screen never appears in the UIKit app. Other
+    screens are fine. What might be missing?
+  expect:
+    contains: ["gamificationScreenAppeared", "gamificationScreenDisappeared"]
+    judge:
+      - q: "Does the answer say the current screen must be reported, because campaign visibility and eligibility depend on the reported screen?"
+        want: "yes"
+  source: "ios/direct.md › Steps › 9. Report the current screen and Known Issues"
+
+- id: ios-direct-no-gamification-at-all
+  profile: ios/direct
+  category: known-issue
+  question: >-
+    Nothing from gamification shows anywhere in the app. Our init passes
+    gamificationWriteKey but gamificationRegion and gamificationBaseURL are both left empty. Is that
+    the reason?
+  expect:
+    contains: ["gamificationRegion", "gamificationBaseURL"]
+    judge:
+      - q: "Does the answer say the write key is mandatory and at least one of region or base URL is required, otherwise gamification stays disabled?"
+        want: "yes"
+  source: "ios/direct.md › Modules › Gamification and Known Issues"
+
+- id: ios-direct-push-never-arrives
+  profile: ios/direct
+  category: known-issue
+  question: >-
+    Users sign in fine and the SDK works, but a push campaign never arrives on the iPhone. Where do we start?
+  expect:
+    contains: ["APNs", "FCM Project ID"]
+    judge:
+      - q: "Does the answer mention that the app's Firebase project (GoogleService-Info.plist) must be the one registered at Capillary?"
+        want: "yes"
+      - q: "Does the answer mention uploading the APNs key to Firebase, or the push gateway not being set up yet, as possible causes?"
+        want: "yes"
+      - q: "Does the answer suggest sending a test message from the Firebase console to the same token to tell app/Firebase problems from Capillary-side ones?"
+        want: "yes"
+  source: "ios/direct.md › Known Issues and _shared/push.md › Test the push flow end to end"
+
+- id: ios-direct-client-credentials-failed
+  profile: ios/direct
+  category: known-issue
+  question: >-
+    On the first launch our debug build logs: HYDRA CAPILLARY SDK: Client Credentials Generation Failed
+    {"error":"source not found","status":400}. The release build works. What does it mean?
+  expect:
+    contains: ["Bundle Name"]
+    judge:
+      - q: "Does the answer say to compare the registered Bundle Name (and Account Id) at Capillary with the bundle ID of the build being run?"
+        want: "yes"
+      - q: "Does the answer say a build variant with a different bundle ID counts as a different app to Capillary and must be registered?"
+        want: "yes"
+  source: "ios/direct.md › Known Issues; _shared/troubleshooting.md › 2. The SDK can't start or authenticate"
+
+- id: ios-direct-events-before-sign-in
+  profile: ios/direct
+  category: edge-case
+  question: >-
+    We call hydra.reportBehavioralEvent(name: "viewed_offer", ...) from the splash screen, before the user
+    logs in, and nothing shows up in Capillary. Also, how should the call be shaped?
+  expect:
+    contains: ["reportBehavioralEvent", "reportUserSignIn"]
+    judge:
+      - q: "Does the answer say events only count after a sign-in or sign-up has been reported (and are invalid after a sign-out)?"
+        want: "yes"
+      - q: "Does the answer mention the behavioural event must also exist/be configured in Capillary (data model / organisation settings)?"
+        want: "yes"
+  source: "ios/direct.md › Steps › 8 and Known Issues; _shared/overview.md"
+
+- id: ios-direct-loyalty-view-empty
+  profile: ios/direct
+  category: edge-case
+  question: >-
+    Our Loyalty View shows up with the right size but is completely blank. We call setCapToken in
+    viewDidLoad of the screen after creating the view. What's the problem?
+  expect:
+    contains: ["setCapToken"]
+    judge:
+      - q: "Does the answer say the token must be set before the Loyalty View mounts, and that without a valid token the view renders empty?"
+        want: "yes"
+      - q: "Does the answer state how to obtain the Capillary B2B short-lived token as a documented fact?"
+        want: "no"
+  source: "ios/direct.md › Steps › 11 and Known Issues; _shared/prerequisites.md › Loyalty View"
+
+- id: ios-direct-inbox-init-order
+  profile: ios/direct
+  category: edge-case
+  question: >-
+    In didFinishLaunching we set up InboxCore first, and we see "Error: Cannot initialize Inbox without
+    HydraCore config." printed. What is the right order and what do the Inbox types need?
+  expect:
+    contains: ["InboxCoreConfiguration", "InboxUICore"]
+    judge:
+      - q: "Does the answer say Inbox (InboxCore / InboxUICore) must be initialised after HydraCore and NotificationCore?"
+        want: "yes"
+      - q: "Does the answer say the inbox configuration takes the shared HydraConfiguration (hydraConfig)?"
+        want: "yes"
+  source: "ios/direct.md › Modules › Inbox"
+
+- id: ios-direct-loyalty-embedid-label
+  profile: ios/direct
+  category: edge-case
+  question: >-
+    I wrote `hydra.gamificationLoyaltyView(loyaltyId: loyaltyId) { height in ... }` and it doesn't compile.
+    What is the correct call? Could you also show how the Banner view is created?
+  expect:
+    contains: ["gamificationLoyaltyView", "embedId", "gamificationBannerView"]
+    judge:
+      - q: "Does the answer use embedId: (not loyaltyId:) as the argument label for the Loyalty View?"
+        want: "yes"
+      - q: "Does the answer mention a height callback that updates the container's height?"
+        want: "yes"
+  source: "ios/direct.md › Modules › Gamification (Loyalty View, Banner View)"
+
+- id: ios-direct-identity-flow
+  profile: ios/direct
+  category: identity
+  question: >-
+    Walk me through reporting login, registration, a later profile change (with push and email opt-in)
+    and logout for a user in our app. What do I pass as the customer id?
+  expect:
+    contains: ["reportUserSignIn", "reportUserProfileUpdate", "reportUserSignOut"]
+    judge:
+      - q: "Does the answer say customerId must match the Account Linking Identifier configured in Capillary CRM?"
+        want: "yes"
+      - q: "Does the answer use HydraSubscription (channel, priority, type) for the opt-in subscriptions in the profile update?"
+        want: "yes"
+  source: "ios/direct.md › Steps › 5, 6, 7; _shared/prerequisites.md › Account Linking Identifier"
+
+- id: ios-direct-apns-key
+  profile: ios/direct
+  category: push
+  question: >-
+    How do I create the Apple push key and what do I do with it? Is there anything I must keep safe?
+  expect:
+    contains: ["Key ID", "Cloud Messaging"]
+    judge:
+      - q: "Does the answer say the key file can be downloaded only once, so it should be backed up and not renamed?"
+        want: "yes"
+      - q: "Does the answer say the key is uploaded in the Firebase console (project settings, Cloud Messaging, iOS app configuration)?"
+        want: "yes"
+      - q: "Does the answer mention adding GoogleService-Info.plist to the app target?"
+        want: "yes"
+  source: "ios/direct.md › Modules › Push › 1. Apple and Firebase console setup"
+
+- id: ios-direct-gen-params
+  profile: ios/direct
+  category: init
+  question: >-
+    Besides `with:`, what other parameters does Hydra.generate take, and what do geo data and screen size
+    look like? We are an iPhone/iPad app on SwiftUI, so where do we call it?
+  expect:
+    contains: ["geoData", "deviceScreenInfo", "supportsPushNotifications"]
+    judge:
+      - q: "Does the answer say that for SwiftUI the same HydraConfiguration / Hydra.generate code is used, e.g. called once from the App struct's init()?"
+        want: "yes"
+  source: "ios/direct.md › Steps › 3. Initialise the SDK"
+
+- id: ios-direct-inbox-show-and-badge
+  profile: ios/direct
+  category: inbox
+  question: >-
+    How do we open the pre-built Notification Center from a tab and show an unread count badge that
+    refreshes when new messages arrive? We want to cap stored messages too.
+  expect:
+    contains: ["showNotificationCenter", "getUnreadNotificationCount", "refreshNotificationList"]
+    judge:
+      - q: "Does the answer mention conforming to HydraInboxUIProtocol and setting the delegate with setHydraInboxUIDelegate(delegate:)?"
+        want: "yes"
+      - q: "Does the answer mention maximumNotificationCount with a default of 250?"
+        want: "yes"
+  source: "ios/direct.md › Modules › Inbox"
+
+- id: ios-direct-inbox-custom-ui
+  profile: ios/direct
+  category: inbox
+  question: >-
+    We want our own inbox screen without the pre-built UI. Which calls do we use to list, open, mark as
+    read, delete and delete everything?
+  expect:
+    contains: ["getNotifications", "handleNotification", "handleDeleteAllNotifications"]
+    judge:
+      - q: "Does the answer mention using HydraInboxCore only (not HydraInboxUI) and the read/delete actions with handleNotification?"
+        want: "yes"
+  source: "ios/direct.md › Modules › Inbox (Custom inbox UI)"
+
+- id: ios-direct-verification-signals
+  profile: ios/direct
+  category: verification
+  question: >-
+    How can we confirm that SDK init, push token registration and the Inbox setup actually worked? Are
+    there official success log lines?
+  expect:
+    contains: ["FCM_Token is", "Error Initializing Hydra Inbox Core/UI"]
+    judge:
+      - q: "Does the answer say that no SDK success log lines or dashboard checks are documented?"
+        want: "yes"
+  source: "ios/direct.md › Verification"
+
+- id: ios-direct-gap-pat-scopes
+  profile: ios/direct
+  category: gap
+  question: >-
+    We're generating a classic GitHub Personal Access Token for the Hydra iOS repo. Which scopes do we
+    tick?
+  expect:
+    contains: ["Personal Access Token"]
+    judge:
+      - q: "Does the answer state a specific list of PAT scopes (for example repo or read:packages) as fact for the iOS SDK?"
+        want: "no"
+      - q: "Does the answer say the required scopes aren't documented or suggest asking Capillary?"
+        want: "yes"
+  source: "ios/direct.md › Prerequisites (Gap)"
+
+- id: ios-direct-gap-log-level-call
+  profile: ios/direct
+  category: gap
+  question: >-
+    The docs show Logger.updateLogLevel(level: .critical). I want console logs at debug and remote logs
+    at warning. Which exact lines do I write?
+  expect:
+    contains: ["updateConsoleLogLevel", "updateRemoteLogLevel"]
+    judge:
+      - q: "Does the answer treat .critical as a valid, documented log level?"
+        want: "no"
+      - q: "Does the answer say the docs' example doesn't match the method names / the exact call isn't settled, or suggest asking Capillary?"
+        want: "yes"
+  source: "ios/direct.md › Steps › 10. Set log levels (Gap)"
+
+- id: ios-direct-gap-inapp-init
+  profile: ios/direct
+  category: gap
+  question: >-
+    How do I initialise and show in-app popup messages on iOS, and which callbacks are available?
+  expect:
+    contains: ["HydraInAppMessage"]
+    judge:
+      - q: "Does the answer give a specific initialisation call or callback list for HydraInAppMessage as fact?"
+        want: "no"
+      - q: "Does the answer say iOS in-app setup isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: "ios/direct.md › Modules › In-App (Gap)"
+
+- id: ios-direct-gap-inbox-environment
+  profile: ios/direct
+  category: gap
+  question: >-
+    InboxCore(with:configuredFor:) uses .dev in the sample. What value do I pass for our production build
+    and what other values exist?
+  expect:
+    contains: [".dev"]
+    judge:
+      - q: "Does the answer state a specific production value (such as .prod or .production) for configuredFor as fact?"
+        want: "no"
+      - q: "Does the answer say the other values aren't listed or suggest asking Capillary?"
+        want: "yes"
+  source: "ios/direct.md › Modules › Inbox (Gap)"
+
+- id: ios-direct-gap-remote-log-level-in-generate
+  profile: ios/direct
+  category: gap
+  question: >-
+    Our Integration PDF has Hydra.generate(with: hydraConfig, remoteLogLevel: .debug). Is that parameter
+    real? What are the retry delay numbers in the server config measured in?
+  expect:
+    contains: ["updateRemoteLogLevel"]
+    judge:
+      - q: "Does the answer state the unit of the retry delays (seconds, milliseconds) as fact?"
+        want: "no"
+      - q: "Does the answer say the documented generate signature has no remoteLogLevel parameter and/or that it should be confirmed with Capillary?"
+        want: "yes"
+  source: "ios/direct.md › Steps › 3 (Gaps) and 10"
+
+- id: ios-direct-trap-android-builder
+  profile: ios/direct
+  category: trap
+  question: >-
+    Our Android colleague initialises with HydraConfig.Builder(...) and instanceWithConfig(...) in
+    their Application class. What is the iOS equivalent for the same settings in our app?
+  expect:
+    contains: ["HydraConfiguration", "Hydra.generate", "genericServer"]
+    judge:
+      - q: "Does the answer give HydraConfig.Builder or instanceWithConfig as the solution for the iOS app?"
+        want: "no"
+  source: "ios/direct.md › Steps › 3. Initialise the SDK"
+
+- id: ios-direct-trap-remote-config-keys
+  profile: ios/direct
+  category: trap
+  question: >-
+    Which Firebase Remote Config key names do we publish for the Account Id, Base URL and SSL key so
+    the iOS SDK picks them up?
+  expect:
+    contains: ["HydraConfiguration"]
+    judge:
+      - q: "Does the answer give hydra_account_id, hydra_base_url or hydra_ssl_public_key as keys to set up for this app?"
+        want: "no"
+      - q: "Does the answer say that in this mode the values are passed directly in code into HydraConfiguration rather than read from Remote Config?"
+        want: "yes"
+  source: "ios/direct.md › Prerequisites and Steps › 3"
+
+- id: ios-direct-trap-pass-fcm-token
+  profile: ios/direct
+  category: trap
+  question: >-
+    In our React Native app we call passFCMToken whenever Firebase refreshes the token. On the native
+    iOS app pushes stop after the token rotates. What do we call and where? And how do we record the
+    user's promotional and transactional push opt-in?
+  expect:
+    contains: ["update(interfaceID", "didReceiveRegistrationToken", "setPromotionalPushOpted"]
+    judge:
+      - q: "Does the answer give passFCMToken as the solution for the native iOS app?"
+        want: "no"
+      - q: "Does the answer say to call hydra.update(interfaceID:) from the MessagingDelegate method when the FCM token changes?"
+        want: "yes"
+  source: "ios/direct.md › Steps › 4, Modules › Push › 4 and Known Issues"
+
+- id: ios-direct-trap-android-no-push-in-direct
+  profile: ios/direct
+  category: trap
+  question: >-
+    The Android guide for non-Firebase mode says push isn't available at all. We're on iOS without Remote
+    Config: can we still do push, and what do we enable in Xcode?
+  expect:
+    contains: ["Firebase Cloud Messaging", "Remote notifications", "App Groups"]
+    judge:
+      - q: "Does the answer say push is still possible on iOS in this mode, delivered through FCM/APNs, with the Firebase SDK and GoogleService-Info.plist added to the app?"
+        want: "yes"
+      - q: "Does the answer say push is unavailable for this iOS setup?"
+        want: "no"
+  source: "ios/direct.md › intro and Modules › Push › 2; _shared/overview.md"
+
+- id: ios-direct-prereq-ssl-expiry
+  profile: ios/direct
+  category: prerequisites
+  question: >-
+    Our iOS app has worked for months and now every call fails with a certificate pinning error. Nothing
+    changed in our code. Why, and since we pass the key in code, what could we have done better?
+  expect:
+    contains: ["Certificate pinning failure", "9 months"]
+    judge:
+      - q: "Does the answer say the SSL public key expires about every 9 months and that Capillary provides the new key?"
+        want: "yes"
+      - q: "Does the answer advise not hardcoding the key (keeping it in remote configuration) so it can be replaced without a store release?"
+        want: "yes"
+  source: "_shared/prerequisites.md › SSL public key: it expires; _shared/troubleshooting.md › 2"
+
+- id: ios-direct-prereq-skipped-401
+  profile: ios/direct
+  category: troubleshooting
+  question: >-
+    Capillary's campaign report shows our iOS users as skipped with reason HTTP 401. What does it mean
+    and what do we need to send them?
+  expect:
+    contains: ["HTTP 401", "service-account"]
+    judge:
+      - q: "Does the answer say the Firebase credentials Capillary holds for the project have expired?"
+        want: "yes"
+      - q: "Does the answer say to share the renewed credential only via the secure channel Capillary names (not in chat, email or git)?"
+        want: "yes"
+  source: "_shared/push.md › Why Capillary skipped a message"

@@ -2,7 +2,7 @@
 
 The LLM never decides what a client needs; it presents this checklist and records progress on it
 (app/tools/prereqs.py). The checklist is rebuilt whenever the profile changes, keeping the status
-of items that still apply (PLAN.md §4 ②).
+of items that still apply (PLAN.md §4 ③ and §6.1; to be rendered into the guide).
 """
 
 import re
@@ -25,12 +25,15 @@ FORMATS = {
     # iOS: reverse-DNS of letters, digits, hyphens and dots.
     "ios_bundle_id": re.compile(r"[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+"),
     # 32 bytes as colon-separated hex pairs, as printed by the signing report.
-    "sha256_fingerprint": re.compile(r"[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){31}"),
+    # The signing report prints colon-separated pairs; Capillary stores "SHA256 - <64 hex>". Accept both.
+    "sha256_fingerprint": re.compile(
+        r"(?:SHA-?256\s*[-:]?\s*)?(?:[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){31}|[0-9A-Fa-f]{64})", re.IGNORECASE
+    ),
 }
 FORMAT_HINTS = {
     "android_application_id": "a package name such as com.example.app",
     "ios_bundle_id": "a bundle ID such as com.example.app",
-    "sha256_fingerprint": "32 colon-separated hex pairs, e.g. AB:CD:…, from the signing report",
+    "sha256_fingerprint": "a SHA256 fingerprint from the signing report: 32 colon-separated hex pairs (AB:CD:…) or 64 hex characters",
 }
 
 Format = Literal["android_application_id", "ios_bundle_id", "sha256_fingerprint"]

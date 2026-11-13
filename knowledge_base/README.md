@@ -1,6 +1,6 @@
 # Knowledge base
 
-The source of truth the agent reads. Every file here is written for **one platform and one config
+The source of truth for the Integration Kit: the guide generator (`app/kb/guide.py`) copies the files that match a client's profile into the guide the client gives their own AI assistant. Every file here is written for **one platform and one config
 mode**, so information from different platforms never mixes (see `../PLAN.md` §2.1 and §5).
 
 | Path | What it is |
@@ -12,7 +12,7 @@ mode**, so information from different platforms never mixes (see `../PLAN.md` §
 | `<platform>/direct.md` | The platform when the app doesn't use Firebase |
 | `issues/*.md` | Learned issues, one per file, SME-approved |
 | `_template/platform.md` | The required structure for every platform file |
-| `source/` | Original vendor documents, kept as provenance (not read by the agent) |
+| `source/` | Original vendor documents, kept as provenance (not included in the kit) |
 | `inbox/` | Drop new documents here, then run `kb propose` (Week 5) |
 | `CHANGELOG.md` | Every knowledge change, including corrections to the source docs |
 

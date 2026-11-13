@@ -1,4 +1,4 @@
-import type { Escalation, Profile, SessionState } from "./types";
+import type { DocGap, Escalation, IssueDraft, IssueEdit, Profile, SessionState } from "./types";
 
 const BASE = "/api";
 const JSON_TYPE = "application/json";
@@ -72,6 +72,37 @@ export const api = {
       method: "POST",
       headers: { "content-type": JSON_TYPE },
       body: JSON.stringify({ answer }),
+    }).then((r) => json<{ ok: boolean }>(r)),
+
+  /** Drafts the agent wrote from fixes clients confirmed, waiting for review. */
+  listIssueDrafts: () => fetch(`${BASE}/admin/issue-drafts`).then((r) => json<IssueDraft[]>(r)),
+
+  /** Publish a draft (with the reviewer's edits). A draft that fails the gate throws with the reasons. */
+  approveIssueDraft: async (id: string, edits: IssueEdit) => {
+    const response = await fetch(`${BASE}/admin/issue-drafts/${encodeURIComponent(id)}/approve`, {
+      method: "POST",
+      headers: { "content-type": JSON_TYPE },
+      body: JSON.stringify(edits),
+    });
+    if (response.status === 422) {
+      const { detail } = (await response.json()) as { detail: string[] | string };
+      throw new ApiError(Array.isArray(detail) ? detail.join(" ") : detail, 422);
+    }
+    return json<{ file: string }>(response);
+  },
+
+  rejectIssueDraft: (id: string) =>
+    fetch(`${BASE}/admin/issue-drafts/${encodeURIComponent(id)}/reject`, { method: "POST" }).then((r) =>
+      json<{ ok: boolean }>(r),
+    ),
+
+  listDocGaps: () => fetch(`${BASE}/admin/doc-gaps`).then((r) => json<DocGap[]>(r)),
+
+  handleDocGaps: (ids: string[]) =>
+    fetch(`${BASE}/admin/doc-gaps/handle`, {
+      method: "POST",
+      headers: { "content-type": JSON_TYPE },
+      body: JSON.stringify({ ids }),
     }).then((r) => json<{ ok: boolean }>(r)),
 
   /** Same-origin URL of the session's downloadable Markdown guide (served as an attachment). */

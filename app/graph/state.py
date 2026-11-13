@@ -78,4 +78,5 @@ class OnboardingState(MessagesState):
     current_step: int
     verified: bool  # the client confirmed every verification check
     open_issue: dict | None  # {"problem", "attempts", "tried"} while troubleshooting
-    resolved_issues: list[dict]  # kept for the learning loop (week 5)
+    resolved_issues: list[dict]  # fixes the client confirmed; become issue drafts for review
+    doc_gaps: list[dict]  # questions the knowledge couldn't answer; reported to the admin

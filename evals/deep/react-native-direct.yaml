@@ -1,0 +1,512 @@
+# Deep eval set: react-native / direct (settings passed in code, no Remote Config).
+# Format and checks: see evals/golden.yaml. Every `contains` string is verified against the kit by
+# `uv run python -m evals.audit_kb`.
+
+- id: rn-direct-package-migration-ios-pat
+  profile: react-native/direct
+  category: gap
+  question: >-
+    We're picking up an older React Native app. Its .npmrc still has an @capillary scope pointing at
+    npm.pkg.github.com with a token, and android/app/build.gradle applies a hydra_github_setup.gradle
+    file. What do we change to install the SDK properly now? And does the iOS side still need a GitHub
+    username and Personal Access Token for pod install?
+  expect:
+    contains: ["@capillarytech/react-native-hydra-lib", "hydra_github_setup.gradle"]
+    judge:
+      - q: "Does the answer recommend installing `@capillary/react-native-hydra-lib` from GitHub Packages (npm.pkg.github.com)?"
+        want: "no"
+      - q: "Does the answer say it is not stated or confirmed whether iOS still needs GitHub credentials, or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: react-native/direct.md › Steps › 1 and 2
+
+- id: rn-direct-podfile-hydrapods-path
+  profile: react-native/direct
+  category: setup
+  question: >-
+    pod install blows up because it can't resolve scripts/HydraPods.rb. Our Podfile starts with
+    require Pod::Executable.execute_command('node', ['-p', 'require.resolve("@capillary/react-native-hydra-lib/scripts/HydraPods.rb", {paths: [process.argv[1]]})', __dir__]).strip
+    What is the right path, and what else has to be added to the Podfile for the main app target?
+  expect:
+    contains: ["@capillarytech/react-native-hydra-lib/scripts/HydraPods.rb", "hydra_pods"]
+    judge:
+      - q: "Does the answer recommend the path `@capillary/react-native-hydra-lib/scripts/HydraPods.rb` (without the `tech`)?"
+        want: "no"
+      - q: "Does the answer place `hydra_pods` in the main app target just below `config = use_native_modules!`?"
+        want: "yes"
+  source: react-native/direct.md › Steps › 4
+
+- id: rn-direct-no-push-config
+  profile: react-native/direct
+  category: setup
+  question: >-
+    Our product owner says no push notifications in the first release, so no Firebase project at all. We
+    do want gamification. What do we put in capillary/hydra-config.json, which setup pieces can we skip,
+    and is there anything we still must do on Android after the SDK is up?
+  expect:
+    contains: ["enable_push_notification", "passFCMToken"]
+    judge:
+      - q: "Does the answer say to skip google-services.json and GoogleService-Info.plist (no Firebase registration needed)?"
+        want: "yes"
+      - q: "Does the answer say to pass a dummy token with HydraPushNotification.passFCMToken on Android for gamification to work?"
+        want: "yes"
+  source: react-native/direct.md › Modules › Push › Without Firebase (no push)
+
+- id: rn-direct-ios-init-duplicate
+  profile: react-native/direct
+  category: init
+  question: >-
+    Our AI coding assistant ran the Hydra setup on the iOS side twice and AppDelegate.swift now seems to
+    have two Hydra init blocks, one of which calls HydraNativeInitializer.sharedInstance().initApplication(...).
+    We pass the account values straight from code. What should the AppDelegate end up with, and how do we
+    avoid duplicates next time?
+  expect:
+    contains: ["Hydra.sharedInstance().initialize", "HydraNativeRemoteConfig"]
+    judge:
+      - q: "Does the answer recommend HydraNativeInitializer.sharedInstance().initApplication as the initialiser to keep?"
+        want: "no"
+      - q: "Does the answer say to check whether the Hydra lines are already present before editing AppDelegate (and similar files)?"
+        want: "yes"
+      - q: "Does the answer say the Hydra call goes after super.application(...) / the result of the super call?"
+        want: "yes"
+  source: react-native/direct.md › Steps › 8; Known Issues (Duplicate code)
+
+- id: rn-direct-android-init-java
+  profile: react-native/direct
+  category: correction
+  question: >-
+    The old runbook we have says to call HydraInitializer.initialize(this, remoteConfig) in
+    MainApplication. Our MainApplication is still a Java file, and we pass the account values in code.
+    What exactly do we write?
+  expect:
+    contains: ["Hydra.initialize(this, remoteConfig = remoteConfig)", "HydraRemoteConfig.Builder"]
+    judge:
+      - q: "Does the answer recommend `HydraInitializer.initialize(this, remoteConfig)`?"
+        want: "no"
+      - q: "Does the answer say that no Java MainApplication code is documented for Hydra.initialize, or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: react-native/direct.md › Steps › 10
+
+- id: rn-direct-identify-signin-crm
+  profile: react-native/direct
+  category: identity
+  question: >-
+    On login we call HydraCore.signIn(userDetails, attrs) with the user's email as customerId, and on
+    logout HydraCore.signOut(id). In Capillary the customer never gets linked to our CRM profile and our
+    custom event Hydra.track('wishlist_added') doesn't show against anyone. What should we be calling, and
+    what must customerId be?
+  expect:
+    contains: ["Hydra.identify", "Hydra.reset", "Account Linking Identifier"]
+    judge:
+      - q: "Does the answer recommend using the deprecated HydraCore.signIn or HydraCore.signOut?"
+        want: "no"
+      - q: "Does the answer say customerId must match the identifier type configured as the Account Linking Identifier in Capillary CRM?"
+        want: "yes"
+  source: react-native/direct.md › Steps › 12; Known Issues (User not matched)
+
+- id: rn-direct-android-push-gradle-container
+  profile: react-native/direct
+  category: push
+  question: >-
+    Walk me through push on the Android side of our RN app: the Gradle changes, where google-services.json
+    goes, where HydraContainer is mounted, and how we ask the user for notification permission.
+  expect:
+    contains: ["google-services.json", "4.4.2", "requestPermission"]
+    judge:
+      - q: "Does the answer say google-services.json goes in android/app/ and that the plugin is applied in android/app/build.gradle?"
+        want: "yes"
+      - q: "Does the answer say to mount HydraContainer near the app root (e.g. in App.tsx), above the screens?"
+        want: "yes"
+      - q: "Does the answer tell them to add hydra_github_setup.gradle?"
+        want: "no"
+  source: react-native/direct.md › Steps › 9, 11, 13
+
+- id: rn-direct-calls-before-init
+  profile: react-native/direct
+  category: init
+  question: >-
+    From our splash screen we call HydraPushNotification.passFCMToken('x') and HydraCore.setHydraAccountConfig(cfg)
+    right after launch and both promises reject. Hydra.identify never logs success either. How do we
+    wait properly, and how do we confirm at runtime that the SDK is up?
+  expect:
+    contains: ["isSdkInitialized", "addHydraSdkInitializationResultListener"]
+    judge:
+      - q: "Does the answer explain that these APIs reject (or do nothing) when called before the SDK has finished initialising?"
+        want: "yes"
+  source: react-native/direct.md › Steps › 14; Known Issues (APIs reject right after launch); Verification
+
+- id: rn-direct-rn077-template-inbox-crash
+  profile: react-native/direct
+  category: edge-case
+  question: >-
+    We're on React Native 0.77 with the newer AppDelegate template (RCTReactNativeFactory, there is no
+    super.application call in didFinishLaunching). We turned on enable_inbox_ui and now the app crashes at
+    launch. Where exactly do we put Hydra.sharedInstance().initialize in this template, and will the
+    Inbox UI work there?
+  expect:
+    contains: ["enable_inbox_ui", "super.application"]
+    judge:
+      - q: "Does the answer say that where the init goes in the 0.76+ (RCTReactNativeFactory) template, and whether the Inbox UI works there, is not documented or should be confirmed with Capillary?"
+        want: "yes"
+      - q: "Does the answer say the Inbox UI wraps the root view controller so the window must already exist, so Hydra must be called after super (and not with a scene-based lifecycle), otherwise leave enable_inbox_ui off?"
+        want: "yes"
+  source: react-native/direct.md › Steps › 8 (Order matters; Gap); Known Issues
+
+- id: rn-direct-xcode-versions
+  profile: react-native/direct
+  category: edge-case
+  question: >-
+    Which Xcode version do we need for this SDK? On Xcode 15 we got Objective-C import errors for the
+    package, and after upgrading to Xcode 26 and adding the Notification Service Extension target,
+    pod install fails when reading the project. What do we do?
+  expect:
+    contains: ["Convert to Group", "xcodeproj"]
+    judge:
+      - q: "Does the answer say that Xcode earlier than 16 can break the Objective-C imports and suggest upgrading Xcode (e.g. 16.2)?"
+        want: "yes"
+      - q: "Does the answer say to right-click the extension's folder in the Project Navigator and convert it to a Group (or classic reference) before pod install?"
+        want: "yes"
+  source: react-native/direct.md › Known Issues (Objective-C import errors; pod install fails Xcode 26); Steps › 5
+
+- id: rn-direct-ios-push-xcode-setup
+  profile: react-native/direct
+  category: push
+  question: >-
+    What do we need to set up in Xcode for push in our RN iOS app, and what goes into the Notification
+    Service Extension's NotificationService.swift?
+  expect:
+    contains: ["App Groups", "HydraRemoteNotificationService", "HydraPushNotificationServiceExtension"]
+    judge:
+      - q: "Does the answer mention enabling Background Modes with Background fetch and Remote notifications?"
+        want: "yes"
+      - q: "Does the answer mention an App Group shared by the main app and the extension?"
+        want: "yes"
+  source: react-native/direct.md › Steps › 5, 7
+
+- id: rn-direct-spm-extension-no-sdk
+  profile: react-native/direct
+  category: known-issue
+  question: >-
+    We enabled Swift Package Manager ($RNHydraUseSPM = true in the Podfile). The app target builds but the
+    Notification Service Extension can't find the Hydra framework, and the extension_pods call in our
+    Podfile seems to do nothing. What now?
+  expect:
+    contains: ["hydra-ios-sdk-spm", "HydraPushNotificationServiceExtension"]
+    judge:
+      - q: "Does the answer say extension_pods does nothing when SPM is on, so the package product must be added to the extension target in Xcode?"
+        want: "yes"
+  source: react-native/direct.md › Known Issues (Extension has no Hydra SDK with SPM); Steps › 4d, 5
+
+- id: rn-direct-notification-icon-block
+  profile: react-native/direct
+  category: known-issue
+  question: >-
+    Our Android push shows a solid white square in the status bar instead of our logo. The file is a
+    512x512 full-colour PNG named hydra_notification_small_icon in capillary/icons. What's wrong?
+  expect:
+    contains: ["alpha", "hydra_notification_color"]
+    judge:
+      - q: "Does the answer say Android uses only the alpha channel of the icon, so it should be redrawn with transparency?"
+        want: "yes"
+  source: react-native/direct.md › Known Issues (Notification icon); Steps › 3
+
+- id: rn-direct-push-listeners-preferences
+  profile: react-native/direct
+  category: push
+  question: >-
+    In HydraContainer we want to handle a tapped Hydra push: deep links should navigate inside our app, web
+    links should open the browser. Separately, a signed-in user wants promotional pushes off but
+    transactional pushes still on. Which listener and call do we use?
+  expect:
+    contains: ["addHydraNotificationClickedListener", "HydraNotificationCtaType.deepLink", "updatePushPreferences"]
+    judge:
+      - q: "Does the answer use HydraPushPreferences with the promotional flag false and the transactional flag true (promPushOpted, transPushOpted)?"
+        want: "yes"
+  source: react-native/direct.md › Steps › 11; Modules › Push
+
+- id: rn-direct-credentials-failed-dev-variant
+  profile: react-native/direct
+  category: troubleshooting
+  question: >-
+    On a new Android build variant (applicationId with a .dev suffix, signed with a debug keystore) the log
+    shows HYDRA CAPILLARY SDK: Client Credentials Generation Failed {"error":"source not found","status":400}.
+    Release builds are fine. What's going on?
+  expect:
+    contains: ["App Signature", "SHA256"]
+    judge:
+      - q: "Does the answer say a build variant with a different application ID or signing key is treated as a different app and must be registered / compared against what Capillary has registered?"
+        want: "yes"
+  source: react-native/direct.md › Known Issues; _shared/push.md › What must match; _shared/troubleshooting.md › 2
+
+- id: rn-direct-push-not-arriving-skipped
+  profile: react-native/direct
+  category: push
+  question: >-
+    We signed in a test user for the first time a few minutes ago and addTokenAvailableListener printed the
+    FCM token, but the push campaign we sent never arrives. Capillary's campaign report says the skipped
+    reason is "Profile Not Found". What should we check?
+  expect:
+    contains: ["FCM Project ID", "1 day"]
+    judge:
+      - q: "Does the answer tell the client to check that the app's Firebase project is the one registered at Capillary (the FCM Project ID)?"
+        want: "yes"
+      - q: "Does the answer mention that a user only becomes reachable for push roughly a day after first sign-in?"
+        want: "yes"
+  source: _shared/push.md › How a push reaches a device; Why Capillary skipped a message
+
+- id: rn-direct-trap-own-fcm-native-api
+  profile: react-native/direct
+  category: trap
+  question: >-
+    Our Android app already has its own FirebaseMessagingService (via @react-native-firebase/messaging).
+    The native Android guide mentions FcmConfig(false) with passPushToken and passPushPayload. Is that what
+    we use in this React Native app? Gamification also behaves oddly since we did that.
+  expect:
+    contains: ["passFCMToken", "enable_hydra_sdk_firebase_registration"]
+    judge:
+      - q: "Does the answer give FcmConfig(false) with passPushToken / passPushPayload as the solution for this React Native app?"
+        want: "no"
+      - q: "Does the answer say to set enable_hydra_sdk_firebase_registration to false and pass tokens with HydraPushNotification.passFCMToken after init?"
+        want: "yes"
+  source: react-native/direct.md › Modules › Push; Known Issues (Gamification on Android); _shared/push.md
+
+- id: rn-direct-screen-reporting-floating-button
+  profile: react-native/direct
+  category: gamification
+  question: >-
+    Floating button campaigns never show. On our Home screen we do
+    useEffect(() => { Hydra.gamificationScreenAppeared('home'); return () => Hydra.gamificationScreenDisappeared(); }, [])
+    and Home is mounted before the user has finished logging in. What's wrong?
+  expect:
+    contains: ["gamificationScreenDisappeared", "500"]
+    judge:
+      - q: "Does the answer recommend calling Hydra.gamificationScreenDisappeared() with no argument?"
+        want: "no"
+      - q: "Does the answer say to pass the same screen name to gamificationScreenDisappeared as to gamificationScreenAppeared?"
+        want: "yes"
+      - q: "Does the answer say to report the screen after sign-in (identify), with a delay of about 500 ms after focus?"
+        want: "yes"
+  source: react-native/direct.md › Steps › 15; Known Issues (Floating Button campaigns)
+
+- id: rn-direct-banner-view-collapsed
+  profile: react-native/direct
+  category: gamification
+  question: >-
+    Our GamificationBannerView leaves an empty gap on the Home screen for brand-new users, and only later
+    shows content after login. We hardcoded the style height to 300. Is that a bug, and how should we size it?
+  expect:
+    contains: ["addGamificationViewHeightChangedListener", "identify"]
+    judge:
+      - q: "Does the answer say a reported height of 0 means there is nothing to show yet and the container should be collapsed?"
+        want: "yes"
+      - q: "Does the answer say a new non-zero height is emitted later when the entry point appears (for example after identify)?"
+        want: "yes"
+  source: react-native/direct.md › Modules › Gamification; Known Issues (Banner / embed view collapsed)
+
+- id: rn-direct-loyalty-view-empty-token
+  profile: react-native/direct
+  category: known-issue
+  question: >-
+    GamificationLoyaltyView renders empty although loyaltyId is set. Also, where do we get the B2B
+    short-lived token that people keep mentioning, and how do we hand it to the SDK?
+  expect:
+    contains: ["setCapToken"]
+    judge:
+      - q: "Does the answer say to call Hydra.setCapToken(token) before showing the Loyalty View?"
+        want: "yes"
+      - q: "Does the answer state how to obtain the Capillary B2B short-lived token as a documented fact?"
+        want: "no"
+      - q: "Does the answer say that how to obtain the token isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: react-native/direct.md › Steps › 16; _shared/prerequisites.md › Loyalty View (Gap)
+
+- id: rn-direct-gamification-callbacks-names
+  profile: react-native/direct
+  category: gap
+  question: >-
+    Which gamification event listeners does the RN SDK expose (deep links, game events, analytics)? We want
+    to forward the analytics ones to our own tool, so please list the exact event names and payload fields
+    we will receive.
+  expect:
+    contains: ["addGamificationDeeplinkListener", "addGamificationEventTriggerListener", "addGamificationAnalyticsEventListener"]
+    judge:
+      - q: "Does the answer state specific gamification event names or payload field names as documented fact?"
+        want: "no"
+      - q: "Does the answer say the event names and payload contents aren't documented, or suggest asking Capillary?"
+        want: "yes"
+  source: react-native/direct.md › Modules › Gamification (Events; Gap)
+
+- id: rn-direct-log-levels
+  profile: react-native/direct
+  category: verification
+  question: >-
+    Where do we set the log level? An older guide shows a log_levels entry in hydra-config.json / HydraConfig.plist.
+    We want debug output in Xcode/Logcat but nothing sent to Capillary's backend.
+  expect:
+    contains: ["console_log_level", "remoteLogLevel"]
+    judge:
+      - q: "Does the answer recommend a `log_levels` / `LOG_LEVELS` key in hydra-config.json or HydraConfig.plist?"
+        want: "no"
+      - q: "Does the answer say the remote level is passed to the native initialiser (0 = off) rather than set in hydra-config.json?"
+        want: "yes"
+  source: react-native/direct.md › Verification (Log levels, Correction)
+
+- id: rn-direct-emitter-static-calls
+  profile: react-native/direct
+  category: correction
+  question: >-
+    We wrote HydraNativeEventEmitter.addTokenAvailableListener(cb) in a screen and later
+    HydraNativeEventEmitter.removeListener(sub), copying a signature from the API page. TypeScript
+    complains and we seem to leak listeners. What's the correct form and how do we clean up?
+  expect:
+    contains: ["getInstance()", "removeListener"]
+    judge:
+      - q: "Does the answer recommend calling add...Listener or removeListener statically on HydraNativeEventEmitter (without getInstance())?"
+        want: "no"
+      - q: "Does the answer say to keep the returned subscription and pass it to removeListener on unmount?"
+        want: "yes"
+  source: react-native/direct.md › API Reference › HydraNativeEventEmitter (Correction)
+
+- id: rn-direct-inbox-ui-custom-config
+  profile: react-native/direct
+  category: gap
+  question: >-
+    We want a bell icon that opens Hydra's built-in notification center plus an unread badge from the
+    inbox. Which config keys and calls do we need? On iOS we'd also like to supply our own layout through
+    INBOX_UI_CONFIG: what format does that take?
+  expect:
+    contains: ["enable_inbox_ui", "showNotificationCenter", "getUnreadMessagesCount"]
+    judge:
+      - q: "Does the answer say the Inbox API (enable_inbox_api) must also be on for the Inbox UI?"
+        want: "yes"
+      - q: "Does the answer give a specific schema or format for INBOX_UI_CONFIG as documented fact?"
+        want: "no"
+      - q: "Does the answer say the INBOX_UI_CONFIG format isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: react-native/direct.md › Modules › Inbox (Gap); Steps › 3
+
+- id: rn-direct-inapp-react-native-ui
+  profile: react-native/direct
+  category: inapp
+  question: >-
+    We want to render in-app messages with our own React Native modal instead of Hydra's native one. What
+    do we turn on, which listener do we use, and how do we report clicks and dismissals? Is this part of
+    Capillary's public docs?
+  expect:
+    contains: ["enable_in_app_messaging_in_react_native", "addHydraInAppMessageListener", "reportMessageDismissed"]
+    judge:
+      - q: "Does the answer say to return true from the listener if the app handles the message and false to let the SDK show it?"
+        want: "yes"
+      - q: "Does the answer say these pieces come only from the runbook / aren't in the public docs, or suggest confirming with Capillary?"
+        want: "yes"
+  source: react-native/direct.md › Modules › In-App (Gap)
+
+- id: rn-direct-visitor-flow
+  profile: react-native/direct
+  category: visitor
+  question: >-
+    We want anonymous visitors tracked before login. What has to be passed at init, which APIs tell us the
+    current state, and how do we switch the visitor flow on for our account? Also when does a user end up
+    as merged rather than legacyRegistered?
+  expect:
+    contains: ["orgId", "getCurrentUserState", "isVisitorFlowEnabled"]
+    judge:
+      - q: "Does the answer state, as documented fact, how the visitor flow is enabled for an account or the rule deciding merged versus legacyRegistered?"
+        want: "no"
+      - q: "Does the answer say that how the flow is turned on and when a user ends as merged vs legacyRegistered isn't documented, or suggest asking Capillary?"
+        want: "yes"
+  source: react-native/direct.md › Modules › Visitor (Gap)
+
+- id: rn-direct-multi-account-order
+  profile: react-native/direct
+  category: multi-account
+  question: >-
+    Our app serves an India and a USA account. On login we call Hydra.identify(...) first and then
+    HydraCore.setHydraAccountConfig(cfg) with values from our backend, and the user still behaves like the
+    default account. What's the correct order, and what happens to the chosen account after a relaunch?
+  expect:
+    contains: ["setHydraAccountConfig", "HydraAccountConfig"]
+    judge:
+      - q: "Does the answer say to wait for SDK initialisation, then set the account and await it, and only then call Hydra.identify?"
+        want: "yes"
+      - q: "Does the answer say the chosen account persists on the device and is used on later launches instead of what the native initialiser passes?"
+        want: "yes"
+  source: react-native/direct.md › Modules › Multi-account
+
+- id: rn-direct-trap-firebase-keys-account-switch
+  profile: react-native/direct
+  category: trap
+  question: >-
+    We run in direct mode without Firebase. To switch to our India account I wrote
+    HydraCore.setFirebaseRemoteConfigKeys(new HydraFirebaseRemoteConfigKeys('ind_hydra_account_id', ...)).
+    The first launch seems fine but later launches fail to read the account settings. Why?
+  expect:
+    contains: ["setHydraAccountConfig"]
+    judge:
+      - q: "Does the answer recommend using setFirebaseRemoteConfigKeys to switch accounts in this setup?"
+        want: "no"
+      - q: "Does the answer explain that the SDK saved the Remote Config key names and later launches try (and fail) to read them from Firebase Remote Config?"
+        want: "yes"
+  source: react-native/direct.md › Modules › Push › Without Firebase (item 4); Known Issues (Account settings fail on later launches)
+
+- id: rn-direct-trap-flutter-initializer
+  profile: react-native/direct
+  category: trap
+  question: >-
+    Our team has done Flutter before. For this React Native app, can we add capillary_hydra from pub.dev and
+    call HydraInitializer.initialize in our index.js entry point? Where does the SDK init live here?
+  expect:
+    contains: ["Hydra.sharedInstance().initialize", "Hydra.initialize(this, remoteConfig = remoteConfig)"]
+    judge:
+      - q: "Does the answer give a pub.dev package or HydraInitializer.initialize as the solution for this React Native app?"
+        want: "no"
+      - q: "Does the answer say the SDK is initialised natively (AppDelegate on iOS, MainApplication on Android) with the npm package installed?"
+        want: "yes"
+  source: react-native/direct.md › Steps › 2, 8, 10; _shared/prerequisites.md › SDK package access
+
+- id: rn-direct-trap-remote-config-keys
+  profile: react-native/direct
+  category: trap
+  question: >-
+    I'm adding hydra_account_id, hydra_base_url and hydra_ssl_public_key as Firebase Remote Config parameters
+    and calling Hydra.initialize(this) with no arguments in MainApplication so the SDK picks them up. We're
+    in the without-Firebase variant of the guide. Is that right?
+  expect:
+    contains: ["HydraRemoteConfig.Builder"]
+    judge:
+      - q: "Does the answer say the no-argument Hydra.initialize(this) / Remote Config keys approach is the right way for this setup?"
+        want: "no"
+      - q: "Does the answer say to pass the values in code with HydraRemoteConfig.Builder on Android and HydraNativeRemoteConfig on iOS?"
+        want: "yes"
+  source: react-native/direct.md › Steps › 8, 10 (no-arg init reads Remote Config); API Reference › Native
+
+- id: rn-direct-ssl-key-expired
+  profile: react-native/direct
+  category: prerequisites
+  question: >-
+    Our production app worked fine since launch, but about nine months in every call fails with
+    "Certificate pinning failure" for all users. Account Id and Base URL haven't changed. What happened, and
+    how do we avoid needing a new store release next time?
+  expect:
+    contains: ["SSL public key", "9 months", "setHydraAccountConfig"]
+    judge:
+      - q: "Does the answer say the SSL public key expires (about every 9 months) and a new key must be obtained from Capillary?"
+        want: "yes"
+      - q: "Does the answer say hardcoded values need a new release, whereas values fetched from your own backend (or via setHydraAccountConfig) do not?"
+        want: "yes"
+  source: react-native/direct.md › Known Issues (SDK stops connecting); _shared/prerequisites.md › SSL public key
+
+- id: rn-direct-prereq-what-to-send
+  profile: react-native/direct
+  category: prerequisites
+  question: >-
+    Before we start coding: what do we have to send Capillary to register our RN app, what values do they
+    give back, and which of those are only for gamification? We also plan to use push. What Firebase
+    material goes to Capillary, and how do we send it?
+  expect:
+    contains: ["SHA256", "Application ID", "SSL Public Key"]
+    judge:
+      - q: "Does the answer list the Bundle ID (iOS), Application ID (Android) and the Android App Signature SHA256 as what the client sends?"
+        want: "yes"
+      - q: "Does the answer say the Firebase service-account file must not be sent in chat, email or git, only via the secure channel Capillary names?"
+        want: "yes"
+  source: react-native/direct.md › Prerequisites; _shared/prerequisites.md; _shared/push.md › What Capillary sets up

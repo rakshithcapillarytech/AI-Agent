@@ -101,3 +101,81 @@
   margin: 60px auto;
   color: var(--muted);
 }
+
+.tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 760px;
+  margin: 0 auto 16px;
+  border-bottom: 1px solid var(--line, #e3e7e5);
+}
+
+.tab,
+.tabActive {
+  padding: 8px 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.tabActive {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+  font-weight: var(--weight-semibold);
+}
+
+.badge {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: var(--text-2xs);
+  text-align: center;
+}
+
+.refresh {
+  margin-left: auto;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card input,
+.card select {
+  padding: 8px 10px;
+  border: 1px solid var(--line, #d5dbd8);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.card input {
+  width: 100%;
+}
+
+.note {
+  max-width: 760px;
+  margin: 0 auto 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-size: var(--text-xs);
+}

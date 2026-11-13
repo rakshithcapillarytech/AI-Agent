@@ -2,7 +2,7 @@
 
 Keep anything that changes per turn (timestamps, the evolving profile) out of here: the profile
 reaches the model through tool results instead. The second block changes only on phase
-transitions, so a cached prefix survives for most of a session (PLAN.md §6.2).
+transitions, so a cached prefix survives for most of a session (original design, PLAN.md §14).
 - Claude: both blocks get explicit `cache_control` breakpoints.
 - Gemini: caching is implicit (prefix-based), so one plain string with the same ordering.
 """

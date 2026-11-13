@@ -44,7 +44,7 @@ def test_headings_in_code_fences_are_not_sections():
 def test_steps_come_from_the_steps_section_in_order():
     steps = steps_for_files(["_shared/overview.md", "android/direct.md", "ios/missing.md"], KB)
     assert steps[0] == "android/direct.md › 1. Store GitHub credentials locally"
-    assert len(steps) == 9 and all(s.startswith("android/direct.md › ") for s in steps)
+    assert len(steps) == 10 and all(s.startswith("android/direct.md › ") for s in steps)
 
 
 def make_kb(tmp_path: Path, status: str) -> Path:

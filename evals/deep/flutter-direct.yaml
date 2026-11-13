@@ -1,0 +1,511 @@
+# Deep question bank: Flutter, direct mode (values passed in the native initializer).
+# Every `contains` string is verified against the kit (flutter/direct.md + _shared/*.md).
+
+- id: flutter-direct-install-package-source
+  profile: flutter/direct
+  category: correction
+  question: >-
+    We're adding the Hydra SDK to our Flutter app. The only guide our team has is a PDF
+    from 2024 that pins a specific beta build, and someone also found a GitHub repository
+    for the Flutter lib. What do we actually put in the project to install it, and do we
+    need any credentials?
+  expect:
+    contains: ["flutter pub add capillary_hydra capillary_hydra_platform_interface", "pub.dev"]
+    judge:
+      - q: "Does the answer recommend pinning the 2024 guide's beta version (1.1.1-beta.6)?"
+        want: "no"
+      - q: "Does the answer recommend installing from the GitHub repository flutter-hydra-lib?"
+        want: "no"
+      - q: "Does the answer say the two packages should be kept on the same version?"
+        want: "yes"
+  source: flutter/direct.md › Requirements, Steps › 2 (Corrections)
+
+- id: flutter-direct-config-json-pinning-init
+  profile: flutter/direct
+  category: setup
+  question: >-
+    Fresh Flutter project, packages already added. Where do we create the Hydra config
+    JSON, how do we switch off SSL certificate pinning for a debug build, how do we make
+    the icon images under capillary/icons get bundled, and where in Dart do we start the SDK?
+  expect:
+    contains: ["capillary/hydra-config.json", "enable_ssl_pinning", "HydraInitializer.initialize"]
+    judge:
+      - q: "Does the answer say to call HydraInitializer.initialize() in main() before runApp?"
+        want: "yes"
+      - q: "Does the answer say enable_ssl_pinning set to false turns pinning off (and that it defaults to true)?"
+        want: "yes"
+      - q: "Does the answer say to list capillary/ and capillary/icons/ under flutter assets in pubspec.yaml?"
+        want: "yes"
+  source: flutter/direct.md › Steps › 3, 4, 6
+
+- id: flutter-direct-ios-uiscene-init
+  profile: flutter/direct
+  category: edge-case
+  question: >-
+    Our iOS Flutter app uses the new UIScene lifecycle (FlutterSceneDelegate with
+    FlutterImplicitEngineDelegate) and CocoaPods. We want to pass the account values in
+    code. What goes in the Podfile, and where exactly do we call the Hydra initializer
+    so it doesn't fail to read the config or crash?
+  expect:
+    contains: ["hydra_pods", "didInitializeImplicitFlutterEngine", "HydraNativeAPI.shared.initApplication"]
+    judge:
+      - q: "Does the answer say the initializer must run after GeneratedPluginRegistrant.register(...)?"
+        want: "yes"
+      - q: "Does the answer say to pass UIApplication.shared and nil launch options in the UIScene case?"
+        want: "yes"
+  source: flutter/direct.md › Steps › 7, 10; Known Issues
+
+- id: flutter-direct-android-application-class
+  profile: flutter/direct
+  category: edge-case
+  question: >-
+    On Android we set android:name in the manifest to com.capillary.plugins.hydra.HydraApplication
+    and put our account id and base url in Kotlin, but the log shows the SDK reading
+    Remote Config defaults and ignoring our values. The plugin also complained about our
+    app theme. What's the right Application setup?
+  expect:
+    contains: ["HydraInitializer.initialize", "super.onCreate()", "Theme.AppCompat"]
+    judge:
+      - q: "Does the answer tell the developer to create their own class that extends HydraApplication and register its fully qualified name in android:name?"
+        want: "yes"
+      - q: "Does the answer recommend keeping android:name pointed at HydraApplication itself?"
+        want: "no"
+      - q: "Does the answer build a HydraRemoteConfig with HydraRemoteConfig.Builder and pass it to HydraInitializer.initialize right after super.onCreate()?"
+        want: "yes"
+  source: flutter/direct.md › Steps › 12, 13, 14; Known Issues
+
+- id: flutter-direct-event-handler-extends
+  profile: flutter/direct
+  category: events
+  question: >-
+    We wrote `class MyHandler implements HydraNativeEventHandler` and it compiled, but
+    after bumping capillary_hydra the app stopped compiling. Also, how do we know the SDK
+    is ready before we call identify?
+  expect:
+    contains: ["extends", "HydraNativeEvents.addEventHandler", "onHydraSdkInitializationResult"]
+    judge:
+      - q: "Does the answer recommend extending HydraNativeEventHandler rather than implementing it?"
+        want: "yes"
+  source: flutter/direct.md › Steps › 15; Known Issues
+
+- id: flutter-direct-identify-track-reset
+  profile: flutter/direct
+  category: identity
+  question: >-
+    How do we log a user in, track a custom event and log out in our Flutter app? We
+    call identify with customerId set to the user's email, it returns true, but the user
+    never links to the right customer in Capillary CRM.
+  expect:
+    contains: ["Hydra.identify", "Hydra.reset", "Account Linking Identifier"]
+    judge:
+      - q: "Does the answer say customerId must match the Account Linking Identifier configured in Capillary CRM?"
+        want: "yes"
+      - q: "Does the answer claim that a true result proves Capillary has processed the user?"
+        want: "no"
+  source: flutter/direct.md › Steps › 16; Known Issues (User not linked in CRM)
+
+- id: flutter-direct-push-ios-android
+  profile: flutter/direct
+  category: push
+  question: >-
+    Walk me through the native side of setting up push in our Flutter app: what do we
+    configure for iOS in Xcode and on the Apple developer portal (including the rich
+    notification part), and what do we add for the Android notification icon?
+  expect:
+    contains: ["Background Modes", "HydraRemoteNotificationService", "hydra_notification_small_icon"]
+    judge:
+      - q: "Does the answer say to add the App Groups capability to both the main target and the Notification Service Extension with the same group?"
+        want: "yes"
+      - q: "Does the answer give the App Group name in the form group.<bundle ID>.hydra?"
+        want: "yes"
+      - q: "Does the answer say to enable Remote notifications (and Background fetch) under Background Modes?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Push (items 2, 4, 5)
+
+- id: flutter-direct-push-token
+  profile: flutter/direct
+  category: push
+  question: >-
+    `await HydraPushNotification.getFCMToken()` throws on a fresh install on our test
+    device. Separately, on Android we use firebase_messaging ourselves and Hydra never
+    seems to get a token. What should we do?
+  expect:
+    contains: ["onTokenAvailable", "passFCMToken"]
+    judge:
+      - q: "Does the answer say getFCMToken throws when no FCM token is available yet and suggest catching it or using onTokenAvailable?"
+        want: "yes"
+      - q: "Does the answer say passFCMToken does nothing on iOS so it is safe to call on both platforms?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Push (items 6, 7); Known Issues
+
+- id: flutter-direct-inapp
+  profile: flutter/direct
+  category: inapp
+  question: >-
+    We want in-app messages in our Flutter app. Which config flag and asset are needed,
+    is there anything to add on iOS, and there's also a flag called
+    enable_in_app_messaging_in_flutter in the JSON. Should we turn that on too?
+  expect:
+    contains: ["enable_in_app_messaging", "hydra_in_app_placeholder", "didReceiveRemoteNotification"]
+    judge:
+      - q: "Does the answer recommend enabling enable_in_app_messaging_in_flutter?"
+        want: "no"
+      - q: "Does the answer say enable_in_app_messaging_in_flutter is currently non-functional and should stay false?"
+        want: "yes"
+  source: flutter/direct.md › Modules › In-App; Known Issues
+
+- id: flutter-direct-inbox-api-refresh
+  profile: flutter/direct
+  category: inbox
+  question: >-
+    We built our own notification list on HydraInbox but it doesn't update when a new push
+    arrives. Is there an inbox-updated stream we can listen to? What do we need to enable
+    for the inbox, including on iOS?
+  expect:
+    contains: ["enable_inbox_api", "onHydraNotificationReceived", "getInboxMessages"]
+    judge:
+      - q: "Does the answer state that the SDK offers an inbox-updated event or stream?"
+        want: "no"
+      - q: "Does the answer mention that the iOS Notification Service Extension and App Group must be set up for the Inbox API?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Inbox; Known Issues
+
+- id: flutter-direct-inbox-ui
+  profile: flutter/direct
+  category: inbox
+  question: >-
+    Show the built-in notification center when the user taps a bell icon, and run some
+    code when they close it. What do we enable, add and call?
+  expect:
+    contains: ["showNotificationCenter", "enable_inbox_ui", "onNotificationCenterDismissed"]
+    judge:
+      - q: "Does the answer mention the Inbox API must also be enabled and that a hydra_inbox_ui_placeholder image goes in capillary/icons?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Inbox (Inbox UI)
+
+- id: flutter-direct-visitor
+  profile: flutter/direct
+  category: visitor
+  question: >-
+    We want to track anonymous visitors before login. How is the visitor flow configured
+    in direct mode, and which APIs and callbacks tell us about the visitor's state?
+  expect:
+    contains: ["orgId", "isVisitorFlowEnabled", "onUserStateChanged"]
+    judge:
+      - q: "Does the answer say the Org Id is passed in the native initializer (iOS HydraRemoteConfig orgId / Android Builder .orgId) rather than set in Firebase Remote Config?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Visitor
+
+- id: flutter-direct-multi-account-order
+  profile: flutter/direct
+  category: multi-account
+  question: >-
+    Our app serves India and the USA. On login we call Hydra.identify and then switch the
+    account on the next line without awaiting, and customers land on the wrong account.
+    What's the correct sequence in direct mode, and what do we pass to switch?
+  expect:
+    contains: ["setHydraAccountConfig", "HydraAccountConfig", "onHydraSdkInitializationResult"]
+    judge:
+      - q: "Does the answer say to wait for onHydraSdkInitializationResult, then await setHydraAccountConfig, then call identify?"
+        want: "yes"
+      - q: "Does the answer say it is fine to call identify before the account is set?"
+        want: "no"
+  source: flutter/direct.md › Modules › Multi-account; Known Issues
+
+- id: flutter-direct-multi-account-persistence
+  profile: flutter/direct
+  category: edge-case
+  question: >-
+    We changed the base URL in our native Android Application class and AppDelegate, shipped
+    it, but devices that already had the app still talk to the old account. Why, and how
+    do we fix it?
+  expect:
+    contains: ["setHydraAccountConfig", "fresh install"]
+    judge:
+      - q: "Does the answer explain that a previously set account persists on the device and the native initializer values only apply on a fresh install?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Multi-account (How switching behaves); Known Issues
+
+- id: flutter-direct-gamification-config
+  profile: flutter/direct
+  category: correction
+  question: >-
+    Our Capillary contact gave us a gamification key and region for Flutter, and the older
+    integration PDF says the base URL is optional. Which gamification values do we have to
+    pass in direct mode, and where do they go?
+  expect:
+    contains: ["gamificationBaseUrl", "gamificationKey", "gamificationRegion"]
+    judge:
+      - q: "Does the answer say the Gamification Base URL is optional?"
+        want: "no"
+      - q: "Does the answer say the values are passed in the native initializer (iOS HydraRemoteConfig / Android Builder) and that gamification stays disabled if key or region is missing?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Gamification (1, Correction)
+
+- id: flutter-direct-gamification-screens-routeaware
+  profile: flutter/direct
+  category: correction
+  question: >-
+    Per the integration doc sample we call `Hydra.gamificationScreenDisappeared()` with no
+    arguments in dispose(). Campaigns never show on our Home tab, which stays mounted under
+    pushed routes. What's the right way to report screens?
+  expect:
+    contains: ["screenName", "RouteAware", "gamificationScreenAppeared"]
+    judge:
+      - q: "Does the answer recommend calling gamificationScreenDisappeared with no argument?"
+        want: "no"
+      - q: "Does the answer say to pass the same screenName to gamificationScreenAppeared and gamificationScreenDisappeared?"
+        want: "yes"
+      - q: "Does the answer mention RouteObserver with RouteAware (and observing app lifecycle) for a screen that stays mounted?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Gamification (2, Corrections); Known Issues
+
+- id: flutter-direct-loyalty-cap-token
+  profile: flutter/direct
+  category: gamification
+  question: >-
+    The Loyalty View shows no loyalty content. We call Hydra.setCapToken in initState after
+    creating GamificationLoyaltyView, and because our older guide says the loyalty view
+    never reports its height, we wrapped it in a fixed-height parent. What's wrong?
+  expect:
+    contains: ["setCapToken", "onHeightChanged", "loyaltyId"]
+    judge:
+      - q: "Does the answer say the cap token must be set before the Loyalty View is mounted?"
+        want: "yes"
+      - q: "Does the answer recommend a fixed-height parent on the grounds that the Loyalty View never reports a height?"
+        want: "no"
+  source: flutter/direct.md › Modules › Gamification (3, 4, Correction); Known Issues
+
+- id: flutter-direct-widget-height-zero
+  profile: flutter/direct
+  category: known-issue
+  question: >-
+    We use `GamificationBannerView(bannerId: 'b1', onHeightChanged: (h) { if (h > 0)
+    setState(() => _h = h); })`. After a campaign is closed the banner leaves a blank gap.
+    Why, and what should the callback do?
+  expect:
+    contains: [">= 0", "onHeightChanged"]
+    judge:
+      - q: "Does the answer recommend keeping the `> 0` check?"
+        want: "no"
+      - q: "Does the answer say a height of 0 is meaningful (nothing to show) and the widget should collapse to it?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Gamification (4, Correction); Known Issues
+
+- id: flutter-direct-suppress-theme-throws
+  profile: flutter/direct
+  category: edge-case
+  question: >-
+    In our splash screen's initState we call `await Hydra.setGamificationSuppressed(suppressed: true)`
+    and `Hydra.setThemeMode(mode: HydraThemeMode.dark)` and get exceptions on cold start. Why,
+    and when is it safe? Also, how do campaigns ask us to open a deep link or hand us analytics events?
+  expect:
+    contains: ["onHydraSdkInitializationResult", "onGamificationDeeplink", "onGamificationAnalyticsEvent"]
+    judge:
+      - q: "Does the answer say these calls throw when the SDK is not initialised yet, so they should run after onHydraSdkInitializationResult reports success?"
+        want: "yes"
+      - q: "Does the answer say an exception from isGamificationSuppressed means the value is false?"
+        want: "no"
+  source: flutter/direct.md › Modules › Gamification (5, 6, 7); Known Issues
+
+- id: flutter-direct-troubleshoot-credentials-push
+  profile: flutter/direct
+  category: troubleshooting
+  question: >-
+    Our Android release build logs `HYDRA CAPILLARY SDK: Client Credentials Generation Failed
+    {"error":"source not found","status":400}` while the debug build worked. Even where sign-in
+    works, pushes never arrive. What do we check?
+  expect:
+    contains: ["SHA256", "App Signature", "FCM Project ID"]
+    judge:
+      - q: "Does the answer say to compare the build's signing SHA256 with the App Signature registered at Capillary and ask Capillary to update it if it differs?"
+        want: "yes"
+      - q: "Does the answer say the Firebase project in the app's config files must match the FCM Project ID registered at Capillary?"
+        want: "yes"
+  source: flutter/direct.md › Known Issues; _shared/push.md › What must match; _shared/troubleshooting.md › 2
+
+- id: flutter-direct-prereq-send-capillary
+  profile: flutter/direct
+  category: prerequisites
+  question: >-
+    Before we write code, what do we have to send Capillary to get our app registered, what
+    do they send back, and can I just paste the Firebase service-account JSON into the support ticket?
+  expect:
+    contains: ["SHA256", "service account", "Account Id"]
+    judge:
+      - q: "Does the answer list the Android application ID and iOS bundle ID among the things to send?"
+        want: "yes"
+      - q: "Does the answer tell the developer to paste the service-account file into chat, email, a ticket or git?"
+        want: "no"
+  source: flutter/direct.md › Prerequisites; _shared/prerequisites.md
+
+- id: flutter-direct-prereq-ssl-expiry
+  profile: flutter/direct
+  category: prerequisites
+  question: >-
+    The app worked for months and now the SDK logs a certificate pinning failure and stops
+    connecting. We hardcoded the SSL public key in our Application class and AppDelegate.
+    What happened and what should we do?
+  expect:
+    contains: ["Certificate pinning failure", "9 months"]
+    judge:
+      - q: "Does the answer say to get the current SSL public key from Capillary?"
+        want: "yes"
+      - q: "Does the answer say a key compiled into the app needs a new release, so it is better kept somewhere remotely changeable (for example your own backend)?"
+        want: "yes"
+  source: "_shared/prerequisites.md › SSL public key: it expires; _shared/troubleshooting.md › 2"
+
+- id: flutter-direct-gap-spm
+  profile: flutter/direct
+  category: gap
+  question: >-
+    We use Swift Package Manager for iOS, not CocoaPods. Give me the exact steps to add
+    Hydra with SPM, including how the Notification Service Extension target gets the
+    HydraPushNotificationServiceExtension module.
+  expect:
+    contains: ["Swift Package Manager"]
+    judge:
+      - q: "Does the answer state a specific SPM package URL or step-by-step SPM procedure as documented fact?"
+        want: "no"
+      - q: "Does the answer say the SPM steps aren't documented or suggest asking Capillary?"
+        want: "yes"
+  source: flutter/direct.md › Steps › 7 (Gap)
+
+- id: flutter-direct-gap-hydraremoteconfig-nil
+  profile: flutter/direct
+  category: gap
+  question: >-
+    iOS crashes at launch on the `remoteConfig!` force unwrap in AppDelegate. Which of our
+    values makes HydraRemoteConfig(...) return nil?
+  expect:
+    contains: ["HydraRemoteConfig"]
+    judge:
+      - q: "Does the answer state a specific condition or input value that makes HydraRemoteConfig return nil as fact?"
+        want: "no"
+      - q: "Does the answer say when it returns nil isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: flutter/direct.md › Steps › 10 (Gap)
+
+- id: flutter-direct-gap-inbox-ui-config
+  profile: flutter/direct
+  category: gap
+  question: >-
+    What does `use_default_inbox_ui_config: false` change in the built-in notification center,
+    and how do we restyle it from Flutter?
+  expect:
+    contains: ["use_default_inbox_ui_config"]
+    judge:
+      - q: "Does the answer state specific customisation options or behaviour of use_default_inbox_ui_config set to false as fact?"
+        want: "no"
+      - q: "Does the answer say this isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Inbox (Gap)
+
+- id: flutter-direct-gap-visitor-states
+  profile: flutter/direct
+  category: gap
+  question: >-
+    What's the actual difference between the legacyRegistered and merged user states, and when
+    does onLegacyFlowReady fire instead of onVisitorSessionReady? What should the app do in each?
+  expect:
+    contains: ["legacyRegistered"]
+    judge:
+      - q: "Does the answer explain precisely when onLegacyFlowReady fires instead of onVisitorSessionReady, as fact?"
+        want: "no"
+      - q: "Does the answer say this isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Visitor (Gap)
+
+- id: flutter-direct-gap-reset-before-switch
+  profile: flutter/direct
+  category: gap
+  question: >-
+    A signed-in user changes region in our app and we switch accounts with setHydraAccountConfig.
+    Should we call Hydra.reset first to clear the old account's session?
+  expect:
+    contains: ["Hydra.reset", "setHydraAccountConfig"]
+    judge:
+      - q: "Does the answer state definitively that Hydra.reset must (or must not) be called before switching accounts?"
+        want: "no"
+      - q: "Does the answer say this isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Multi-account (Gap)
+
+- id: flutter-direct-gap-verification-logs
+  profile: flutter/direct
+  category: gap
+  question: >-
+    Which exact log lines or dashboard checks confirm Hydra is working on a fresh integration, and
+    if we register our event handler after initialisation has finished, will we still receive
+    onHydraSdkInitializationResult?
+  expect:
+    contains: ["onHydraSdkInitializationResult"]
+    judge:
+      - q: "Does the answer state that a handler registered late still receives onHydraSdkInitializationResult, as fact?"
+        want: "no"
+      - q: "Does the answer say expected log lines, dashboard checks or late-handler behaviour aren't documented, or suggest asking Capillary?"
+        want: "yes"
+  source: flutter/direct.md › Verification (Gap)
+
+- id: flutter-direct-trap-skip-firebase
+  profile: flutter/direct
+  category: trap
+  question: >-
+    We use direct mode, and the Android native guide says there's no Firebase or google-services.json
+    in direct mode. Can we skip the Firebase files and the Google Services Gradle plugin in our
+    Flutter app too?
+  expect:
+    contains: ["google-services.json"]
+    judge:
+      - q: "Does the answer say the Firebase config files and Google Services plugin are NOT needed in Flutter direct mode?"
+        want: "no"
+      - q: "Does the answer say that in Flutter direct mode only Remote Config is replaced, and Firebase (for push) is still part of the setup?"
+        want: "yes"
+  source: flutter/direct.md › Coverage; Steps › 1, 9, 11
+
+- id: flutter-direct-trap-native-android-apis
+  profile: flutter/direct
+  category: trap
+  question: >-
+    The native Android guide initialises with `HydraConfig.Builder(...)` and `Hydra.instanceWithConfig`,
+    and signs users in with `pushUserSignin`. We're writing a Flutter app; should we call those from
+    our Kotlin and Dart code?
+  expect:
+    contains: ["HydraRemoteConfig.Builder", "Hydra.identify"]
+    judge:
+      - q: "Does the answer recommend HydraConfig.Builder or instanceWithConfig as the way to initialise Hydra in this Flutter app?"
+        want: "no"
+      - q: "Does the answer recommend pushUserSignin for signing users in from Flutter?"
+        want: "no"
+  source: flutter/direct.md › Steps › 12, 16
+
+- id: flutter-direct-trap-react-native-package
+  profile: flutter/direct
+  category: trap
+  question: >-
+    Our React Native team installs the SDK with `npm install @capillarytech/react-native-hydra-lib`.
+    Is the Flutter app the same, and which package or import do we use there?
+  expect:
+    contains: ["flutter pub add", "package:capillary_hydra/hydra.dart"]
+    judge:
+      - q: "Does the answer recommend installing the npm package @capillarytech/react-native-hydra-lib for the Flutter app?"
+        want: "no"
+      - q: "Does the answer say Flutter uses the pub.dev packages capillary_hydra and capillary_hydra_platform_interface?"
+        want: "yes"
+  source: flutter/direct.md › Steps › 2; _shared/prerequisites.md › SDK package access
+
+- id: flutter-direct-trap-remote-config-keys
+  profile: flutter/direct
+  category: trap
+  question: >-
+    For our second market we'll publish ind_hydra_account_id, ind_hydra_base_url and the other
+    prefixed keys in Firebase Remote Config and call setFirebaseRemoteConfigKeys, as in some
+    Flutter examples. We're in direct mode. Is that the way to switch accounts?
+  expect:
+    contains: ["setHydraAccountConfig"]
+    judge:
+      - q: "Does the answer recommend putting prefixed values in Remote Config and calling setFirebaseRemoteConfigKeys as the way to switch accounts in this direct-mode app?"
+        want: "no"
+      - q: "Does the answer say that in direct mode you pass values you fetched yourself with HydraCore.setHydraAccountConfig?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Multi-account; API Reference

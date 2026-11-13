@@ -51,11 +51,12 @@ def test_flutter_firebase_needs_both_config_files_and_signature():
     assert "org_id" in ids(profile("flutter/firebase", modules=["core", "visitor"]))
 
 
-def test_direct_mode_push_still_needs_firebase_on_flutter_and_web():
-    assert "firebase_project" not in ids(profile("flutter/direct"))
-    assert {"firebase_project", "google_services_json"} <= ids(
-        profile("flutter/direct", modules=["core", "push"])
+def test_firebase_is_base_setup_on_flutter_and_push_only_on_web_direct():
+    # Flutter: Firebase registration and the config files are base setup in every mode.
+    assert {"firebase_project", "google_services_json", "google_service_info_plist"} <= ids(
+        profile("flutter/direct")
     )
+    assert "firebase_project" not in ids(profile("web/direct"))
     web_push = ids(profile("web/direct", modules=["core", "push"]))
     assert {"firebase_project", "web_firebase_config", "web_vapid_key"} <= web_push
 
@@ -69,7 +70,9 @@ def test_web_direct_core_has_no_client_items_and_no_mobile_values():
 
 def test_org_id_follows_the_shared_prerequisites_table():
     assert "org_id" in ids(profile("ios/direct"))
-    assert "org_id" not in ids(profile("ios/firebase"))
+    assert "org_id" in ids(profile("ios/firebase"))  # gamification passes orgID in both modes (to be confirmed)
+    assert "org_id" not in ids(profile("react-native/firebase"))
+    assert "org_id" in ids(profile("react-native/firebase", modules=["core", "visitor"]))
 
 
 def test_customer_id_type_fills_the_crm_title():
@@ -108,3 +111,42 @@ def test_rebuild_keeps_progress_and_drops_items_that_no_longer_apply():
 )
 def test_value_checks(rule_id, value, ok):
     assert (check_value(RULES.by_id()[rule_id], value) is None) is ok
+
+
+def test_push_adds_the_firebase_project_and_service_account_item():
+    for app in ("flutter/firebase", "react-native/direct", "ios/direct", "android/firebase"):
+        assert "push_firebase_project" in ids(profile(app, modules=["core", "push"])), app
+    assert "push_firebase_project" not in ids(profile("flutter/firebase", modules=["core"]))
+    assert "push_firebase_project" not in ids(profile("android/direct", modules=["core", "push"]))  # no push here
+    assert "push_firebase_project" not in ids(profile("web/firebase", modules=["core", "push"]))
+    item = next(i for i in build_checklist(profile("flutter/firebase", modules=["push"]), RULES) if i.id == "push_firebase_project")
+    assert item.owner == "client" and not item.blocking and "secure channel" in item.how
+
+
+def test_native_android_signature_is_optional_but_react_native_and_flutter_need_it():
+    android = {i.id: i for i in build_checklist(profile("android/firebase"), RULES)}
+    assert "android_signature_native" in android and not android["android_signature_native"].blocking
+    assert "android_sha256" not in android
+    for app in ("react-native/direct", "flutter/firebase"):
+        got = {i.id: i for i in build_checklist(profile(app), RULES)}
+        assert got["android_sha256"].blocking and "android_signature_native" not in got
+
+
+def test_react_native_package_access_is_to_check_and_every_mobile_app_gets_the_ssl_reminder():
+    rn = {i.id: i for i in build_checklist(profile("react-native/firebase"), RULES)}
+    assert not rn["rn_package_access"].blocking and rn["rn_package_access"].owner == "client"
+    for app in ("android/direct", "ios/firebase", "flutter/direct", "react-native/direct"):
+        got = {i.id: i for i in build_checklist(profile(app), RULES)}
+        assert "ssl_key_updatable" in got and not got["ssl_key_updatable"].blocking, app
+    assert "ssl_key_updatable" not in ids(profile("web/direct"))
+    assert "rn_package_access" not in ids(profile("flutter/firebase"))
+
+
+def test_sha256_accepts_the_signing_report_and_capillarys_stored_form():
+    rule = RULES.by_id()["android_sha256"]
+    hex64 = "C9F2936D37CF7B97FF3A474D0F24F0866B78D6D4217BBEB6877739603BBA968D"
+    pairs = ":".join(hex64[i:i + 2] for i in range(0, 64, 2))
+    for ok in (pairs, hex64, hex64.lower(), f"SHA256 - {hex64}", f"SHA-256: {pairs}"):
+        assert check_value(rule, ok) is None, ok
+    for bad in (hex64[:-2], "SHA1 - " + hex64[:40], "not a fingerprint"):
+        assert check_value(rule, bad) is not None, bad

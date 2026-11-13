@@ -48,12 +48,43 @@ items:
     blocking: true
     value: true
     format: sha256_fingerprint
-    how: Copy the SHA256 fingerprint from your Android app signing report.
+    how: >-
+      Copy the SHA256 fingerprint from your Android app signing report, for the build you'll run.
+      Capillary registers it as the App Signature; if it doesn't match the app, the SDK can't start
+      (`Client Credentials Generation Failed … source not found`).
     when:
       - platforms: [react-native, flutter]
     source: _shared/prerequisites.md › The client gives Capillary
 
-  # ── SDK repository access (native direct mode) ────────────────────────────────────────────
+  - id: android_signature_native
+    title: Send Capillary your Android app signature (SHA256), to be confirmed
+    owner: client
+    blocking: false
+    value: true
+    format: sha256_fingerprint
+    how: >-
+      Copy the SHA256 fingerprint from your Android app signing report, for the build you'll run. The native Android
+      guides don't list it, but Capillary registers an App Signature for the app and a mismatch stops the SDK
+      (`Client Credentials Generation Failed … source not found`). Confirm with your Capillary contact whether it is needed.
+    when:
+      - platforms: [android]
+    source: _shared/prerequisites.md › The client gives Capillary
+
+  - id: push_firebase_project
+    title: Send Capillary your Firebase project ID and service account (push)
+    owner: client
+    blocking: false
+    how: >-
+      Capillary needs your Firebase project ID, the service-account email and the service-account credentials
+      file to send push through your Firebase project; the project must be the same one your app uses. The file
+      contains a private key: send it only through the secure channel your Capillary contact names, never in
+      chat, email or git.
+    when:
+      - platforms: [android/firebase, ios, react-native, flutter]
+        modules: [push]
+    source: _shared/push.md › What Capillary sets up after the client sends their details
+
+  # ── SDK package access ────────────────────────────────────────────
   - id: android_repo_access
     title: Get access to the Android SDK repository
     owner: client
@@ -64,7 +95,7 @@ items:
       machine (e.g. a git-ignored `github.properties`); never share it in chat.
     when:
       - platforms: [android/direct]
-    source: _shared/prerequisites.md › SDK repository access
+    source: _shared/prerequisites.md › SDK package access
 
   - id: ios_repo_access
     title: Get access to the iOS SDK repository
@@ -76,7 +107,33 @@ items:
       stays on your machine.
     when:
       - platforms: [ios/direct]
-    source: _shared/prerequisites.md › SDK repository access
+    source: _shared/prerequisites.md › SDK package access
+
+  - id: rn_package_access
+    title: Check whether you need credentials for Capillary's React Native packages
+    owner: client
+    blocking: false
+    how: >-
+      Capillary's public developer docs install `@capillarytech/react-native-hydra-lib` from the public npm registry and
+      the Android SDK from Maven Central, with no credentials. An older internal setup used GitHub Packages and a GitHub
+      token; whether React Native on iOS still needs one isn't stated. If an install is denied, ask your Capillary
+      contact for a GitHub username and token, keep them in environment variables (never in the repo or chat), and ask
+      for a new one when it expires.
+    when:
+      - platforms: [react-native]
+    source: _shared/prerequisites.md › SDK package access
+
+  - id: ssl_key_updatable
+    title: Plan to update the SSL public key without an app release
+    owner: client
+    blocking: false
+    how: >-
+      The SSL public key expires about every 9 months; when it does the SDK fails with a certificate pinning failure.
+      Keep the key (with the Account Id and Base URL) in Firebase Remote Config or another remote configuration rather
+      than hardcoding it, so it can be replaced without a new store release.
+    when:
+      - platforms: [android, ios, react-native, flutter]
+    source: "_shared/prerequisites.md › SSL public key: it expires"
 
   # ── Firebase (Firebase mode only) ─────────────────────────────────────────────────────────
   - id: firebase_project
@@ -85,8 +142,8 @@ items:
     blocking: true
     how: Firebase Console → Add project, then register each app. Skip the project step if you already have one.
     when:
-      - platforms: [android/firebase, ios/firebase, react-native/firebase, flutter/firebase, web/firebase]
-      - platforms: [flutter/direct, web/direct]  # direct mode still uses Firebase for push
+      - platforms: [android/firebase, ios/firebase, react-native/firebase, flutter, web/firebase]  # Flutter: Firebase is base setup in every mode
+      - platforms: [web/direct]  # direct mode still uses Firebase for push
         modules: [push]
     source: _shared/firebase-setup.md › 1. Create a Firebase project
 
@@ -97,9 +154,7 @@ items:
     validator: google_services_json
     how: Download it while registering the Android app in Firebase. Don't make the code changes Firebase suggests. Then upload it with the button in the checklist panel and we'll check it belongs to your app.
     when:
-      - platforms: [android/firebase, react-native/firebase, flutter/firebase]
-      - platforms: [flutter/direct]
-        modules: [push]
+      - platforms: [android/firebase, react-native/firebase, flutter]
     source: _shared/firebase-setup.md › 2. Register each app
 
   - id: google_service_info_plist
@@ -109,9 +164,7 @@ items:
     validator: google_service_info_plist
     how: Download it while registering the iOS app in Firebase. Don't make the code changes Firebase suggests. Then upload it with the button in the checklist panel and we'll check it belongs to your app.
     when:
-      - platforms: [ios/firebase, react-native/firebase, flutter/firebase]
-      - platforms: [flutter/direct]
-        modules: [push]
+      - platforms: [ios/firebase, react-native/firebase, flutter]
     source: _shared/firebase-setup.md › 2. Register each app
 
   - id: web_firebase_config
@@ -201,8 +254,8 @@ items:
     blocking: true
     how: Capillary sends it once your app is registered.
     when:
-      - platforms: [web, android, react-native, ios/direct]
-      - platforms: [flutter]
+      - platforms: [web, android, react-native/direct, ios]  # iOS gamification passes orgID in both modes (to be confirmed)
+      - platforms: [flutter, react-native/firebase]
         modules: [visitor]
     source: _shared/prerequisites.md › Capillary gives the client
 

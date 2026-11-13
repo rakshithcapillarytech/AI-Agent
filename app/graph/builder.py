@@ -7,7 +7,8 @@ Running phase_transition right after tools means a confirmation (e.g. confirm_pr
 the session to the next phase within the same turn, and the agent continues in it.
 Troubleshooting is tools, not a subgraph (search, log_fix_attempt, escalate_to_human), so it can
 interrupt any phase; escalate_to_human pauses the thread with `interrupt()`.
-Deviation from PLAN.md §6.1: no LLM router node, the agent's tool use does the routing.
+The optional chat assistant (kept, PLAN.md §14); the Integration Kit doesn't use this graph.
+Deviation from the original design: no LLM router node, the agent's tool use does the routing.
 """
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -21,7 +22,7 @@ from app.graph.nodes.phase_transition import phase_transition
 from app.graph.state import OnboardingState
 from app.tools import integration, prereqs, profile, search, troubleshoot
 
-# Bound once for every phase: a fixed tool list keeps the prompt cache stable (PLAN.md §6.2).
+# Bound once for every phase: a fixed tool list keeps the prompt cache stable (original design, PLAN.md §14).
 TOOLS = [
     *profile.TOOLS,
     *prereqs.TOOLS,

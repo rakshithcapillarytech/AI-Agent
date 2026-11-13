@@ -1,0 +1,458 @@
+# Deep evaluation questions for android/direct (Hydra SDK, settings passed in code, no Firebase).
+# Format: see evals/golden.yaml. Every `contains` string is present in the kit for this profile.
+
+- id: android-direct-maven-credentials-setup
+  profile: android/direct
+  category: setup
+  question: >-
+    We're adding the Hydra SDK to our Android app for the first time. Where do we keep the GitHub
+    username and token for the private Maven repo, and what has to go into settings.gradle so
+    Gradle can pick them up?
+  expect:
+    contains: ["github.properties", "hydra-sdk-android-maven", ".gitignore"]
+    judge:
+      - q: "Does the answer say github.properties should be added to .gitignore (not committed)?"
+        want: "yes"
+      - q: "Does the answer put the Maven repository inside dependencyResolutionManagement.repositories?"
+        want: "yes"
+  source: android/direct.md › Steps › 1 and 2
+
+- id: android-direct-maven-403
+  profile: android/direct
+  category: known-issue
+  question: >-
+    Gradle sync fails with `Received status code 403 from server: Forbidden` for
+    https://maven.pkg.github.com/Capillary/hydra-sdk-android-maven/com/capillary/hydra-core/...
+    A teammate generated a fresh personal access token yesterday. What should we check?
+  expect:
+    contains: ["read:packages"]
+    judge:
+      - q: "Does the answer say to confirm repository access with Capillary's access team (the account must have access to the repo)?"
+        want: "yes"
+  source: android/direct.md › Known Issues (Gradle can't resolve hydra-core)
+
+- id: android-direct-ci-cannot-resolve
+  profile: android/direct
+  category: edge-case
+  question: >-
+    The build works on every developer laptop but our Jenkins pipeline can't resolve
+    com.capillary:hydra-core. Same commit, same Gradle files. What's different on CI?
+  expect:
+    contains: ["github.properties"]
+    judge:
+      - q: "Does the answer say github.properties is git-ignored so it doesn't exist on CI, and that CI should generate it from secrets before the Gradle build?"
+        want: "yes"
+  source: android/direct.md › Known Issues (CI builds can't resolve the SDK)
+
+- id: android-direct-dependencies-no-firebase
+  profile: android/direct
+  category: trap
+  question: >-
+    We cloned our Firebase-enabled sample app's build.gradle as a starting point. Which Hydra
+    dependencies do we keep in this app, we also want the notification inbox and the gamification
+    UI, and do we need the google-services plugin?
+  expect:
+    contains: ["hydra-core", "hydra-gamification-ui", "hydra-inbox-ui"]
+    judge:
+      - q: "Does the answer recommend adding the com.google.gms.google-services plugin, Firebase dependencies or google-services.json?"
+        want: "no"
+      - q: "Does the answer say only hydra-core is required and the other modules are optional?"
+        want: "yes"
+  source: android/direct.md › Steps › 3
+
+- id: android-direct-gamification-region-enum
+  profile: android/direct
+  category: init
+  question: >-
+    Our init code won't compile:
+
+        val cfg = HydraConfig.Builder(applicationContext, accountId = "ACC123")
+            .orgId("ORG1")
+            .gamificationWriteKey("KEY")
+            .gamificationRegion("IN")
+            .build()
+
+    How should the gamification region be passed, and what do we call after build()?
+  expect:
+    contains: ["GamificationRegion.IN", "instanceWithConfig"]
+    judge:
+      - q: "Does the answer say the region must be a GamificationRegion enum member and not a string?"
+        want: "yes"
+  source: android/direct.md › Steps › 4
+
+- id: android-direct-init-exception
+  profile: android/direct
+  category: known-issue
+  question: >-
+    The app dies at launch with an exception coming out of the Hydra SDK. We initialise in
+    Application.onCreate and set orgId, baseURL, sslPublicKey and the gamification values. What
+    could we be missing?
+  expect:
+    contains: ["accountId"]
+    judge:
+      - q: "Does the answer say the SDK throws when accountId isn't provided to HydraConfig.Builder?"
+        want: "yes"
+  source: android/direct.md › Known Issues (SDK throws an exception at initialisation)
+
+- id: android-direct-java-builder-style-gap
+  profile: android/direct
+  category: gap
+  question: >-
+    Our Java developer copied `new HydraConfig.Builder(applicationContext).setAccountId("...").setBaseURL("...")`
+    from the SDK initialisation page, but the sample in our integration guide uses
+    `new HydraConfig.Builder(ctx, accountId).orgId(...)`. Which builder style is right for the
+    SDK version we're on?
+  expect:
+    contains: ["HydraConfig.Builder"]
+    judge:
+      - q: "Does the answer state definitively that one of the two Java builder styles is the correct one for this SDK version?"
+        want: "no"
+      - q: "Does the answer say the docs show both styles and this isn't settled / suggest asking a Capillary engineer?"
+        want: "yes"
+  source: android/direct.md › Steps › 4 (builder style Gap)
+
+- id: android-direct-late-init-logger-manifest
+  profile: android/direct
+  category: edge-case
+  question: >-
+    We initialise Hydra from a splash-screen component after the app has already started, and we
+    see no Hydra output in Logcat at all. How do we get console logging, and what do we need in
+    AndroidManifest so our MyApplication class is actually the one Android uses?
+  expect:
+    contains: ["initializeConsoleLogger", "android:name"]
+  source: android/direct.md › Steps › 4 and 5
+
+- id: android-direct-signin-signup
+  profile: android/direct
+  category: identity
+  question: >-
+    How do we report a brand-new registration versus a returning login? Our backend has an
+    internal numeric user id, but Capillary CRM links customers by mobile number. What do we pass
+    as the user identifier?
+  expect:
+    contains: ["pushUserSignup", "pushUserSignin", "Account Linking Identifier"]
+    judge:
+      - q: "Does the answer say the customer identifier (cuid) must match the Account Linking Identifier configured in Capillary CRM, rather than an arbitrary internal id?"
+        want: "yes"
+  source: android/direct.md › Steps › 6 and 7
+
+- id: android-direct-signout-argument-gap
+  profile: android/direct
+  category: gap
+  question: >-
+    Our integration PDF shows `hydraAPI?.pushUserSignout()` with no arguments on logout, but the
+    API reference shows `pushUserSignOut(cuid)`. Our code currently does
+    `hydraAPI?.pushUserSignOut("9000090000")`. Which form is correct for our SDK build?
+  expect:
+    contains: ["pushUserSignOut"]
+    judge:
+      - q: "Does the answer state definitively that the no-argument pushUserSignout() is the correct form for this SDK version?"
+        want: "no"
+      - q: "Does the answer say the two sources disagree and suggest checking with a Capillary engineer?"
+        want: "yes"
+  source: android/direct.md › Steps › 6 (sign-out Gap)
+
+- id: android-direct-profile-update-preferences
+  profile: android/direct
+  category: identity
+  question: >-
+    A signed-in user edited their name in our profile screen and also switched off promotional
+    notifications but kept transactional ones. What do we call to tell the SDK about each?
+  expect:
+    contains: ["pushUserUpdate", "passUserPreferences"]
+    judge:
+      - q: "Does the answer use UserPreferences with promPushOpted and transPushOpted for the notification opt-in?"
+        want: "yes"
+  source: android/direct.md › Steps › 7 and API Reference
+
+- id: android-direct-event-before-signin
+  profile: android/direct
+  category: events
+  question: >-
+    We fire `hydraAPI?.pushEvent("add_to_cart", mapOf("sku" to "A1"))` from the product screen,
+    and many of those fire while the user is still logged out. Nothing shows up in Capillary.
+    Why, and what else should we check on the Capillary side?
+  expect:
+    contains: ["pushEvent"]
+    judge:
+      - q: "Does the answer say behavioural events are only valid after a sign-in or sign-up (and invalid after sign-out)?"
+        want: "yes"
+      - q: "Does the answer say the behavioural event must first be created in Capillary (Organisation settings / Data Model)?"
+        want: "yes"
+  source: android/direct.md › Steps › 8 and Known Issues
+
+- id: android-direct-screen-not-reported
+  profile: android/direct
+  category: known-issue
+  question: >-
+    We finished SDK init and sign-in. A Popup campaign targeted at our Cart screen never shows,
+    and LeakCanary complains about an activity that was left behind after leaving a screen with
+    a Banner on it. What did we skip?
+  expect:
+    contains: ["onScreenChanged", "onActivityDestroyed", "GamificationUIManager"]
+  source: android/direct.md › Known Issues (screen-targeted campaigns, memory leaks) and Steps › 9
+
+- id: android-direct-automatic-campaigns
+  profile: android/direct
+  category: gamification
+  question: >-
+    Which gamification campaign formats appear on their own, without us adding any XML or binding
+    code, and what has to be in place for them to be shown on a given screen?
+  expect:
+    contains: ["Floating Button", "Bottom Sheet", "Popup"]
+    judge:
+      - q: "Does the answer say the current screen must be reported (via GamificationUIManager.onScreenChanged) for campaigns to appear?"
+        want: "yes"
+  source: android/direct.md › Modules › Gamification
+
+- id: android-direct-banner-view
+  profile: android/direct
+  category: gamification
+  question: >-
+    Marketing wants a Banner on the home screen. How do we add it to our layout, and do we need
+    any Kotlin code to bind it?
+  expect:
+    contains: ["BannerView", "com.capillary.hydra.gamification.ui.entrypoints"]
+    judge:
+      - q: "Does the answer say the view's android:id must correspond to the ID configured in the campaign dashboard?"
+        want: "yes"
+      - q: "Does the answer say the Banner view is rendered automatically once the screen is reported and needs no manual binding?"
+        want: "yes"
+  source: android/direct.md › Modules › Gamification (Banner View)
+
+- id: android-direct-embed-view-empty
+  profile: android/direct
+  category: known-issue
+  question: >-
+    Our EmbedWebView (id `embedView`) has stayed blank for days even though the campaign is live.
+    Init and screen reporting are done. What's missing, and what value goes in as the entry point id?
+  expect:
+    contains: ["bindEmbedView"]
+    judge:
+      - q: "Does the answer say that in this mode the Embed view is not bound automatically and must be bound with bindEmbedView?"
+        want: "yes"
+      - q: "Does the answer state where the entry point id value (EMBED_ENTRY_POINT_ID) comes from as a documented fact?"
+        want: "no"
+      - q: "Does the answer say the source of the entry point id isn't documented / suggest asking Capillary?"
+        want: "yes"
+  source: android/direct.md › Modules › Gamification (Embed View, Gap) and Known Issues
+
+- id: android-direct-loyalty-token-order
+  profile: android/direct
+  category: edge-case
+  question: >-
+    Our LoyaltyEmbedView renders but it's empty. We fetch the B2B token in the activity and call
+    `hydraAPI?.setCapToken(token)` in onResume, after the screen has already been reported by our
+    lifecycle callbacks. What's wrong?
+  expect:
+    contains: ["setCapToken"]
+    judge:
+      - q: "Does the answer say the token must be set before the Loyalty View renders, i.e. before the screen is reported?"
+        want: "yes"
+  source: android/direct.md › Steps › 10 and Known Issues (Loyalty View empty)
+
+- id: android-direct-loyalty-embedid-gap
+  profile: android/direct
+  category: gap
+  question: >-
+    The LoyaltyEmbedView's android:id has to match the embedId. Which SDK or API call returns
+    that embedId to us?
+  expect:
+    contains: ["LoyaltyEmbedView"]
+    judge:
+      - q: "Does the answer name a specific API response or endpoint as the source of the Loyalty embedId?"
+        want: "no"
+      - q: "Does the answer say this isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: android/direct.md › Modules › Gamification (Loyalty View Gap)
+
+- id: android-direct-lifecycle-androidx-gap
+  profile: android/direct
+  category: gap
+  question: >-
+    Copying the foreground/background snippet, `ProcessLifecycleOwner` is an unresolved reference
+    in our project. Which androidx artifact do we add and at which version?
+  expect:
+    contains: ["ProcessLifecycleOwner", "lifecycle-process"]
+    judge:
+      - q: "Does the answer state a specific version number for the androidx lifecycle-process library as the version to use?"
+        want: "no"
+      - q: "Does the answer say the versions aren't documented in this mode's guide / suggest asking a Capillary engineer?"
+        want: "yes"
+  source: android/direct.md › Steps › 3 (AndroidX Gap) and Steps › 9
+
+- id: android-direct-gamification-values-correction
+  profile: android/direct
+  category: correction
+  question: >-
+    Our iOS colleagues keep the gamification key and region in Firebase Remote Config under
+    hydra_gamification_key and hydra_gamification_region. Should we create the same Remote Config
+    parameters for this Android app and read them at start-up?
+  expect:
+    contains: [".gamificationWriteKey", ".gamificationRegion"]
+    judge:
+      - q: "Does the answer recommend using the hydra_gamification_key / hydra_gamification_region / hydra_gamification_base_url Remote Config keys in this mode?"
+        want: "no"
+      - q: "Does the answer say to pass the gamification values through HydraConfig.Builder in code?"
+        want: "yes"
+  source: android/direct.md › Verification (Correction)
+
+- id: android-direct-fcm-config-push-trap
+  profile: android/direct
+  category: trap
+  question: >-
+    Please add FCM push to our direct-mode Android app. Give us the FcmConfig(true) builder call
+    and the HydraFirebaseMessagingService manifest snippet.
+  expect:
+    contains: ["not available"]
+    judge:
+      - q: "Does the answer say push is not available in this (no-Firebase, direct) mode?"
+        want: "yes"
+      - q: "Does the answer supply an FcmConfig(true) builder call or a HydraFirebaseMessagingService manifest entry as the solution for this mode?"
+        want: "no"
+      - q: "Does the answer point to the Firebase-mode Android guide / Firebase integration for adding push later?"
+        want: "yes"
+  source: android/direct.md › Modules › Push
+
+- id: android-direct-inapp-trap
+  profile: android/direct
+  category: trap
+  question: >-
+    We want in-app messages (popup and interstitial). Show the Gradle line, the
+    HydraInAppUIHelper click-listener registration and how to pass InAppConfig for the fallback image.
+  expect:
+    contains: ["hydra-inapp"]
+    judge:
+      - q: "Does the answer say it is unclear/undocumented whether In-App works without Firebase, because in-app messages are delivered through Hydra's push mechanism?"
+        want: "yes"
+      - q: "Does the answer present HydraInAppUIHelper registration code or an InAppConfig builder call as documented steps for this mode?"
+        want: "no"
+  source: android/direct.md › Modules › In-App
+
+- id: android-direct-ssl-key-expired-trap
+  profile: android/direct
+  category: trap
+  question: >-
+    The app has worked since spring and now every SDK call fails with `Certificate pinning failure`
+    in Logcat. A Flutter colleague says to set enable_ssl_pinning to false. We hard-coded the key
+    in `.sslPublicKey(...)`. What should we do?
+  expect:
+    contains: ["9 months"]
+    judge:
+      - q: "Does the answer recommend turning SSL pinning off (enable_ssl_pinning false) as the fix for this Android app?"
+        want: "no"
+      - q: "Does the answer say to get the current SSL public key from Capillary and update it?"
+        want: "yes"
+      - q: "Does the answer note that a key compiled into the app needs a new release when it expires?"
+        want: "yes"
+  source: "_shared/prerequisites.md › SSL public key (it expires)"
+
+- id: android-direct-visitor-flow-trap
+  profile: android/direct
+  category: trap
+  question: >-
+    Users browse our app before logging in. How do we track these anonymous visitors? Our Flutter
+    team uses a hydra_org_id Remote Config key for the visitor flow, so presumably we do something
+    similar here?
+  expect:
+    contains: ["visitor"]
+    judge:
+      - q: "Does the answer give a specific visitor-flow API or procedure for Android as a documented fact?"
+        want: "no"
+      - q: "Does the answer say the visitor flow isn't documented for this mode / suggest asking a Capillary engineer?"
+        want: "yes"
+  source: android/direct.md › Coverage and Modules › Visitor
+
+- id: android-direct-inbox-default-ui-click
+  profile: android/direct
+  category: inbox
+  question: >-
+    We want the stock Notification Center screen. Our inbox rows show blank images whenever the
+    image download fails, and our app should handle the tap on a message itself instead of the SDK
+    doing it. How do we set all that up?
+  expect:
+    contains: ["InboxActivity", "NotificationCenterConfig", "registerOnMessageClickListener"]
+    judge:
+      - q: "Does the answer say the click listener must return true for the app to handle the click (false lets the SDK perform the action)?"
+        want: "yes"
+      - q: "Does the answer say the fallback image is set on HydraConfig.Builder during SDK initialisation?"
+        want: "yes"
+  source: android/direct.md › Modules › Inbox and Known Issues (Inbox images missing)
+
+- id: android-direct-inbox-own-ui-gap
+  profile: android/direct
+  category: gap
+  question: >-
+    We're building our own inbox list. Show how to fetch the messages and read each message's
+    title and body from InboxMessage, plus the unread badge count.
+  expect:
+    contains: ["fetchInboxMessages", "getUnReadMessagesCount"]
+    judge:
+      - q: "Does the answer list specific InboxMessage field names or the OnMessagesAvailableListener callback method name as documented fact?"
+        want: "no"
+      - q: "Does the answer say those details aren't documented / suggest asking a Capillary engineer?"
+        want: "yes"
+  source: android/direct.md › Modules › Inbox (Inbox API Gap)
+
+- id: android-direct-prerequisites-exchange
+  profile: android/direct
+  category: prerequisites
+  question: >-
+    We're about to ask Capillary to onboard our new Android app in direct mode. What do we send
+    them, and what values do we get back to put in the SDK?
+  expect:
+    contains: ["application ID", "SHA256", "Account Id"]
+    judge:
+      - q: "Does the answer list Base URL, SSL Public Key and Org Id among the values Capillary gives the client?"
+        want: "yes"
+      - q: "Does the answer mention the Gamification Key and Gamification Region (IN, US or ME) among the values from Capillary?"
+        want: "yes"
+  source: android/direct.md › Prerequisites and _shared/prerequisites.md
+
+- id: android-direct-client-credentials-dev-flavor
+  profile: android/direct
+  category: edge-case
+  question: >-
+    Our debug build uses applicationId com.acme.shop.dev and the SDK log shows
+    `Client Credentials Generation Failed` with `{"error":"source not found","status":400}`.
+    The release build is fine. What do we check?
+  expect:
+    contains: ["App Signature", "Bundle Name"]
+    judge:
+      - q: "Does the answer say a build variant with a different application ID is treated as a different app by Capillary and must be registered?"
+        want: "yes"
+      - q: "Does the answer say to compare the build's SHA256 signature with the one registered at Capillary?"
+        want: "yes"
+  source: android/direct.md › Known Issues and _shared/troubleshooting.md › 2
+
+- id: android-direct-verify-init-gap
+  profile: android/direct
+  category: verification
+  question: >-
+    Is there a log line or callback that tells us the SDK initialised successfully in this setup?
+    And what's the checklist we should tick before calling the integration done?
+  expect:
+    contains: ["debugLevel"]
+    judge:
+      - q: "Does the answer state a specific log line or callback as the confirmation that SDK initialisation succeeded?"
+        want: "no"
+      - q: "Does the answer say no such confirmation is documented / suggest asking Capillary?"
+        want: "yes"
+      - q: "Does the checklist mention that github.properties is git-ignored, hydra-core is added, and no google-services.json / Firebase dependencies are present?"
+        want: "yes"
+  source: android/direct.md › Verification
+
+- id: android-direct-requirements-versions-gap
+  profile: android/direct
+  category: gap
+  question: >-
+    What minSdk and compileSdk do we need, and which Android Gradle Plugin, Kotlin and Gradle
+    versions does this SDK require?
+  expect:
+    contains: ["21", "34"]
+    judge:
+      - q: "Does the answer state specific required AGP, Kotlin or Gradle versions as fact?"
+        want: "no"
+      - q: "Does the answer say AGP, Kotlin and Gradle versions aren't documented / suggest asking a Capillary engineer?"
+        want: "yes"
+  source: android/direct.md › Requirements

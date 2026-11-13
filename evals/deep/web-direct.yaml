@@ -1,0 +1,679 @@
+# Deep evaluation cases for web/direct (settings passed in code via HydraSDK.initialize()).
+# Format: see evals/golden.yaml. Every `contains` string is verified against the kit by
+# `uv run python -m evals.audit_kb` (check "evals answerable from their kit").
+
+- id: web-direct-install-yarn-beta
+  profile: web/direct
+  category: setup
+  question: >-
+    We're a yarn project (there's a yarn.lock in the repo root) and we want to try the
+    pre-release SDK on our staging site first. What exactly do we run?
+  expect:
+    contains: ["yarn add cap-hydra-web-sdk@beta"]
+    judge:
+      - q: "Does the answer give a yarn command (not npm install) for the beta channel?"
+        want: "yes"
+  source: web/direct.md › Steps › 1. Install the SDK
+
+- id: web-direct-install-bun-types
+  profile: web/direct
+  category: setup
+  question: >-
+    Project uses bun (bun.lockb in the root). I added the SDK as a devDependency and now CI
+    fails on `import { HydraSDK } from "cap-hydra-web-sdk"` with TypeScript saying it can't
+    resolve the module's types. What's the correct install and what's wrong?
+  expect:
+    contains: ["bun add cap-hydra-web-sdk", "dependencies"]
+    judge:
+      - q: "Does the answer say the package belongs in `dependencies` (not devDependencies)?"
+        want: "yes"
+  source: web/direct.md › Steps › 1 and Known Issues (TypeScript import errors)
+
+- id: web-direct-service-wrapper
+  profile: web/direct
+  category: setup
+  question: >-
+    How should we structure our code around the SDK? We were going to import HydraSDK
+    straight into our React components wherever we need to track something.
+  expect:
+    contains: ["sdkService"]
+    judge:
+      - q: "Does the answer say components should NOT import HydraSDK directly and that every call should go through one service wrapper file?"
+        want: "yes"
+      - q: "Does the answer say to import the service file from the app entry point?"
+        want: "yes"
+  source: web/direct.md › Steps › 2 (Rules to enforce)
+
+- id: web-direct-init-lifecycle-await
+  profile: web/direct
+  category: edge-case
+  question: >-
+    Our React setup code looks like this and the SDK sometimes isn't ready when the first
+    page view fires:
+
+        useEffect(() => {
+          (async () => {
+            await HydraSDK.initialize({ accountId, baseURL, orgId });
+            if (HydraSDK.isInitialized()) HydraSDK.pageView();
+          })();
+        }, []);
+
+    What should we change?
+  expect:
+    contains: ["sdkService.initialize()"]
+    judge:
+      - q: "Does the answer say to call initialize once at module load / top level of the service file, not inside useEffect or another lifecycle hook?"
+        want: "yes"
+      - q: "Does the answer tell the developer to keep awaiting SDK calls or to add isInitialized() guards?"
+        want: "no"
+      - q: "Does the answer say the SDK queues calls internally until it is ready?"
+        want: "yes"
+  source: web/direct.md › Steps › 2 (Rules to enforce) and Known Issues
+
+- id: web-direct-init-missing-field
+  profile: web/direct
+  category: known-issue
+  question: >-
+    HydraSDK.initialize() throws a synchronous Error as soon as the page loads. Our config
+    object only has accountId, baseURL and appVersion. What's the problem?
+  expect:
+    contains: ["orgId"]
+    judge:
+      - q: "Does the answer say accountId, baseURL and orgId are all required in direct mode and the missing field must be added to the initialize() call?"
+        want: "yes"
+  source: web/direct.md › Known Issues (initialize() throws) and API Reference
+
+- id: web-direct-trap-remote-config-keys
+  profile: web/direct
+  category: trap
+  question: >-
+    I copied initialize() from another project of ours. It has accountId, baseURL and orgId,
+    but also a firebaseConfig object and remoteConfigKey: "hydra_sdk_config". Our direct values
+    seem to be ignored (the SDK is trying to read Firebase Remote Config). Why, and what do we do?
+  expect:
+    contains: ["remoteConfigKey"]
+    judge:
+      - q: "Does the answer tell the developer to remove remoteConfigKey and firebaseConfig from initialize() in this setup?"
+        want: "yes"
+      - q: "Does the answer say the SDK picks Remote Config mode because remoteConfigKey is present?"
+        want: "yes"
+      - q: "Does the answer tell the developer to create a Remote Config parameter for the Hydra settings?"
+        want: "no"
+  source: web/direct.md › Known Issues (Direct config ignored) and top bootstrap paragraph
+
+- id: web-direct-events-not-arriving
+  profile: web/direct
+  category: known-issue
+  question: >-
+    Everything initialises without errors, but none of our events or page views show up in
+    Capillary. What should we verify first?
+  expect:
+    contains: ["baseURL"]
+    judge:
+      - q: "Does the answer say to verify the baseURL value with Capillary?"
+        want: "yes"
+  source: web/direct.md › Known Issues (Events not reaching the API)
+
+- id: web-direct-consent-banner
+  profile: web/direct
+  category: events
+  question: >-
+    A user rejects cookies in our consent banner. What do we call on the SDK, what happens to
+    events fired afterwards, and how should we restore their choice on the next visit?
+  expect:
+    contains: ["disableTracking", "enableTracking"]
+    judge:
+      - q: "Does the answer say new events are dropped while tracking is disabled, and that events already queued are kept and sent when tracking is re-enabled?"
+        want: "yes"
+      - q: "Does the answer say the app must persist the consent decision in its own storage and call enableTracking() / disableTracking() on app load?"
+        want: "yes"
+  source: web/direct.md › Steps › 8 and Known Issues (Events missing after consent revoked)
+
+- id: web-direct-identify-login-refresh
+  profile: web/direct
+  category: identity
+  question: >-
+    On login for an existing customer we call
+    sdkService.identifyUser("email", user.email, "USER_UPDATE") and the profile isn't being
+    created in Capillary. We also run it in our layout component on every page load to keep
+    the SDK in sync. What's wrong?
+  expect:
+    contains: ["USER_REGISTER", "IndexedDB"]
+    judge:
+      - q: "Does the answer say USER_REGISTER is used for both login and sign-up and USER_UPDATE is only for profile changes, never at login?"
+        want: "yes"
+      - q: "Does the answer say not to re-identify the user on every page refresh because the SDK persists user context?"
+        want: "yes"
+  source: web/direct.md › Steps › 3, 4 and Known Issues (Wrong actionType; Re-identifying on every refresh)
+
+- id: web-direct-trap-mobile-identify
+  profile: web/direct
+  category: trap
+  question: >-
+    On our Android app we call pushUserSignin after login, and on iOS something like
+    Hydra.identify via HydraCore. What's the equivalent call to run when a user signs in on
+    the website?
+  expect:
+    contains: ["HydraSDK.identify"]
+    judge:
+      - q: "Does the answer explain the web sign-in call as sdkService.identifyUser (wrapping HydraSDK.identify) with identifier type, cuid and actionType USER_REGISTER?"
+        want: "yes"
+      - q: "Does the answer tell the web developer to call pushUserSignin, HydraCore or a mobile Hydra.identify API?"
+        want: "no"
+  source: web/direct.md › Steps › 3 and API Reference
+
+- id: web-direct-identify-timezone-trait
+  profile: web/direct
+  category: identity
+  question: >-
+    I want to send the user's timezone in identify() but TypeScript says 'timezone' isn't
+    in our sdkService traits type. Is it supported, and in what format should I send it?
+  expect:
+    contains: ["timezone"]
+    judge:
+      - q: "Does the answer say timezone is a supported trait and that the service template's traits type omits it so it must be added?"
+        want: "yes"
+      - q: "Does the answer state a specific format for the timezone value (for example IANA names or UTC offsets) as documented fact?"
+        want: "no"
+      - q: "Does the answer say the timezone format is not documented or suggest asking Capillary?"
+        want: "yes"
+  source: web/direct.md › API Reference (traits; Gap on formats)
+
+- id: web-direct-reset-logout
+  profile: web/direct
+  category: identity
+  question: >-
+    When a user logs out of our SPA, what should we call, and what happens to their loyalty
+    token and to tracking afterwards?
+  expect:
+    contains: ["reset"]
+    judge:
+      - q: "Does the answer say reset() clears the user context and the Capillary token, and that tracking returns to anonymous?"
+        want: "yes"
+  source: web/direct.md › Steps › 5
+
+- id: web-direct-correction-getuser
+  profile: web/direct
+  category: correction
+  question: >-
+    The old integration PDF we were given says to call HydraSDK.getUser() to read the visitor
+    ID before login, but TypeScript says there's no such method. How do we get the anonymous
+    visitor ID?
+  expect:
+    contains: ["getAnonymousId"]
+    judge:
+      - q: "Does the answer recommend using HydraSDK.getUser() to get the visitor ID?"
+        want: "no"
+      - q: "Does the answer say getAnonymousId() returns a string or null and is safe to call at any time regardless of auth state?"
+        want: "yes"
+  source: web/direct.md › Modules › Visitor (⚠️ Correction)
+
+- id: web-direct-correction-websdk-track
+  profile: web/direct
+  category: correction
+  question: >-
+    Following the integration PDF we wrote WebSDK.track("add_to_cart", { sku: "A1" }) and
+    WebSDK.pageView() but get "ReferenceError: WebSDK is not defined". What do we use instead?
+  expect:
+    contains: ["HydraSDK"]
+    judge:
+      - q: "Does the answer recommend calling WebSDK.track or WebSDK.pageView?"
+        want: "no"
+      - q: "Does the answer say to use HydraSDK.track and HydraSDK.pageView, called through the service wrapper (trackEvent / trackPageView)?"
+        want: "yes"
+  source: web/direct.md › Steps › 6 (⚠️ Correction)
+
+- id: web-direct-correction-gamification-two-fields
+  profile: web/direct
+  category: correction
+  question: >-
+    Following the 2024 guide we gave initialize() only gamificationWriteKey and
+    gamificationRegion. No campaigns or entry points ever appear and there are no errors.
+    Why?
+  expect:
+    contains: ["gamificationBaseUrl"]
+    judge:
+      - q: "Does the answer say gamification needs all three of gamificationWriteKey, gamificationRegion and gamificationBaseUrl?"
+        want: "yes"
+      - q: "Does the answer say that the write key and region alone are enough to activate gamification?"
+        want: "no"
+      - q: "Does the answer also mention at least one other thing to check, such as identify() having been called, the URL path rules, or overlay suppression?"
+        want: "yes"
+  source: web/direct.md › Modules › Gamification (⚠️ Correction) and Known Issues (Gamification entry points not appearing)
+
+- id: web-direct-correction-notifications-block
+  profile: web/direct
+  category: correction
+  question: >-
+    Push never registers. Our config follows the old PDF:
+
+        notifications: {
+          firebaseConfig: { apiKey: "...", projectId: "..." },
+          vapidKey: "...",
+          serviceWorkerPath: "/firebase-messaging-sw.js",
+        }
+
+    Is that the right shape for the notifications block?
+  expect:
+    contains: ["getMessaging(firebaseApp)", "messaging"]
+    judge:
+      - q: "Does the answer recommend putting firebaseConfig inside the notifications block?"
+        want: "no"
+      - q: "Does the answer say to create your own Firebase app and pass its Messaging instance as notifications.messaging?"
+        want: "yes"
+  source: web/direct.md › Modules › Push (⚠️ Correction)
+
+- id: web-direct-correction-missing-comma
+  profile: web/direct
+  category: correction
+  question: >-
+    We copied the gamification part of the init sample from the 2024 PDF and the build fails
+    with a syntax error on the line right after gamificationBaseUrl:
+
+        gamificationRegion: "us",
+        gamificationBaseUrl: "https://example.invalid"
+        appVersion: "1.0.0",
+
+    What's wrong, and what should we copy instead?
+  expect:
+    contains: ["gamificationBaseUrl"]
+    judge:
+      - q: "Does the answer identify the missing comma after the gamificationBaseUrl line as the syntax error?"
+        want: "yes"
+      - q: "Does the answer point to the corrected service-file template (step 2) as the thing to follow?"
+        want: "yes"
+  source: web/direct.md › Steps › 2 (⚠️ Correction)
+
+- id: web-direct-push-app-exists
+  profile: web/direct
+  category: push
+  question: >-
+    Enabling push, we get "FirebaseError: Firebase: Firebase App named '[DEFAULT]' already
+    exists (app/duplicate-app)" on load. Our site also initialises Firebase for analytics.
+    What do we change?
+  expect:
+    contains: ["hydra-fcm"]
+    judge:
+      - q: "Does the answer say to give the push Firebase app its own name by passing it as the second argument to initializeApp?"
+        want: "yes"
+  source: web/direct.md › Modules › Push (P3) and Known Issues ("Firebase App already exists")
+
+- id: web-direct-push-subpath-404
+  profile: web/direct
+  category: push
+  question: >-
+    Our site is served at https://example.com/my-app/ . The browser shows a 404 for the
+    firebase-messaging-sw.js request and push never registers. What do we fix?
+  expect:
+    contains: ["/my-app/firebase-messaging-sw.js", "serviceWorkerPath"]
+    judge:
+      - q: "Does the answer say the file must live in public/ (or the static directory served at the site root) and serviceWorkerPath must match its real URL?"
+        want: "yes"
+  source: web/direct.md › Modules › Push (P3 table, P4) and Known Issues (Service worker 404)
+
+- id: web-direct-push-self-firebase-undefined
+  profile: web/direct
+  category: known-issue
+  question: >-
+    In the service worker's DevTools console we see that self.firebase is undefined, and no
+    push is ever shown. We have a fairly strict CSP. What should we check?
+  expect:
+    contains: ["gstatic.com", "YOUR_"]
+    judge:
+      - q: "Does the answer say to replace all the YOUR_* placeholder values in the service worker's Firebase config?"
+        want: "yes"
+      - q: "Does the answer say importScripts may have failed and that network access to gstatic.com must be allowed (CSP)?"
+        want: "yes"
+  source: web/direct.md › Known Issues (self.firebase is undefined)
+
+- id: web-direct-push-sw-no-notification
+  profile: web/direct
+  category: edge-case
+  question: >-
+    For debugging we added `const payload = event.data.json(); console.log(payload);` to the
+    push listener in firebase-messaging-sw.js. Now pushes arrive but no notification is shown
+    at all. Why?
+  expect:
+    judge:
+      - q: "Does the answer say the push body can be read only once, so the added read makes Firebase's own handler throw?"
+        want: "yes"
+      - q: "Does the answer tell the developer not to modify the worker's logic (remove the added code)?"
+        want: "yes"
+  source: web/direct.md › Modules › Push (P4) and Known Issues (No notification shown at all)
+
+- id: web-direct-push-title-icon
+  profile: web/direct
+  category: push
+  question: >-
+    Push notifications show up but with no title or body text (we filled those in the
+    campaign's notification fields), and the icon is a broken image. Why?
+  expect:
+    contains: ["data", "logo192.png"]
+    judge:
+      - q: "Does the answer say title/body must be sent as fields of the push data payload, not the notification payload?"
+        want: "yes"
+      - q: "Does the answer say icon and badge fall back to /logo192.png, so that file must exist in public/ or the fallback paths be changed?"
+        want: "yes"
+  source: web/direct.md › Modules › Push (P4) and Known Issues (title missing; icon missing)
+
+- id: web-direct-push-dlr-stale-worker
+  profile: web/direct
+  category: troubleshooting
+  question: >-
+    We redeployed the site but delivery receipts (received / clicked / dismissed) aren't being
+    recorded any more. The service worker file itself hasn't changed. What do we try?
+  expect:
+    contains: ["Unregister"]
+    judge:
+      - q: "Does the answer say an old service worker may be cached and to unregister it in DevTools (Application, Service Workers) then reload?"
+        want: "yes"
+  source: web/direct.md › Known Issues (DLR events not recorded)
+
+- id: web-direct-push-vapid-console
+  profile: web/direct
+  category: push
+  question: >-
+    We aren't using Remote Config. Where do I get the VAPID key for web push in the Firebase
+    console, and which SDK setting does it go into?
+  expect:
+    contains: ["Generate key pair", "vapidKey"]
+    judge:
+      - q: "Does the answer mention Project Settings, Cloud Messaging, Web configuration, Web Push certificates?"
+        want: "yes"
+  source: web/direct.md › Modules › Push (P1)
+
+- id: web-direct-trap-push-mobile-artifacts
+  profile: web/direct
+  category: trap
+  question: >-
+    For web push, do we need to upload an APNs key, add a google-services.json, or fetch an
+    FCM device token the way we do in our iOS and Android apps?
+  expect:
+    contains: ["VAPID"]
+    judge:
+      - q: "Does the answer say web push uses a Firebase Messaging instance created in the web app (getMessaging on a named Firebase app) plus a VAPID key and the service worker file?"
+        want: "yes"
+      - q: "Does the answer instruct the developer to upload an APNs key or add google-services.json for the web integration?"
+        want: "no"
+  source: web/direct.md › Modules › Push (P1-P4)
+
+- id: web-direct-gamification-embedded-hook
+  profile: web/direct
+  category: gamification
+  question: >-
+    Marketing configured an EMBEDDED gamification container for our home page in the dashboard.
+    What do we have to put in our page, and what id do we use?
+  expect:
+    contains: ["hookId"]
+    judge:
+      - q: "Does the answer say to add a div whose id equals the hookId provided by the dashboard/Capillary team?"
+        want: "yes"
+      - q: "Does the answer say EMBEDDED / NATIVE_BANNER hooks are SPA-safe because a MutationObserver waits for them, so they need not exist at page load?"
+        want: "yes"
+  source: web/direct.md › Modules › Gamification (Containers; Inline hooks)
+
+- id: web-direct-loyalty-embed-token
+  profile: web/direct
+  category: gamification
+  question: >-
+    The loyalty iframe never renders. Our div has id="loyalty-widget" but Capillary gave us
+    a different loyalty ID, and we haven't wired any token yet. How does this work, and how
+    does the token behave on reload and logout?
+  expect:
+    contains: ["embedId", "setCapToken"]
+    judge:
+      - q: "Does the answer say the div id must match the embedId from the Capillary team and that the element must exist before or shortly after identify() or the embed is silently skipped?"
+        want: "yes"
+      - q: "Does the answer say the token is appended as a capToken query parameter to the loyalty iframe URL, persisted in IndexedDB, and cleared on reset()?"
+        want: "yes"
+  source: web/direct.md › Modules › Gamification (loyalty embeds, Capillary token) and Known Issues (Loyalty iframe not rendering)
+
+- id: web-direct-gamification-path-rules
+  profile: web/direct
+  category: gamification
+  question: >-
+    A banner has the dashboard path rule "product". Will it show on /products/shoes? And
+    what about a rule of "example.com/cart" to target only our cart page?
+  expect:
+    contains: ["https://"]
+    judge:
+      - q: "Does the answer say a path-segment rule does not substring-match, so 'product' does not match 'products'?"
+        want: "yes"
+      - q: "Does the answer say an exact-URL rule must include http:// or https://?"
+        want: "yes"
+  source: web/direct.md › Modules › Gamification (URL path rules table)
+
+- id: web-direct-gamification-webview-manual-tracking
+  profile: web/direct
+  category: gamification
+  question: >-
+    Our site runs inside a native-shell webview with a custom router that never changes the
+    real URL. Gamification entry points never match any page. How do we make it work?
+  expect:
+    contains: ["enablePagePathTracking(false)", "onScreenChanged"]
+    judge:
+      - q: "Does the answer say to call onScreenChanged(screenName) on every navigation after switching to manual path tracking?"
+        want: "yes"
+  source: web/direct.md › Modules › Gamification (URL path rules) and Known Issues (webview / custom router)
+
+- id: web-direct-gamification-suppress
+  profile: web/direct
+  category: gamification
+  question: >-
+    During checkout we don't want any gamification popups, but the inline banners on the
+    page should keep rendering. How do we do that?
+  expect:
+    contains: ["setGamificationSuppressed"]
+    judge:
+      - q: "Does the answer say suppression pauses overlay containers (POP_UP, BOTTOM_SHEET, CHAT_BOX, ICON_BUTTON) and leaves EMBEDDED, NATIVE_BANNER and loyalty embeds unaffected?"
+        want: "yes"
+      - q: "Does the answer say to call setGamificationSuppressed(false) to resume?"
+        want: "yes"
+  source: web/direct.md › Modules › Gamification (Suppression)
+
+- id: web-direct-csp-allowlist
+  profile: web/direct
+  category: setup
+  question: >-
+    We have a strict Content Security Policy and use push plus gamification. Which entries do
+    we need for connect-src and worker-src, and do we replace what we already have?
+  expect:
+    contains: ["https://*.capillarytech.com", "https://*.posthog.com", "blob:"]
+    judge:
+      - q: "Does the answer say to add the entries to the existing directives rather than replacing them?"
+        want: "yes"
+      - q: "Does the answer list the Firebase / Google domains (googleapis.com, firebaseio.com, firebaseapp.com) for connect-src because push is used?"
+        want: "yes"
+  source: web/direct.md › Steps › 9
+
+- id: web-direct-gap-customerglu-csp
+  profile: web/direct
+  category: gap
+  question: >-
+    Capillary gave us a gamificationBaseUrl on customerglu.com. Do we need to add that domain
+    to connect-src?
+  expect:
+    contains: ["customerglu"]
+    judge:
+      - q: "Does the answer state definitively that customerglu.com must (or must not) be allowlisted, as established fact?"
+        want: "no"
+      - q: "Does the answer say this isn't documented or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: web/direct.md › Steps › 9 (⚠️ Gap)
+
+- id: web-direct-gap-versions
+  profile: web/direct
+  category: gap
+  question: >-
+    Which Node.js version and which version of the firebase npm package should we install
+    alongside the SDK for push?
+  expect:
+    contains: ["Capillary"]
+    judge:
+      - q: "Does the answer state a specific minimum Node.js version as fact?"
+        want: "no"
+      - q: "Does the answer state a specific firebase npm package version that must be installed as fact?"
+        want: "no"
+      - q: "Does the answer say this isn't documented or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: web/direct.md › Requirements (⚠️ Gap)
+
+- id: web-direct-gap-push-prompt-test
+  profile: web/direct
+  category: gap
+  question: >-
+    Who triggers the browser's "Allow notifications" prompt, and how do we send a test push to
+    our own browser to check the setup end to end?
+  expect:
+    contains: ["Capillary"]
+    judge:
+      - q: "Does the answer give a specific method name or procedure for showing the permission prompt or sending a test push as documented fact?"
+        want: "no"
+      - q: "Does the answer say the permission prompt, foreground handling or test-push procedure isn't documented, or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: web/direct.md › Modules › Push (⚠️ Gap) and Verification (⚠️ Gap)
+
+- id: web-direct-gap-inapp-inbox
+  profile: web/direct
+  category: gap
+  question: >-
+    How do we show in-app messages and a notification inbox on our website with this SDK?
+  expect:
+    contains: ["Capillary"]
+    judge:
+      - q: "Does the answer provide specific SDK methods or setup steps for in-app messages or an inbox on web as fact?"
+        want: "no"
+      - q: "Does the answer say in-app / inbox isn't documented for Web or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: web/direct.md › Modules › In-App and Inbox (⚠️ Gap)
+
+- id: web-direct-gap-cap-token-source
+  profile: web/direct
+  category: gap
+  question: >-
+    We need to call setCapToken after login. Which Capillary API do we call to obtain that
+    short-lived token for the logged-in user?
+  expect:
+    contains: ["setCapToken"]
+    judge:
+      - q: "Does the answer name a specific endpoint or API for obtaining the token as fact?"
+        want: "no"
+      - q: "Does the answer say how to obtain the token isn't documented or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: web/direct.md › Prerequisites (loyalty embeds) and _shared/prerequisites.md › Loyalty View (⚠️ Gap)
+
+- id: web-direct-trap-ssl-key-rotation
+  profile: web/direct
+  category: trap
+  question: >-
+    Our mobile team has to replace the SSL public key every nine months or they get
+    certificate pinning failures. Do we need to store and rotate an SSL key for the web
+    integration too?
+  expect:
+    contains: ["SSL"]
+    judge:
+      - q: "Does the answer say the SSL public key is for mobile only and is not part of the web integration?"
+        want: "yes"
+      - q: "Does the answer tell the web developer to pass an SSL public key to HydraSDK.initialize()?"
+        want: "no"
+  source: _shared/prerequisites.md › Capillary gives the client (SSL Public Key row, Mobile only)
+
+- id: web-direct-smoke-checks
+  profile: web/direct
+  category: verification
+  question: >-
+    What should we run to verify the integration before production? I set debugLevel to
+    "DEBUG" but the console shows nothing extra.
+  expect:
+    contains: ["Verbose", "trackPageView", "enableTracking"]
+    judge:
+      - q: "Does the answer say DevTools hides console.debug output unless the Verbose level is enabled in the Console filter?"
+        want: "yes"
+      - q: "Does the answer include checks for page view (an outbound POST to the baseURL in the Network tab), custom event, identify, reset and consent?"
+        want: "yes"
+  source: web/direct.md › Verification and Known Issues (debugLevel "DEBUG" shows nothing)
+
+- id: web-direct-rollback
+  profile: web/direct
+  category: edge-case
+  question: >-
+    The SDK is causing problems on our production site. What's the safe rollback sequence?
+  expect:
+    contains: ["disableTracking", "npm uninstall cap-hydra-web-sdk"]
+    judge:
+      - q: "Does the answer include removing the SDK service import from the app entry point and sending the error details to the Capillary team?"
+        want: "yes"
+  source: web/direct.md › Known Issues (Rollback)
+
+- id: web-direct-config-defaults
+  profile: web/direct
+  category: init
+  question: >-
+    Which optional initialize() settings exist and what are their defaults (session timeout,
+    batch size, retry delays, logging level)?
+  expect:
+    contains: ["sessionTimeoutMinutes", "batchSize", "900000"]
+    judge:
+      - q: "Does the answer say the default session timeout is 30 minutes and the default batchSize is 50?"
+        want: "yes"
+      - q: "Does the answer list debugLevel values NONE, ERROR, WARN, INFO, DEBUG, VERBOSE with NONE as the default?"
+        want: "yes"
+  source: web/direct.md › API Reference (initialize() fields)
+
+- id: web-direct-engagement-events
+  profile: web/direct
+  category: events
+  question: >-
+    We started seeing events called game_viewed and reward_seen in our analytics even though
+    we never track them. Where do they come from?
+  expect:
+    contains: ["game_viewed"]
+    judge:
+      - q: "Does the answer say the SDK itself sends gamification engagement events (such as game_open, game_played, reward_seen) through the normal event pipeline?"
+        want: "yes"
+  source: web/direct.md › Modules › Gamification (Engagement events)
+
+- id: web-direct-prereq-values-and-cluster
+  profile: web/direct
+  category: prerequisites
+  question: >-
+    We're on the North America cluster. What do we need from Capillary before writing code,
+    which initialize() fields do those map to, and what Base URL do we use?
+  expect:
+    contains: ["accountId", "orgId", "https://mapp-uscrm.api.capillarytech.com/"]
+    judge:
+      - q: "Does the answer map Account ID to accountId, Base URL to baseURL and Org ID to orgId?"
+        want: "yes"
+      - q: "Does the answer say that for gamification all three of the write key, region and base URL are needed?"
+        want: "yes"
+      - q: "Does the answer say to use the Base URL Capillary confirms for the org?"
+        want: "yes"
+  source: web/direct.md › Prerequisites and _shared/prerequisites.md › Capillary gives the client / Base URL by cluster
+
+- id: web-direct-prereq-registration-gap
+  profile: web/direct
+  category: prerequisites
+  question: >-
+    What does our team have to send Capillary so that they register our web app, and does the
+    identifier we pass to identify() have to match the Account Linking Identifier in the CRM?
+  expect:
+    contains: ["Capillary"]
+    judge:
+      - q: "Does the answer state a definitive list of items the client sends to register a web app?"
+        want: "no"
+      - q: "Does the answer say the web registration details (and whether the identify() identifier must match the CRM Account Linking Identifier) aren't documented for Web, or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: web/direct.md › Prerequisites (⚠️ Gap) and _shared/prerequisites.md
+
+- id: web-direct-escalation-info
+  profile: web/direct
+  category: troubleshooting
+  question: >-
+    We've hit a problem we can't solve and want to escalate to Capillary support. What should
+    we include in the report?
+  expect:
+    contains: ["Hydra SDK version"]
+    judge:
+      - q: "Does the answer ask for the platform, the exact error with logs or screenshots, and what has already been checked?"
+        want: "yes"
+  source: _shared/troubleshooting.md › 6. What to send when you escalate

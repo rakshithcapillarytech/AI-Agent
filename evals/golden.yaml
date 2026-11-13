@@ -87,27 +87,27 @@
         want: "yes"
   source: android/direct.md › Modules › Push
 
-- id: android-direct-minsdk-gap
+- id: android-direct-minsdk
   profile: android/direct
   question: What's the minimum Android API level (minSdk) the Hydra SDK supports?
   expect:
+    contains: ["21"]
     judge:
-      - q: "Does the answer state a specific minimum Android API level number as a fact?"
-        want: "no"
-      - q: "Does the answer say this isn't documented, or suggest checking with Capillary?"
+      - q: "Does the answer state that the minimum Android SDK version (minSdk) is 21?"
         want: "yes"
-  source: android/direct.md › Requirements (gap)
+  source: android/direct.md › Requirements (android-sdk-getting-started)
 
-- id: android-firebase-push-gap
+- id: android-firebase-push-setup
   profile: android/firebase
   question: How do we set up push notifications on Android with Firebase? Give us the Gradle lines.
   expect:
+    contains: ["hydra-pushbase", "hydra-firebase"]
     judge:
-      - q: "Does the answer give specific Gradle dependency lines with version numbers for hydra-pushbase or hydra-firebase?"
-        want: "no"
-      - q: "Does the answer say this isn't fully documented, or offer to involve a Capillary engineer?"
+      - q: "Does the answer give dependency lines for the Hydra push modules (hydra-pushbase and hydra-firebase)?"
         want: "yes"
-  source: android/firebase.md › Modules › Push (gap)
+      - q: "Does the answer mention that Firebase (google-services.json) must also be set up?"
+        want: "yes"
+  source: android/firebase.md › Steps (push) and Modules › Push
 
 - id: shared-account-linking
   profile: android/direct
@@ -164,3 +164,160 @@
       - q: "Does the answer present a specific SDK method or API endpoint for deleting a customer as if it exists?"
         want: "no"
   source: none (not in the knowledge base; the agent must not invent one)
+
+- id: android-source-not-found-signature
+  profile: android/direct
+  question: >-
+    Our SDK log shows "Client Credentials Generation Failed" and {"error":"source not found","status":400}
+    when the app starts. What does that mean?
+  expect:
+    contains: ["signature"]
+    judge:
+      - q: "Does the answer say the App Signature registered at Capillary doesn't match the signature of the app build?"
+        want: "yes"
+  source: android/direct.md › Known Issues; _shared/push.md › What must match
+
+- id: flutter-push-token-but-no-push
+  profile: flutter/firebase
+  question: >-
+    Users sign in and we can see an FCM token in the logs, but no push notification from a campaign ever
+    arrives. What should we check first?
+  expect:
+    contains: ["Firebase project"]
+    judge:
+      - q: "Does the answer tell the client to check that the app's Firebase project is the one registered with Capillary?"
+        want: "yes"
+      - q: "Does the answer suggest sending a test message from the Firebase console to tell whether the problem is the app or Capillary's setup?"
+        want: "yes"
+  source: _shared/push.md › Common problems; Test the push flow
+
+- id: android-firebase-service-account-secret
+  profile: android/firebase
+  question: >-
+    Capillary asked for our Firebase service-account JSON for push. Can we paste it here in the chat or email it?
+  expect:
+    judge:
+      - q: "Does the answer tell the client NOT to share the service-account file in chat or email, and to use only the secure channel their Capillary contact gives them?"
+        want: "yes"
+  source: _shared/push.md › What Capillary sets up; _shared/prerequisites.md
+
+- id: push-fcm-delivery-events
+  profile: ios/firebase
+  question: How can we confirm from Firebase whether FCM actually delivered our push messages?
+  expect:
+    contains: ["BigQuery", "MESSAGE_DELIVERED"]
+  source: _shared/push.md › Confirm delivery with FCM reports
+
+- id: rn-package-from-github-packages
+  profile: react-native/direct
+  question: Which npm package do we install for the Hydra React Native SDK, and where is it hosted?
+  expect:
+    contains: ["@capillarytech/react-native-hydra-lib"]
+    judge:
+      - q: "Does the answer say the package is installed from GitHub Packages (npm.pkg.github.com) with a GitHub token?"
+        want: "no"
+  source: "react-native/direct.md › Steps › 1–2 (package correction, public registry)"
+
+- id: ssl-key-expiry-not-hardcoded
+  profile: android/direct
+  question: Can we hardcode the Hydra SSL public key in our app?
+  expect:
+    judge:
+      - q: "Does the answer say the SSL public key expires periodically (about every 9 months) and advise keeping it in a remote configuration instead of hardcoding it?"
+        want: "yes"
+  source: _shared/prerequisites.md › SSL public key; _shared/troubleshooting.md › section 2
+
+- id: rn-firebase-remote-config-keys
+  profile: react-native/firebase
+  question: Which Firebase Remote Config keys does the React Native SDK need to initialise?
+  expect:
+    contains: ["hydra_account_id", "hydra_base_url", "hydra_ssl_public_key", "hydra_remote_log_level"]
+  source: react-native/firebase.md › Steps › 8
+
+- id: rn-xcode26-extension-pod-install
+  profile: react-native/direct
+  question: After adding the Notification Service Extension in Xcode 26, pod install fails. What should we do?
+  expect:
+    contains: ["Convert to Group"]
+  source: react-native/direct.md › Steps › 5
+
+- id: push-request-entity-not-found
+  profile: flutter/firebase
+  question: >-
+    Our push campaign report shows the skipped reason "Request Entity Not Found" for some users. What does it mean
+    and how do we fix it?
+  expect:
+    judge:
+      - q: "Does the answer say the user's FCM token has expired and that the user should log out and log in again?"
+        want: "yes"
+  source: _shared/push.md › Why Capillary skipped a message
+
+- id: push-reachability-one-day
+  profile: android/firebase
+  question: A user signed in to our app a few minutes ago, but our test push campaign skipped them. Why?
+  expect:
+    judge:
+      - q: "Does the answer explain that reachability for push becomes available about one day after the user's first sign-in?"
+        want: "yes"
+  source: _shared/push.md › How a push reaches a device (reachability)
+
+- id: rn-sign-out
+  profile: react-native/direct
+  question: How do we sign a user out in the React Native SDK?
+  expect:
+    contains: ["Hydra.reset"]
+    judge:
+      - q: "Does the answer recommend `HydraCore.signOut` as the way to sign out?"
+        want: "no"
+  source: react-native/direct.md › Steps › 12 (correction)
+
+- id: rn-firebase-multi-account
+  profile: react-native/firebase
+  question: We have two Hydra accounts (India and USA). How do we switch the account at runtime?
+  expect:
+    contains: ["setFirebaseRemoteConfigKeys", "identify"]
+  source: react-native/firebase.md › Modules › Multi-account
+
+- id: ios-rich-push-extension
+  profile: ios/direct
+  question: Push notification images don't show on iOS. What do we need to add?
+  expect:
+    contains: ["Notification Service Extension", "mutable-content"]
+  source: ios/direct.md › Modules › Push
+
+- id: android-own-fcm-service
+  profile: android/firebase
+  question: >-
+    Our Android app has its own Firebase messaging service. What must we change in the Hydra setup
+    so push still works?
+  expect:
+    contains: ["FcmConfig", "passPushToken"]
+  source: android/firebase.md › Steps (own FCM service)
+
+- id: push-ttl-late-delivery
+  profile: android/firebase
+  question: >-
+    A push campaign ended days ago, but a user got the notification when they opened the app today.
+    Is that a bug?
+  expect:
+    contains: ["TTL"]
+    judge:
+      - q: "Does the answer say this is expected because undelivered pushes are pulled when the app is opened within the campaign TTL (15 days by default)?"
+        want: "yes"
+  source: _shared/push.md › Late pushes (campaign TTL)
+
+- id: web-firebase-app-already-exists
+  profile: web/firebase
+  question: Push works in development but we get a "Firebase App already exists" error. What's wrong?
+  expect:
+    contains: ["hydra-fcm"]
+  source: web/firebase.md › Known Issues
+
+- id: flutter-multi-account-order
+  profile: flutter/direct
+  question: In a multi-account Flutter app, when should we set the Hydra account relative to identify?
+  expect:
+    judge:
+      - q: "Does the answer say the account must be set after the SDK is initialised and before calling identify?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Multi-account

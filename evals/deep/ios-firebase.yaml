@@ -1,0 +1,550 @@
+# Deep evaluation cases for ios/firebase (iOS, settings in Firebase Remote Config). See evals/golden.yaml for the format.
+
+- id: ios-firebase-spm-version-from-110
+  profile: ios/firebase
+  category: correction
+  question: >-
+    Package.swift from the install page has `.upToNextMajor(from: "1.1.0")` for the hydra-sdk-ios-packages
+    dependency. We resolved it and got an old SDK without gamification. What version should be there?
+  expect:
+    contains: ["1.7.5-preprod.12", "upToNextMajor"]
+    judge:
+      - q: "Does the answer recommend using from: \"1.1.0\" as the version?"
+        want: "no"
+      - q: "Does the answer say to use 1.7.5-preprod.12 (the required/minimum version)?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 2. Install the SDK › Option A (Correction) and Known Issues"
+
+- id: ios-firebase-spm-repo-and-preprod10
+  profile: ios/firebase
+  category: correction
+  question: >-
+    The Experience+ iOS gamification guide says to use https://github.com/Capillary/hydra-ios-sdk-spm.git with
+    minimum 1.7.5-preprod.10. Is that the package we add to our native iOS project?
+  expect:
+    contains: ["hydra-sdk-ios-packages", "1.7.5-preprod.12"]
+    judge:
+      - q: "Does the answer recommend https://github.com/Capillary/hydra-ios-sdk-spm.git as the package URL for this app?"
+        want: "no"
+      - q: "Does the answer recommend 1.7.5-preprod.10 as the version to use?"
+        want: "no"
+  source: "ios/firebase.md › Steps › 2. Install the SDK › Option A (Correction 2)"
+
+- id: ios-firebase-podfile-two-bugs
+  profile: ios/firebase
+  category: correction
+  question: >-
+    Our Podfile (copied from the install guide) has `private_repo = ...` as the first line inside
+    `target 'MyApp' do`, and there's an extension target below it that references private_repo too. We also
+    have a stray line "Ensure you are using the correct source or git URL" that isn't commented. `pod install`
+    breaks. What's the fixed layout?
+  expect:
+    contains: ["private_repo", "pod 'HydraPushNotificationServiceExtension', :git => private_repo"]
+    judge:
+      - q: "Does the answer say private_repo should be defined above (outside) both target blocks?"
+        want: "yes"
+      - q: "Does the answer recommend keeping private_repo defined inside the target 'YourAppTargetName' block?"
+        want: "no"
+      - q: "Does the answer tell the developer to remove that line or make it a comment, rather than keep it as active text?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 2. Install the SDK › Option C: CocoaPods (two Corrections)"
+
+- id: ios-firebase-gamification-base-url-key-name
+  profile: ios/firebase
+  category: correction
+  question: >-
+    The key list in the Integration PDF shows the gamification base URL as `hydra_gamification_base_url ()`.
+    What exact Remote Config parameter key should we create for it, and when is it needed?
+  expect:
+    contains: ["hydra_gamification_base_url", "hydra_gamification_region"]
+    judge:
+      - q: "Does the answer recommend a key name with parentheses, hydra_gamification_base_url (), as the Remote Config key?"
+        want: "no"
+      - q: "Does the answer say the base URL is required only if hydra_gamification_region is not provided (one of the two is needed)?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 3. Add the Remote Config keys (Correction)"
+
+- id: ios-firebase-fetch-private-repo-fails
+  profile: ios/firebase
+  category: known-issue
+  question: >-
+    Adding the Hydra package in Xcode (File > Add Packages) ends with an authentication error against
+    the Capillary GitHub repo. How do we get past it?
+  expect:
+    contains: ["hydra-sdk-ios-packages", "Accounts"]
+    judge:
+      - q: "Does the answer say access to the private repo must be requested from Capillary's access team?"
+        want: "yes"
+      - q: "Does the answer offer GitHub credentials in Xcode or a username plus Personal Access Token in the URL as the options?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 1 and Known Issues"
+
+- id: ios-firebase-objc-init
+  profile: ios/firebase
+  category: known-issue
+  question: >-
+    We maintain an Objective-C iOS app. Where do we initialise the SDK from our Remote Config values when
+    HydraConfiguration isn't visible to Objective-C?
+  expect:
+    contains: ["Swift-only", "Swift file"]
+    judge:
+      - q: "Does the answer say to run the initialisation from a small Swift file, with Objective-C code running afterwards?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 3 (Objective-C) and Known Issues"
+
+- id: ios-firebase-rich-push-no-image
+  profile: ios/firebase
+  category: known-issue
+  question: >-
+    Pushes show up with title and body only. The campaign has an image and buttons but we see none of it
+    on iPhone. What is missing?
+  expect:
+    contains: ["HydraPushNotificationServiceExtension", "mutable-content"]
+    judge:
+      - q: "Does the answer mention a Notification Service Extension target with the framework added to that extension target?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › Push › 5 and Known Issues"
+
+- id: ios-firebase-cta-deeplink-ignored
+  profile: ios/firebase
+  category: known-issue
+  question: >-
+    Tapping a push CTA with a custom deep link does nothing, but URL-type CTAs open Safari. How do we
+    handle our own CTA types?
+  expect:
+    contains: ["HydraNotificationCallbackDelegate", "setNotificationCallbackDelagte"]
+    judge:
+      - q: "Does the answer say the SDK itself only handles external-type CTAs unless a delegate is set?"
+        want: "yes"
+      - q: "Does the answer mention process(cta:notificationPayload:) returning true when handled?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › Push › 6 and Known Issues"
+
+- id: ios-firebase-inbox-not-storing
+  profile: ios/firebase
+  category: known-issue
+  question: >-
+    The Notification Center screen is blank and no incoming push is stored in the inbox. Pushes do reach
+    the device. What do we verify?
+  expect:
+    contains: ["App Group"]
+    judge:
+      - q: "Does the answer say the same App Group ID must be on the app target and the Notification Service Extension (all SDK targets)?"
+        want: "yes"
+      - q: "Does the answer say push must be initialised and the Inbox initialised after HydraCore and NotificationCore?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › Inbox and Known Issues"
+
+- id: ios-firebase-screen-targeted-missing
+  profile: ios/firebase
+  category: known-issue
+  question: >-
+    Our bottom-sheet campaign is targeted to the Checkout screen but it never appears in the SwiftUI app.
+    Floating buttons on other screens do. What should we add?
+  expect:
+    contains: [".gamificationScreen("]
+    judge:
+      - q: "Does the answer say the screen must be reported because campaign visibility and eligibility depend on the reported screen?"
+        want: "yes"
+      - q: "Does the answer apply the .gamificationScreen modifier on the screen's own view (not on HydraGamificationUI())?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 9 and Known Issues"
+
+- id: ios-firebase-no-gamification-at-all
+  profile: ios/firebase
+  category: known-issue
+  question: >-
+    Gamification never starts. In Remote Config we published hydra_gamification_region but forgot to
+    create a key for the write key. Is that why nothing appears?
+  expect:
+    contains: ["hydra_gamification_key"]
+    judge:
+      - q: "Does the answer say hydra_gamification_key is mandatory and that gamification stays disabled without it?"
+        want: "yes"
+      - q: "Does the answer say the values must also be passed to HydraConfiguration (gamificationWriteKey, gamificationRegion / gamificationBaseURL)?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 3 and Known Issues"
+
+- id: ios-firebase-custom-scheme-deeplink
+  profile: ios/firebase
+  category: known-issue
+  question: >-
+    A gamification campaign has a button that should open myapp://rewards. Nothing happens on tap
+    in our iOS app, but https links work. Why?
+  expect:
+    contains: ["gamificationRequestedDeeplink"]
+    judge:
+      - q: "Does the answer say the SDK handles only HTTP/HTTPS links and the host app handles custom-scheme deeplinks in the delegate method?"
+        want: "yes"
+  source: "ios/firebase.md › Known Issues and Modules › Gamification (HydraGamificationDelegate)"
+
+- id: ios-firebase-push-never-arrives
+  profile: ios/firebase
+  category: known-issue
+  question: >-
+    We sign in users fine and Remote Config values load, but a campaign push never lands on iPhones.
+    What do we check, in order?
+  expect:
+    contains: ["APNs", "FCM Project ID"]
+    judge:
+      - q: "Does the answer mention that the app's Firebase project (GoogleService-Info.plist) must match the one registered at Capillary?"
+        want: "yes"
+      - q: "Does the answer mention the APNs key uploaded to Firebase or the push gateway not being set up as possible causes?"
+        want: "yes"
+      - q: "Does the answer suggest a test message from the Firebase console to the same token?"
+        want: "yes"
+  source: "ios/firebase.md › Known Issues; _shared/push.md › Test the push flow end to end"
+
+- id: ios-firebase-client-credentials-failed
+  profile: ios/firebase
+  category: known-issue
+  question: >-
+    SDK log: "Client Credentials Generation Failed" with {"error":"source not found","status":400} right
+    after launch of our staging build, whose bundle ID has a .stg suffix. What is going on?
+  expect:
+    contains: ["Bundle Name"]
+    judge:
+      - q: "Does the answer say the registered Bundle Name at Capillary must match the build's bundle ID, and that a variant with a different bundle ID is a different app to Capillary?"
+        want: "yes"
+      - q: "Does the answer say to ask Capillary to correct or add the registration?"
+        want: "yes"
+  source: "ios/firebase.md › Known Issues; _shared/troubleshooting.md › 2; _shared/push.md"
+
+- id: ios-firebase-events-before-sign-in
+  profile: ios/firebase
+  category: edge-case
+  question: >-
+    Our analytics team says the custom events from hydra.reportBehavioralEvent never appear for users who
+    open the app and browse before logging in. Is that expected?
+  expect:
+    contains: ["reportBehavioralEvent", "reportUserSignIn"]
+    judge:
+      - q: "Does the answer say events only count after a sign-in or sign-up has been reported and are invalid after a sign-out?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 8 and Known Issues"
+
+- id: ios-firebase-loyalty-empty
+  profile: ios/firebase
+  category: edge-case
+  question: >-
+    The GamificationLoyaltyView in our SwiftUI screen renders as an empty box. We call
+    hydra.setCapToken(token) in onAppear of that same view, after it is built. What do we change?
+  expect:
+    contains: ["setCapToken"]
+    judge:
+      - q: "Does the answer say the token must be set before the Loyalty View mounts, and an invalid/missing token makes it render empty?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 11 and Known Issues"
+
+- id: ios-firebase-inbox-init-order
+  profile: ios/firebase
+  category: edge-case
+  question: >-
+    We set up InboxCore at the very top of didFinishLaunching, before the Hydra instance and
+    NotificationCore exist, and hydraSDK?.configuration() returns nil. What is the correct order and
+    what config do we pass to the Inbox?
+  expect:
+    contains: ["InboxCoreConfiguration", "hydraConfig"]
+    judge:
+      - q: "Does the answer say to initialise Inbox only after HydraCore and NotificationCore?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › Inbox"
+
+- id: ios-firebase-loyalty-embedid-label
+  profile: ios/firebase
+  category: edge-case
+  question: >-
+    For the Loyalty View I wrote GamificationLoyaltyView(loyaltyId: 42) and it won't build (42 is a made-up
+    placeholder). What's the label, and how do I do the Embedded view in UIKit?
+  expect:
+    contains: ["GamificationLoyaltyView", "embedId", "gamificationEmbedView"]
+    judge:
+      - q: "Does the answer use embedId: (not loyaltyId:) as the argument label for the Loyalty View?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › Gamification (Loyalty View, Embedded View)"
+
+- id: ios-firebase-identity-flow
+  profile: ios/firebase
+  category: identity
+  question: >-
+    How do we report that a user signed up, signed in, updated their subscriptions, and signed out,
+    and what must the customer id match?
+  expect:
+    contains: ["reportUserSignUp", "reportUserProfileUpdate", "reportUserSignOut"]
+    judge:
+      - q: "Does the answer say customerId must match the Account Linking Identifier in Capillary CRM?"
+        want: "yes"
+      - q: "Does the answer mention that email is optional (nil) while firstName, lastName and phone are mandatory for sign-in/up?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 5, 6, 7; _shared/prerequisites.md"
+
+- id: ios-firebase-init-from-remote-config
+  profile: ios/firebase
+  category: init
+  question: >-
+    Show me how the SDK is initialised once the values come from Remote Config, and which parameters
+    map to the gamification arguments.
+  expect:
+    contains: ["HydraConfiguration", "Hydra.generate", "gamificationWriteKey"]
+    judge:
+      - q: "Does the answer map hydra_gamification_key, hydra_gamification_region and hydra_gamification_base_url to gamificationWriteKey, gamificationRegion and gamificationBaseURL?"
+        want: "yes"
+      - q: "Does the answer say to create one SDK instance per application and initialise in application(_:didFinishLaunchingWithOptions:)?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 3. Add the Remote Config keys and initialise the SDK"
+
+- id: ios-firebase-gap-remote-config-core-keys
+  profile: ios/firebase
+  category: gap
+  question: >-
+    What are the Remote Config parameter names for the Account Id, Base URL, SSL public key and Org Id on
+    iOS, and how do I fetch them in Swift?
+  expect:
+    contains: ["hydra_gamification_key"]
+    judge:
+      - q: "Does the answer state specific Remote Config key names for Account Id, Base URL, SSL key or Org Id on iOS (for example hydra_account_id or hydra_base_url) as fact?"
+        want: "no"
+      - q: "Does the answer say these key names and the fetch code aren't documented for iOS, or suggest asking Capillary?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 3 (Gap) and Coverage; _shared/firebase-setup.md › Core keys (Gap)"
+
+- id: ios-firebase-gap-retry-delays
+  profile: ios/firebase
+  category: gap
+  question: >-
+    What values should we use for retryDelays in .genericServer(...), and are the numbers seconds or
+    milliseconds?
+  expect:
+    contains: ["retryDelays"]
+    judge:
+      - q: "Does the answer state the unit of retryDelays (seconds or milliseconds) as fact?"
+        want: "no"
+      - q: "Does the answer say the unit isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 3 (Gap)"
+
+- id: ios-firebase-gap-suppress-resume
+  profile: ios/firebase
+  category: gap
+  question: >-
+    We call hydra.setGamificationSuppressed(true) while the user is in checkout. How do we turn the
+    popups back on afterwards?
+  expect:
+    contains: ["setGamificationSuppressed"]
+    judge:
+      - q: "Does the answer state definitively that passing false resumes the gamification UI?"
+        want: "no"
+      - q: "Does the answer say that resuming isn't stated in the documentation (only true is shown) or suggest asking Capillary?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › Gamification (UI suppression Gap)"
+
+- id: ios-firebase-gap-delegate-registration
+  profile: ios/firebase
+  category: gap
+  question: >-
+    We implemented HydraGamificationDelegate in an extension. What call registers our object as the
+    delegate with Hydra?
+  expect:
+    contains: ["HydraGamificationDelegate"]
+    judge:
+      - q: "Does the answer state a specific registration method or property (such as setGamificationDelegate or hydra.gamificationDelegate = ) as fact?"
+        want: "no"
+      - q: "Does the answer say how to register the delegate isn't documented, or suggest asking Capillary?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › Gamification (HydraGamificationDelegate Gap)"
+
+- id: ios-firebase-gap-inapp-init
+  profile: ios/firebase
+  category: gap
+  question: >-
+    Which call configures HydraInAppMessage for popup in-app messages in our iOS app, and what callbacks
+    does it fire?
+  expect:
+    contains: ["HydraInAppMessage"]
+    judge:
+      - q: "Does the answer give a specific initialisation call or callback list for HydraInAppMessage as fact?"
+        want: "no"
+      - q: "Does the answer say iOS in-app setup isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › In-App (Gap)"
+
+- id: ios-firebase-trap-flutter-initializer
+  profile: ios/firebase
+  category: trap
+  question: >-
+    In Flutter we used HydraInitializer.initialize() and a hydra-config.json file listing the Remote Config
+    key names. Is there an equivalent for native iOS? How do we start the SDK here?
+  expect:
+    contains: ["HydraConfiguration", "Hydra.generate"]
+    judge:
+      - q: "Does the answer give HydraInitializer.initialize or a hydra-config.json file as the way to initialise the native iOS SDK?"
+        want: "no"
+  source: "ios/firebase.md › Steps › 3"
+
+- id: ios-firebase-trap-remote-log-level-key
+  profile: ios/firebase
+  category: trap
+  question: >-
+    We want Capillary to see our SDK logs from production. Troubleshooting mentions a
+    hydra_remote_log_level Remote Config parameter. Do we set that for iOS, or what is the iOS call?
+  expect:
+    contains: ["updateRemoteLogLevel"]
+    judge:
+      - q: "Does the answer state that the iOS SDK reads hydra_remote_log_level from Remote Config as fact?"
+        want: "no"
+      - q: "Does the answer give updateRemoteLogLevel(level:) as the documented iOS call (default none), or say the Remote Config key isn't documented for iOS?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 10; _shared/troubleshooting.md › 4; _shared/firebase-setup.md › Core keys (Gap)"
+
+- id: ios-firebase-trap-pass-fcm-token
+  profile: ios/firebase
+  category: trap
+  question: >-
+    On React Native we hand the refreshed token to the SDK with passFCMToken. After a token refresh our
+    native iOS users stop getting pushes. Which call do we use, from where, and what are the opt-in
+    flag setters for promotional and transactional pushes?
+  expect:
+    contains: ["update(interfaceID", "didReceiveRegistrationToken", "setTransactionalPushOpted"]
+    judge:
+      - q: "Does the answer give passFCMToken as the solution for the native iOS app?"
+        want: "no"
+      - q: "Does the answer say to call update(interfaceID:) with the FCM token from the MessagingDelegate callback?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 4, Modules › Push › 4 and Known Issues"
+
+- id: ios-firebase-trap-ssl-pinning-flag
+  profile: ios/firebase
+  category: trap
+  question: >-
+    On Flutter there's an enable_ssl_pinning flag we turn off for dev builds. Which iOS setting disables
+    certificate pinning for our dev build?
+  expect:
+    contains: ["SSL public key"]
+    judge:
+      - q: "Does the answer give a specific iOS flag or setting to disable certificate pinning as fact?"
+        want: "no"
+      - q: "Does the answer say the flag is documented for Flutter / React Native only, or that no iOS equivalent is documented, or point to keeping the SSL public key current?"
+        want: "yes"
+  source: "_shared/prerequisites.md › SSL public key: it expires (Flutter and React Native flag); ios/firebase.md"
+
+- id: ios-firebase-prereq-ssl-expiry-remote-config
+  profile: ios/firebase
+  category: prerequisites
+  question: >-
+    The SDK suddenly fails with a certificate pinning failure after about nine months in production. How do
+    we fix it fast and avoid a store release next time?
+  expect:
+    contains: ["Certificate pinning failure", "Remote Config"]
+    judge:
+      - q: "Does the answer say the SSL public key expires about every 9 months and Capillary supplies the new key?"
+        want: "yes"
+      - q: "Does the answer advise keeping the key in Firebase Remote Config (or another remote configuration) so it can be replaced without a store release?"
+        want: "yes"
+  source: "_shared/prerequisites.md › SSL public key: it expires; _shared/troubleshooting.md › 2"
+
+- id: ios-firebase-prereq-skipped-profile-not-found
+  profile: ios/firebase
+  category: troubleshooting
+  question: >-
+    Capillary's campaign report lists some of our iOS users as skipped with "Profile Not Found" and others
+    with "Gateway Not Found". What does each tell us?
+  expect:
+    contains: ["Profile Not Found", "Gateway Not Found", "Project ID"]
+    judge:
+      - q: "Does the answer link Profile Not Found to the app's Firebase Project ID not matching the account's FCM Project ID?"
+        want: "yes"
+      - q: "Does the answer say Gateway Not Found means Capillary's push gateway or onboarding configuration is incomplete (Capillary checks it)?"
+        want: "yes"
+  source: "_shared/push.md › Why Capillary skipped a message"
+
+- id: ios-firebase-apns-capabilities
+  profile: ios/firebase
+  category: push
+  question: >-
+    Give me the full Apple-side and Xcode-side checklist for push: key, Firebase upload, capabilities,
+    and the shared container for the extension. What format should the container ID have?
+  expect:
+    contains: ["Key ID", "Background Modes", "group."]
+    judge:
+      - q: "Does the answer say to turn on Push Notifications and Background Modes > Remote notifications for the app target?"
+        want: "yes"
+      - q: "Does the answer say the same App Group ID must be enabled on every target that uses the Capillary SDK, including the Notification Service Extension?"
+        want: "yes"
+      - q: "Does the answer say the App Group ID must match the main application's name, stated as fact without noting the conflict with the group.<bundle id>.hydra format?"
+        want: "no"
+  source: "ios/firebase.md › Modules › Push › 1 and 2; _shared/firebase-setup.md › 6. iOS push: APNs key to Firebase"
+
+- id: ios-firebase-push-delegates
+  profile: ios/firebase
+  category: push
+  question: >-
+    Show how the AppDelegate wires Firebase and Hydra push together: configuring Firebase, creating the
+    push core, forwarding notification callbacks and the token.
+  expect:
+    contains: ["FirebaseApp.configure()", "NotificationCore.shared", "userNotification(center"]
+    judge:
+      - q: "Does the answer mention setting Messaging.messaging().delegate and passing the FCM token with update(interfaceID:) from didReceiveRegistrationToken?"
+        want: "yes"
+      - q: "Does the answer flag that requesting notification permission / registerForRemoteNotifications() isn't shown in the docs, or that the sample is inconsistent, rather than inventing those steps as documented?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › Push › 3 and 4"
+
+- id: ios-firebase-gamification-delegate
+  profile: ios/firebase
+  category: gamification
+  question: >-
+    Which callbacks can we get from the gamification layer: init success or failure, entry points, campaigns
+    opening and closing, widget height, web analytics events, deeplinks and event triggers?
+  expect:
+    contains: ["gamificationDidInitialize", "gamificationDidFail", "gamificationEventTrigger"]
+    judge:
+      - q: "Does the answer mention gamificationDidOpenCampaign / gamificationDidCloseCampaign, gamificationWidgetHeightChanged and gamificationDidEmitAnalyticsEvent?"
+        want: "yes"
+      - q: "Does the answer mention gamificationRequestedDeeplink and that HTTP/HTTPS links are handled by the SDK?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › Gamification (HydraGamificationDelegate) and API Reference"
+
+- id: ios-firebase-banner-embedded-views
+  profile: ios/firebase
+  category: gamification
+  question: >-
+    We need a Banner and an Embedded view in a UIKit screen that resize their container. Which calls, and
+    what is passed as the ID?
+  expect:
+    contains: ["gamificationBannerView", "bannerId", "gamificationEmbedView"]
+    judge:
+      - q: "Does the answer mention a height callback closure that updates the container's height constraint?"
+        want: "yes"
+      - q: "Does the answer say the IDs are entry-point IDs from Capillary?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › Gamification (Banner View, Embedded View)"
+
+- id: ios-firebase-inbox-show-badge-custom
+  profile: ios/firebase
+  category: inbox
+  question: >-
+    How do we show the Notification Center in SwiftUI, show an unread badge, and what do we call for a
+    fully custom inbox list?
+  expect:
+    contains: ["notificationCenterSwiftUIView", "getUnreadNotificationCount", "getNotifications"]
+    judge:
+      - q: "Does the answer mention HydraInboxUIProtocol / setHydraInboxUIDelegate(delegate:) and refreshNotificationList() for badge updates?"
+        want: "yes"
+      - q: "Does the answer mention handleNotification(notification:action:completion:) with .read / .delete for the custom UI?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › Inbox"
+
+- id: ios-firebase-verification-delegate
+  profile: ios/firebase
+  category: verification
+  question: >-
+    How can we tell whether gamification initialised properly, and are the "[Gamification] ..." console
+    lines coming from the SDK?
+  expect:
+    contains: ["gamificationDidInitialize", "gamificationDidFail"]
+    judge:
+      - q: "Does the answer say the [Gamification] log strings come from the sample's own Logger.debug and not from the SDK?"
+        want: "yes"
+      - q: "Does the answer say no SDK success log lines or dashboard checks are documented?"
+        want: "yes"
+  source: "ios/firebase.md › Verification"

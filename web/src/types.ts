@@ -90,3 +90,34 @@ export interface Escalation {
     recent_messages: { role: "client" | "assistant"; text: string }[];
   };
 }
+
+/** A fix the client confirmed, drafted by the agent for review (app/learning/issues.py). */
+export interface IssueDraft {
+  id: string;
+  session_id: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  payload: {
+    error_signature: string;
+    root_cause: string;
+    fix: string;
+    platform: Platform | null;
+    config_mode: ConfigMode | null;
+    tried: string[];
+    step: string | null;
+  };
+}
+
+/** Something clients needed that the documentation doesn't cover, grouped by question. */
+export interface DocGap {
+  question: string;
+  count: number;
+  sessions: number;
+  ids: string[];
+  last_seen: string;
+}
+
+export type IssueEdit = Partial<Pick<IssueDraft["payload"], "error_signature" | "root_cause" | "fix">> & {
+  platform?: string;
+  config_mode?: string;
+};

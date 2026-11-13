@@ -1,0 +1,517 @@
+# Deep eval set: react-native / firebase (settings read from Firebase Remote Config).
+# Format and checks: see evals/golden.yaml. Every `contains` string is verified against the kit by
+# `uv run python -m evals.audit_kb`.
+
+- id: rn-firebase-package-migration-ios-pat
+  profile: react-native/firebase
+  category: gap
+  question: >-
+    We inherited a React Native app whose .npmrc has an @capillary scope pointing at npm.pkg.github.com with a
+    token, and whose android/app/build.gradle applies hydra_github_setup.gradle. What do we change to install
+    the SDK the current way? And does pod install on iOS still need a GitHub username and Personal Access
+    Token?
+  expect:
+    contains: ["@capillarytech/react-native-hydra-lib", "hydra_github_setup.gradle"]
+    judge:
+      - q: "Does the answer recommend installing `@capillary/react-native-hydra-lib` from GitHub Packages (npm.pkg.github.com)?"
+        want: "no"
+      - q: "Does the answer say it is not stated or confirmed whether iOS still needs GitHub credentials, or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: react-native/firebase.md › Steps › 1 and 2
+
+- id: rn-firebase-podfile-hydrapods-path
+  profile: react-native/firebase
+  category: setup
+  question: >-
+    pod install can't resolve scripts/HydraPods.rb. Our Podfile has
+    require Pod::Executable.execute_command('node', ['-p', 'require.resolve("@capillary/react-native-hydra-lib/scripts/HydraPods.rb", {paths: [process.argv[1]]})', __dir__]).strip
+    What's the correct path, and what else belongs in the Podfile for the app target and, if we use push,
+    for the extension?
+  expect:
+    contains: ["@capillarytech/react-native-hydra-lib/scripts/HydraPods.rb", "hydra_pods", "extension_pods"]
+    judge:
+      - q: "Does the answer recommend the path `@capillary/react-native-hydra-lib/scripts/HydraPods.rb` (without the `tech`)?"
+        want: "no"
+  source: react-native/firebase.md › Steps › 4
+
+- id: rn-firebase-sdk-never-initialises-keys
+  profile: react-native/firebase
+  category: init
+  question: >-
+    On both platforms the addHydraSdkInitializationResultListener callback either reports failure or never
+    fires. We typed the account values into the Firebase console as hydra_account_id and hydra_base_url but
+    I'm not sure we hit the final button, and I don't think we added anything for the SSL key or log level.
+    What exactly must exist in Remote Config?
+  expect:
+    contains: ["hydra_account_id", "hydra_ssl_public_key", "hydra_remote_log_level"]
+    judge:
+      - q: "Does the answer say the keys must be published in Remote Config (not just saved) and that the names must match exactly what the code passes?"
+        want: "yes"
+      - q: "Does the answer list hydra_base_url as one of the always-needed keys?"
+        want: "yes"
+  source: react-native/firebase.md › Steps › 8; Known Issues (SDK never initialises); _shared/firebase-setup.md › 3
+
+- id: rn-firebase-ios-init-duplicate
+  profile: react-native/firebase
+  category: init
+  question: >-
+    Our AI coding assistant ran the Hydra setup twice and AppDelegate.swift now has two Hydra init blocks, one
+    calling HydraNativeInitializer.sharedInstance().initApplication(usingFirebaseRemoteConfig: ...). We read
+    values from Remote Config with the default key names. What should the AppDelegate end up with, and how do
+    we avoid duplicates next time?
+  expect:
+    contains: ["Hydra.sharedInstance().initialize", "super.application"]
+    judge:
+      - q: "Does the answer recommend HydraNativeInitializer.sharedInstance().initApplication as the initialiser to keep?"
+        want: "no"
+      - q: "Does the answer say to check whether the Hydra lines are already present before editing AppDelegate (and similar files)?"
+        want: "yes"
+      - q: "Does the answer pass nil for the keys and nil for the Hydra remote config (default key names)?"
+        want: "yes"
+  source: react-native/firebase.md › Steps › 8; Known Issues (Duplicate code)
+
+- id: rn-firebase-android-init-java
+  profile: react-native/firebase
+  category: correction
+  question: >-
+    The 2026 runbook we were given says to call HydraInitializer.initializeUsingFirebaseRemoteConfig(this)
+    in MainApplication. Our MainApplication is Java rather than Kotlin. What exactly do we write?
+  expect:
+    contains: ["Hydra.initialize(this)", "com.hydralib.nativeapis"]
+    judge:
+      - q: "Does the answer recommend `HydraInitializer.initializeUsingFirebaseRemoteConfig(this)`?"
+        want: "no"
+      - q: "Does the answer say that no Java MainApplication code is documented for Hydra.initialize, or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: react-native/firebase.md › Steps › 10
+
+- id: rn-firebase-identify-signin-crm
+  profile: react-native/firebase
+  category: identity
+  question: >-
+    On login we call HydraCore.signUp(userDetails, attrs) with the user's email as customerId and on logout
+    HydraCore.signOut(id). Capillary never links the user to our CRM customer, and Hydra.track events don't
+    show against anyone. What should we be calling, and what must customerId be?
+  expect:
+    contains: ["Hydra.identify", "Hydra.reset", "Account Linking Identifier"]
+    judge:
+      - q: "Does the answer recommend using the deprecated HydraCore.signUp or HydraCore.signOut?"
+        want: "no"
+      - q: "Does the answer say customerId must match the identifier type configured as the Account Linking Identifier in Capillary CRM?"
+        want: "yes"
+  source: react-native/firebase.md › Steps › 12; Known Issues (User not matched)
+
+- id: rn-firebase-android-push-gradle-icon
+  profile: react-native/firebase
+  category: push
+  question: >-
+    Android push in our RN app: what Gradle changes and where does google-services.json go? Also, once it's
+    working our status bar icon shows as a solid white square although we supplied a 512x512 colour PNG named
+    hydra_notification_small_icon. And where do we ask for notification permission?
+  expect:
+    contains: ["4.4.2", "alpha", "requestPermission"]
+    judge:
+      - q: "Does the answer say google-services.json goes in android/app/ and the google-services plugin is applied in android/app/build.gradle?"
+        want: "yes"
+      - q: "Does the answer say Android uses only the alpha channel of the small icon (tinted with hydra_notification_color), so it should be redrawn with transparency?"
+        want: "yes"
+  source: react-native/firebase.md › Steps › 3, 9, 13; Known Issues (Notification icon)
+
+- id: rn-firebase-calls-before-init
+  profile: react-native/firebase
+  category: init
+  question: >-
+    Right after launch our splash screen calls HydraCore.setHydraAccountConfig(cfg) and
+    HydraPushNotification.passFCMToken(t) and both reject; Hydra.identify never logs success. How do we wait
+    properly, and how do we confirm at runtime that the SDK is up?
+  expect:
+    contains: ["isSdkInitialized", "addHydraSdkInitializationResultListener"]
+    judge:
+      - q: "Does the answer explain that these APIs reject (or do nothing) when called before the SDK has finished initialising?"
+        want: "yes"
+  source: react-native/firebase.md › Steps › 14; Known Issues (APIs reject right after launch); Verification
+
+- id: rn-firebase-rn077-template-inbox-crash
+  profile: react-native/firebase
+  category: edge-case
+  question: >-
+    We're on React Native 0.77 with the new AppDelegate template (RCTReactNativeFactory, no super.application
+    call). We enabled enable_inbox_ui and the iOS app crashes at launch. Where exactly does
+    Hydra.sharedInstance().initialize go in this template, and does the Inbox UI work there?
+  expect:
+    contains: ["enable_inbox_ui", "super.application"]
+    judge:
+      - q: "Does the answer say that where the init goes in the 0.76+ (RCTReactNativeFactory) template, and whether the Inbox UI works there, is not documented or should be confirmed with Capillary?"
+        want: "yes"
+      - q: "Does the answer say the Inbox UI wraps the root view controller so the window must already exist, so Hydra must be called after super (and not with a scene-based lifecycle), otherwise leave enable_inbox_ui off?"
+        want: "yes"
+  source: react-native/firebase.md › Steps › 8 (Order matters; Gap); Known Issues
+
+- id: rn-firebase-xcode-versions
+  profile: react-native/firebase
+  category: edge-case
+  question: >-
+    What Xcode version does this SDK need? On Xcode 15 we got Objective-C import errors for the package, and
+    after moving to Xcode 26 and adding the Notification Service Extension target, pod install fails while
+    reading the project. What do we do?
+  expect:
+    contains: ["Convert to Group", "xcodeproj"]
+    judge:
+      - q: "Does the answer say that Xcode earlier than 16 can break the Objective-C imports and suggest upgrading Xcode (e.g. 16.2)?"
+        want: "yes"
+      - q: "Does the answer say to right-click the extension's folder in the Project Navigator and convert it to a Group (or classic reference) before pod install?"
+        want: "yes"
+  source: react-native/firebase.md › Known Issues (Objective-C import errors; pod install fails Xcode 26); Steps › 5
+
+- id: rn-firebase-ios-push-xcode-setup
+  profile: react-native/firebase
+  category: push
+  question: >-
+    What has to be configured in Xcode for push in our RN iOS app, and what code goes into the Notification
+    Service Extension's NotificationService file (we use Objective-C in AppDelegate.mm)?
+  expect:
+    contains: ["App Groups", "HydraRemoteNotificationService", "NotificationService.mm"]
+    judge:
+      - q: "Does the answer mention enabling Background Modes with Background fetch and Remote notifications?"
+        want: "yes"
+      - q: "Does the answer say the extension language should be Objective-C because AppDelegate is Objective-C?"
+        want: "yes"
+  source: react-native/firebase.md › Steps › 5, 7
+
+- id: rn-firebase-spm-extension-no-sdk
+  profile: react-native/firebase
+  category: known-issue
+  question: >-
+    We turned on Swift Package Manager with $RNHydraUseSPM = true. The app builds, but the Notification
+    Service Extension can't find the Hydra framework and extension_pods in the Podfile does nothing. What do
+    we do?
+  expect:
+    contains: ["hydra-ios-sdk-spm", "HydraPushNotificationServiceExtension"]
+    judge:
+      - q: "Does the answer say extension_pods does nothing when SPM is on, so the package product must be added to the extension target in Xcode?"
+        want: "yes"
+  source: react-native/firebase.md › Known Issues (Extension has no Hydra SDK with SPM); Steps › 4d, 5
+
+- id: rn-firebase-push-listeners-preferences
+  profile: react-native/firebase
+  category: push
+  question: >-
+    In HydraContainer we want tapped Hydra pushes to deep-link inside our app and to open the browser for web
+    links. Also one user wants promotional pushes off but transactional on. Which listener and call?
+  expect:
+    contains: ["addHydraNotificationClickedListener", "HydraNotificationCtaType.deepLink", "updatePushPreferences"]
+    judge:
+      - q: "Does the answer use HydraPushPreferences with the promotional flag false and the transactional flag true (promPushOpted, transPushOpted)?"
+        want: "yes"
+  source: react-native/firebase.md › Steps › 11; Modules › Push
+
+- id: rn-firebase-credentials-failed-dev-variant
+  profile: react-native/firebase
+  category: troubleshooting
+  question: >-
+    On a new Android flavor (applicationId with a .dev suffix, debug keystore) the log shows HYDRA CAPILLARY
+    SDK: Client Credentials Generation Failed {"error":"source not found","status":400}. Release builds work.
+    What's going on?
+  expect:
+    contains: ["App Signature", "SHA256"]
+    judge:
+      - q: "Does the answer say a build variant with a different application ID or signing key is treated as a different app and must be registered / compared against what Capillary has registered?"
+        want: "yes"
+  source: react-native/firebase.md › Known Issues; _shared/push.md › What must match; _shared/troubleshooting.md › 2
+
+- id: rn-firebase-push-not-arriving-skipped
+  profile: react-native/firebase
+  category: push
+  question: >-
+    A test user signed in for the first time minutes ago and the FCM token printed from
+    addTokenAvailableListener, but our push campaign never arrives and Capillary's campaign report says
+    skipped reason "Profile Not Found". What do we check?
+  expect:
+    contains: ["FCM Project ID", "1 day"]
+    judge:
+      - q: "Does the answer tell the client to check that the app's Firebase project is the one registered at Capillary (the FCM Project ID)?"
+        want: "yes"
+      - q: "Does the answer mention that a user only becomes reachable for push roughly a day after first sign-in?"
+        want: "yes"
+  source: _shared/push.md › How a push reaches a device; Why Capillary skipped a message
+
+- id: rn-firebase-trap-own-fcm-native-api
+  profile: react-native/firebase
+  category: trap
+  question: >-
+    Our Android app has its own FirebaseMessagingService (via @react-native-firebase/messaging). The native
+    Android guide mentions FcmConfig(false) with passPushToken and passPushPayload. Do we use that here?
+    Gamification also acts strangely since we took over FCM.
+  expect:
+    contains: ["passFCMToken", "enable_hydra_sdk_firebase_registration"]
+    judge:
+      - q: "Does the answer give FcmConfig(false) with passPushToken / passPushPayload as the solution for this React Native app?"
+        want: "no"
+      - q: "Does the answer say to set enable_hydra_sdk_firebase_registration to false and pass tokens with HydraPushNotification.passFCMToken after init?"
+        want: "yes"
+  source: react-native/firebase.md › Modules › Push; Known Issues (Gamification on Android); _shared/push.md
+
+- id: rn-firebase-screen-reporting-floating-button
+  profile: react-native/firebase
+  category: gamification
+  question: >-
+    Floating button campaigns never appear. Our Home screen does
+    useEffect(() => { Hydra.gamificationScreenAppeared('home'); return () => Hydra.gamificationScreenDisappeared(); }, [])
+    and Home mounts before login finishes. What's wrong?
+  expect:
+    contains: ["gamificationScreenDisappeared", "500"]
+    judge:
+      - q: "Does the answer recommend calling Hydra.gamificationScreenDisappeared() with no argument?"
+        want: "no"
+      - q: "Does the answer say to pass the same screen name to gamificationScreenDisappeared as to gamificationScreenAppeared?"
+        want: "yes"
+      - q: "Does the answer say to report the screen after sign-in (identify), with a delay of about 500 ms after focus?"
+        want: "yes"
+  source: react-native/firebase.md › Steps › G3; Known Issues (Floating Button campaigns)
+
+- id: rn-firebase-banner-view-collapsed
+  profile: react-native/firebase
+  category: gamification
+  question: >-
+    Our GamificationEmbedView leaves an empty gap for new users and only fills in after login. We hardcoded
+    height: 600. Is that a bug, and how should we size it?
+  expect:
+    contains: ["addGamificationViewHeightChangedListener", "identify"]
+    judge:
+      - q: "Does the answer say a reported height of 0 means there is nothing to show yet and the container should be collapsed?"
+        want: "yes"
+      - q: "Does the answer say a new non-zero height is emitted later when the entry point appears (for example after identify)?"
+        want: "yes"
+  source: react-native/firebase.md › Modules › Gamification; Known Issues (Banner / embed view collapsed)
+
+- id: rn-firebase-loyalty-view-empty-token
+  profile: react-native/firebase
+  category: known-issue
+  question: >-
+    GamificationLoyaltyView is empty though loyaltyId is set. Where do we get the B2B short-lived token that
+    the docs keep mentioning, and how do we give it to the SDK?
+  expect:
+    contains: ["setCapToken"]
+    judge:
+      - q: "Does the answer say to call Hydra.setCapToken(token) before showing the Loyalty View?"
+        want: "yes"
+      - q: "Does the answer state how to obtain the Capillary B2B short-lived token as a documented fact?"
+        want: "no"
+      - q: "Does the answer say that how to obtain the token isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: react-native/firebase.md › Steps › G4; _shared/prerequisites.md › Loyalty View (Gap)
+
+- id: rn-firebase-gamification-callbacks-names
+  profile: react-native/firebase
+  category: gap
+  question: >-
+    Which gamification event listeners does the RN SDK give us (deep links, game events, analytics)? We want
+    to forward the analytics ones to our own tool, so list the exact event names and payload fields we'll get.
+  expect:
+    contains: ["addGamificationDeeplinkListener", "addGamificationEventTriggerListener", "addGamificationAnalyticsEventListener"]
+    judge:
+      - q: "Does the answer state specific gamification event names or payload field names as documented fact?"
+        want: "no"
+      - q: "Does the answer say the event names and payload contents aren't documented, or suggest asking Capillary?"
+        want: "yes"
+  source: react-native/firebase.md › Modules › Gamification (Events; Gap)
+
+- id: rn-firebase-log-levels
+  profile: react-native/firebase
+  category: verification
+  question: >-
+    Where do we set log levels? An older guide shows a log_levels entry in hydra-config.json /
+    HydraConfig.plist. We want debug logs in Xcode/Logcat and nothing remote in production unless we turn it up.
+  expect:
+    contains: ["console_log_level", "hydra_remote_log_level"]
+    judge:
+      - q: "Does the answer recommend a `log_levels` / `LOG_LEVELS` key in hydra-config.json or HydraConfig.plist?"
+        want: "no"
+      - q: "Does the answer say the remote level lives in Firebase Remote Config (so it can be raised without a release)?"
+        want: "yes"
+  source: react-native/firebase.md › Verification (Log levels, Correction); _shared/troubleshooting.md › 4
+
+- id: rn-firebase-emitter-static-calls
+  profile: react-native/firebase
+  category: correction
+  question: >-
+    We call HydraNativeEventEmitter.addInboxUpdatedListener(cb) statically in a screen and later
+    HydraNativeEventEmitter.removeListener(sub), copying a signature from the API page. TypeScript complains
+    and listeners seem to leak. What's the correct form and cleanup?
+  expect:
+    contains: ["getInstance()", "removeListener"]
+    judge:
+      - q: "Does the answer recommend calling add...Listener or removeListener statically on HydraNativeEventEmitter (without getInstance())?"
+        want: "no"
+      - q: "Does the answer say to keep the returned subscription and pass it to removeListener on unmount?"
+        want: "yes"
+  source: react-native/firebase.md › API Reference › HydraNativeEventEmitter (Correction)
+
+- id: rn-firebase-inbox-ui-custom-config
+  profile: react-native/firebase
+  category: gap
+  question: >-
+    We want a bell icon that opens Hydra's built-in notification center and an unread badge. Which config
+    keys and calls? On iOS we'd also like our own layout via INBOX_UI_CONFIG: what format does it take?
+  expect:
+    contains: ["enable_inbox_ui", "showNotificationCenter", "getUnreadMessagesCount"]
+    judge:
+      - q: "Does the answer say the Inbox API (enable_inbox_api) must also be on for the Inbox UI?"
+        want: "yes"
+      - q: "Does the answer give a specific schema or format for INBOX_UI_CONFIG as documented fact?"
+        want: "no"
+      - q: "Does the answer say the INBOX_UI_CONFIG format isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: react-native/firebase.md › Modules › Inbox (Gap); Steps › 3
+
+- id: rn-firebase-inapp-react-native-ui
+  profile: react-native/firebase
+  category: inapp
+  question: >-
+    We'd rather render in-app messages in our own React Native modal than Hydra's native one. What do we turn
+    on, which listener, and how do we report clicks and dismissals? Is it in Capillary's public docs?
+  expect:
+    contains: ["enable_in_app_messaging_in_react_native", "addHydraInAppMessageListener", "reportMessageClicked"]
+    judge:
+      - q: "Does the answer say to return true from the listener if the app handles the message and false to let the SDK show it?"
+        want: "yes"
+      - q: "Does the answer say these pieces come only from the runbook / aren't in the public docs, or suggest confirming with Capillary?"
+        want: "yes"
+  source: react-native/firebase.md › Modules › In-App (Gap)
+
+- id: rn-firebase-visitor-flow
+  profile: react-native/firebase
+  category: visitor
+  question: >-
+    We want to track anonymous visitors before login. Which Remote Config key is needed, which APIs show the
+    current state, and how do we enable the visitor flow for our account? And when does a user end up as
+    merged instead of legacyRegistered?
+  expect:
+    contains: ["hydra_org_id", "getCurrentUserState", "isVisitorFlowEnabled"]
+    judge:
+      - q: "Does the answer state, as documented fact, how the visitor flow is enabled for an account or the rule deciding merged versus legacyRegistered?"
+        want: "no"
+      - q: "Does the answer say that how the flow is turned on and when a user ends as merged vs legacyRegistered isn't documented, or suggest asking Capillary?"
+        want: "yes"
+  source: react-native/firebase.md › Modules › Visitor (Gap)
+
+- id: rn-firebase-multi-account-remote-config
+  profile: react-native/firebase
+  category: multi-account
+  question: >-
+    We have an India and a USA account in one app and want both configured in Remote Config. We call
+    Hydra.identify first, then switch the account with prefixed keys, and the user still behaves like the
+    default account. How should it be done and in what order? Sometimes the switch call rejects with a
+    "Failed to get values for these keys" message.
+  expect:
+    contains: ["setFirebaseRemoteConfigKeys", "HydraFirebaseRemoteConfigKeys", "ind_hydra_account_id"]
+    judge:
+      - q: "Does the answer say to wait for SDK initialisation, then switch the account and await it, and only then call Hydra.identify?"
+        want: "yes"
+      - q: "Does the answer say the prefixed keys must be published in Remote Config because the call reads already-fetched values and doesn't fetch?"
+        want: "yes"
+      - q: "Does the answer say the chosen account persists on the device and is used on later launches?"
+        want: "yes"
+  source: react-native/firebase.md › Modules › Multi-account (Option A); Known Issues (setHydraAccountConfig / setFirebaseRemoteConfigKeys rejects)
+
+- id: rn-firebase-gamification-keys-version
+  profile: react-native/firebase
+  category: gamification
+  question: >-
+    Gamification never shows up in our app. In Remote Config we added hydra_gamification_key and
+    hydra_gamification_region, plus the base URL as hydra_gamification_url, as a teammate remembered from a
+    Flutter guide. Which keys exactly are required, and which package version do we need for gamification?
+  expect:
+    contains: ["hydra_gamification_base_url", "hydra_gamification_key", "1.7.0-beta.7"]
+    judge:
+      - q: "Does the answer tell the client to use `hydra_gamification_url` as the base-URL key name?"
+        want: "no"
+      - q: "Does the answer say the key, region and base URL are all required (gamification stays disabled if one is missing)?"
+        want: "yes"
+      - q: "Does the answer say the public docs state no minimum version, or that the minimum version should be confirmed with Capillary?"
+        want: "yes"
+  source: react-native/firebase.md › Steps › G1, G2; Known Issues (Gamification never appears); _shared/firebase-setup.md › Gamification keys (Correction)
+
+- id: rn-firebase-trap-flutter-initializer
+  profile: react-native/firebase
+  category: trap
+  question: >-
+    We did Flutter before. For this React Native app, can we add capillary_hydra from pub.dev and call
+    HydraInitializer.initialize in index.js, with the Remote Config keys we used there? Where does init live
+    here?
+  expect:
+    contains: ["Hydra.sharedInstance().initialize", "Hydra.initialize(this)"]
+    judge:
+      - q: "Does the answer give a pub.dev package or HydraInitializer.initialize as the solution for this React Native app?"
+        want: "no"
+      - q: "Does the answer say the SDK is initialised natively (AppDelegate on iOS, MainApplication on Android) with the npm package installed?"
+        want: "yes"
+  source: react-native/firebase.md › Steps › 2, 8, 10; _shared/prerequisites.md › SDK package access
+
+- id: rn-firebase-trap-direct-and-web-json
+  profile: react-native/firebase
+  category: trap
+  question: >-
+    To keep it simple we'd like to pass accountId, baseUrl and the SSL key straight in code with
+    HydraRemoteConfig.Builder on Android, or else store everything in one Remote Config parameter called
+    hydra_sdk_config containing a JSON object like the Web SDK does. Do either of those work for this
+    RN-with-Firebase setup?
+  expect:
+    contains: ["hydra_account_id", "hydra_base_url"]
+    judge:
+      - q: "Does the answer say passing values with HydraRemoteConfig.Builder / HydraNativeRemoteConfig is not part of this mode (it belongs to the direct, no-Remote-Config mode)?"
+        want: "yes"
+      - q: "Does the answer recommend a single JSON Remote Config parameter such as hydra_sdk_config for React Native?"
+        want: "no"
+      - q: "Does the answer say React Native uses one Remote Config parameter per value with the hydra_* names?"
+        want: "yes"
+  source: react-native/firebase.md › API Reference › Native; _shared/firebase-setup.md › 3 (Remote Config)
+
+- id: rn-firebase-ssl-key-expired
+  profile: react-native/firebase
+  category: prerequisites
+  question: >-
+    Our production app worked since launch, but around nine months in every call fails with "Certificate
+    pinning failure" for all users. Account Id and Base URL are unchanged. What happened and do we need a
+    store release to fix it?
+  expect:
+    contains: ["hydra_ssl_public_key", "9 months"]
+    judge:
+      - q: "Does the answer say the SSL public key expires (about every 9 months) and a new key must be obtained from Capillary?"
+        want: "yes"
+      - q: "Does the answer say that updating the Remote Config value is enough, with no new release needed?"
+        want: "yes"
+  source: react-native/firebase.md › Known Issues (SDK stops connecting); _shared/prerequisites.md › SSL public key
+
+- id: rn-firebase-prereq-what-to-send
+  profile: react-native/firebase
+  category: prerequisites
+  question: >-
+    Before we code: what do we send Capillary to register our RN app, what do they give back (and which are
+    gamification-only), and what Firebase material goes to Capillary for push and how do we send it?
+  expect:
+    contains: ["SHA256", "Application ID", "SSL Public Key"]
+    judge:
+      - q: "Does the answer list the Bundle ID (iOS), Application ID (Android) and the Android App Signature SHA256 as what the client sends?"
+        want: "yes"
+      - q: "Does the answer say the Firebase service-account file must not be sent in chat, email or git, only via the secure channel Capillary names?"
+        want: "yes"
+  source: react-native/firebase.md › Prerequisites; _shared/prerequisites.md; _shared/push.md › What Capillary sets up
+
+- id: rn-firebase-trap-vapid-web-push-apns
+  profile: react-native/firebase
+  category: trap
+  question: >-
+    For push in our RN app on iOS, our web colleague says we must generate a VAPID Web Push certificate in
+    the Firebase console and add a service-worker file. What do we actually need on the Firebase side for iOS
+    push, and can we re-download the key later if we lose it?
+  expect:
+    contains: ["APNs", "Cloud Messaging"]
+    judge:
+      - q: "Does the answer tell the client to generate a VAPID key / Web Push certificate or add a service worker for this React Native app?"
+        want: "no"
+      - q: "Does the answer say to upload an APNs authentication key (or certificate) in Firebase Project settings > Cloud Messaging?"
+        want: "yes"
+      - q: "Does the answer say the APNs key file can be downloaded only once, so it must be backed up?"
+        want: "yes"
+  source: "_shared/firebase-setup.md › 4 (Web push VAPID) and 6 (iOS push APNs key to Firebase)"

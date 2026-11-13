@@ -15,7 +15,7 @@ Android (native), iOS (native), React Native, Flutter and Web. Each has one know
 ## Config modes
 | Mode | Meaning |
 |---|---|
-| `firebase` | The SDK reads its settings (Account Id, Base URL, keys …) from **Firebase Remote Config**. |
+| `firebase` | The SDK's settings come from **Firebase Remote Config**. Which values depends on the platform: Flutter and React Native read the core values (Account Id, Base URL, SSL key, log level) and the gamification keys; on Android and iOS the documented Remote Config keys are the gamification ones (see the platform file). |
 | `direct` | The settings are passed straight into the SDK's init call instead of Remote Config. |
 
 Push uses Firebase Cloud Messaging. On native Android, push is **not available** in direct mode. Flutter and Web direct mode can still use Firebase for push: see the platform file.
@@ -33,7 +33,14 @@ Push uses Firebase Cloud Messaging. On native Android, push is **not available**
 
 Which modules are documented for a platform and mode is listed in that file's **Coverage** section.
 
+## How an integration is set up (order)
+1. **Firebase and the push gateway:** the client's mobile app team sets up Firebase; Capillary's team configures the gateway (`_shared/push.md`).
+2. **Source account:** the client's Capillary contact (CSM or project manager) configures the MAPP_SDK source account in Capillary CRM (`_shared/prerequisites.md`).
+3. Then in the app: install the SDK, initialise it, sign users in, then push, in-app, inbox and gamification, as the platform file describes.
+
+Behavioural events must exist in Capillary before the app sends them (*Organisation settings → Master Data Management → Data Model → Behavioural events*), and they only count after a sign-in or sign-up.
+
 ## Versions
-UAT / POC uses the beta SDK builds named in each platform file.
+UAT / POC uses the beta SDK builds where a platform file names one; most platforms install the latest release.
 
 > ⚠️ Gap: production SDK versions aren't documented. Ask a Capillary engineer.

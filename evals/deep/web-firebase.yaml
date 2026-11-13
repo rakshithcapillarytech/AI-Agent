@@ -1,0 +1,651 @@
+# Deep evaluation cases for web/firebase (Remote Config bootstrap: settings come from a JSON
+# parameter in Firebase Remote Config). Format: see evals/golden.yaml. Every `contains` string is
+# verified against the kit by `uv run python -m evals.audit_kb` ("evals answerable from their kit").
+
+- id: web-firebase-console-project-webapp
+  profile: web/firebase
+  category: setup
+  question: >-
+    We don't have a Firebase project for the website yet. Walk me through creating the project
+    and registering the web app so I get the config object the SDK needs.
+  expect:
+    contains: ["Add project", "Register app"]
+    judge:
+      - q: "Does the answer mention clicking the Web icon (</>), entering an app nickname, and copying the Firebase config object after registering?"
+        want: "yes"
+      - q: "Does the answer say enabling Google Analytics is optional (recommended)?"
+        want: "yes"
+  source: web/firebase.md › Steps › 1 and 2 (also _shared/firebase-setup.md › 1, 2)
+
+- id: web-firebase-remote-config-json
+  profile: web/firebase
+  category: setup
+  question: >-
+    How do we store the Hydra settings in Remote Config? Which fields go in, what do we name
+    the parameter, and anything we must do after saving?
+  expect:
+    contains: ["Publish changes", "remoteConfigKey", "accountId"]
+    judge:
+      - q: "Does the answer say the parameter key is a name of your choice and is the value later passed as remoteConfigKey in initialize()?"
+        want: "yes"
+      - q: "Does the answer say the default value is a JSON containing accountId, baseURL and orgId (required), and the three gamification fields only if gamification is used?"
+        want: "yes"
+      - q: "Does the answer say to republish after every edit?"
+        want: "yes"
+  source: web/firebase.md › Steps › 3 (also _shared/firebase-setup.md › 3)
+
+- id: web-firebase-install-pnpm-types
+  profile: web/firebase
+  category: setup
+  question: >-
+    Our repo has pnpm-lock.yaml. What do we run to install the production SDK? Also, TypeScript
+    can't find the package's types in our build after we put it under devDependencies. Why?
+  expect:
+    contains: ["pnpm add cap-hydra-web-sdk", "dependencies"]
+    judge:
+      - q: "Does the answer say the package must be in `dependencies` and node_modules should be refreshed?"
+        want: "yes"
+  source: web/firebase.md › Steps › 5 and Known Issues (TypeScript import errors)
+
+- id: web-firebase-init-call
+  profile: web/firebase
+  category: init
+  question: >-
+    Show me the HydraSDK.initialize() call for our web app. Where do the Capillary values like
+    accountId and the base URL go?
+  expect:
+    contains: ["firebaseConfig", "remoteConfigKey"]
+    judge:
+      - q: "Does the answer pass firebaseConfig and remoteConfigKey to initialize() and keep accountId, baseURL and orgId OUT of the initialize() call (they live in Remote Config)?"
+        want: "yes"
+  source: web/firebase.md › Steps › 6
+
+- id: web-firebase-trap-values-in-initialize
+  profile: web/firebase
+  category: trap
+  question: >-
+    For a quick local test I'd like to pass accountId, baseURL and orgId straight into
+    initialize() next to remoteConfigKey so I don't have to touch Remote Config. Is that fine?
+  expect:
+    contains: ["Remote Config"]
+    judge:
+      - q: "Does the answer tell the developer to put accountId, baseURL and orgId in initialize() in this mode?"
+        want: "no"
+      - q: "Does the answer say these Capillary and gamification fields come only from Remote Config and must not be passed to initialize()?"
+        want: "yes"
+  source: web/firebase.md › Steps › 3 and Steps › 6 (Rules to enforce)
+
+- id: web-firebase-silent-failure-orgid
+  profile: web/firebase
+  category: known-issue
+  question: >-
+    The app loads with no visible errors but the SDK does nothing: no events, no profile. Our
+    Remote Config JSON has accountId and baseURL, plus gamification keys. What could be wrong?
+  expect:
+    contains: ["orgId"]
+    judge:
+      - q: "Does the answer say a missing accountId, baseURL or orgId makes initialize() fail silently in this mode (only a fetch error is logged)?"
+        want: "yes"
+      - q: "Does the answer say to add the field to the JSON and republish?"
+        want: "yes"
+  source: web/firebase.md › Steps › 3 and Known Issues (SDK silently does nothing)
+
+- id: web-firebase-events-not-arriving
+  profile: web/firebase
+  category: known-issue
+  question: >-
+    Initialisation looks fine but events never reach Capillary. We just edited the base URL in
+    the Remote Config console. What do we check?
+  expect:
+    contains: ["baseURL"]
+    judge:
+      - q: "Does the answer say to verify baseURL and to confirm the Remote Config parameter has been published?"
+        want: "yes"
+  source: web/firebase.md › Known Issues (Events not reaching the API)
+
+- id: web-firebase-init-lifecycle-await
+  profile: web/firebase
+  category: edge-case
+  question: >-
+    In our Angular app we call HydraSDK.initialize() in ngOnInit of AppComponent, awaiting it,
+    and we guard every track call with isInitialized(). The SDK often doesn't start on app
+    load. What's the correct pattern?
+  expect:
+    contains: ["sdkService.initialize()"]
+    judge:
+      - q: "Does the answer say to call initialize at module load / top level of the service file, not in ngOnInit or any lifecycle hook?"
+        want: "yes"
+      - q: "Does the answer say not to await SDK calls and not to add isInitialized() guards because the SDK queues calls until ready?"
+        want: "yes"
+  source: web/firebase.md › Steps › 6 (Rules to enforce) and Known Issues (SDK not initialising on app load)
+
+- id: web-firebase-identify-actiontype-refresh
+  profile: web/firebase
+  category: identity
+  question: >-
+    We call identifyUser(type, cuid, "USER_UPDATE") whenever the app boots, for returning
+    users, and new sign-ups seem to be missing in Capillary. What should login, sign-up and
+    page refresh each do?
+  expect:
+    contains: ["USER_REGISTER", "IndexedDB"]
+    judge:
+      - q: "Does the answer say USER_REGISTER is for both login and sign-up, and USER_UPDATE only for profile changes, never at login?"
+        want: "yes"
+      - q: "Does the answer say not to re-identify on page refresh because the user context persists in IndexedDB?"
+        want: "yes"
+  source: web/firebase.md › Steps › 7 and Known Issues (Wrong actionType; Re-identifying on every refresh)
+
+- id: web-firebase-reset-logout
+  profile: web/firebase
+  category: identity
+  question: >-
+    What do we call when the user signs out, and what state is the SDK in afterwards?
+  expect:
+    contains: ["reset"]
+    judge:
+      - q: "Does the answer say reset() returns tracking to anonymous and clears the Capillary token?"
+        want: "yes"
+  source: web/firebase.md › Steps › 7
+
+- id: web-firebase-consent
+  profile: web/firebase
+  category: events
+  question: >-
+    Our cookie banner lets people opt out. After they revoke consent our analytics team says
+    events are missing. Is the SDK broken, and how do we handle consent properly?
+  expect:
+    contains: ["enableTracking", "disableTracking"]
+    judge:
+      - q: "Does the answer say the missing events are expected because new events are dropped while tracking is disabled?"
+        want: "yes"
+      - q: "Does the answer say queued events stay in IndexedDB and are sent on re-enable, and that the app should persist the decision and restore it on load?"
+        want: "yes"
+  source: web/firebase.md › Steps › 7 and Known Issues (Events missing after consent revoked)
+
+- id: web-firebase-correction-getuser
+  profile: web/firebase
+  category: correction
+  question: >-
+    Our teammate's runbook says to call HydraSDK.getUser() to read the anonymous visitor ID.
+    What's the right call?
+  expect:
+    contains: ["getAnonymousId"]
+    judge:
+      - q: "Does the answer recommend HydraSDK.getUser()?"
+        want: "no"
+      - q: "Does the answer say getAnonymousId() returns the backend-assigned anonymous visitor ID (string or null) and works regardless of auth state?"
+        want: "yes"
+  source: web/firebase.md › Modules › Visitor (⚠️ Correction)
+
+- id: web-firebase-correction-2024-runbook
+  profile: web/firebase
+  category: correction
+  question: >-
+    A colleague wants us to follow the 2024 Cursor runbook for the web SDK because it's more
+    detailed than the current docs. Is that a good idea for push and the visitor ID?
+  expect:
+    contains: ["getAnonymousId", "messaging"]
+    judge:
+      - q: "Does the answer recommend following the 2024 Cursor runbook?"
+        want: "no"
+      - q: "Does the answer say to use the current AI-assisted runbook (summarised in this file), which uses notifications.messaging, a service-worker file and getAnonymousId()?"
+        want: "yes"
+  source: web/firebase.md › Prerequisites (⚠️ Correction)
+
+- id: web-firebase-correction-browser-matrix
+  profile: web/firebase
+  category: correction
+  question: >-
+    Our PM found a table saying push works from Chrome 49, Firefox 52 and Safari 10, and
+    Internet Explorer 11 in a limited way. What are the actual minimum browsers for push?
+  expect:
+    contains: ["109", "140", "26.3"]
+    judge:
+      - q: "Does the answer give Chrome 109+, Firefox 140+, Safari 26.3+ and Edge (Chromium) 149+ as the minimums for push?"
+        want: "yes"
+      - q: "Does the answer recommend Chrome 49 as the minimum for push?"
+        want: "no"
+      - q: "Does the answer say Internet Explorer is not supported?"
+        want: "yes"
+  source: web/firebase.md › Requirements (⚠️ Correction)
+
+- id: web-firebase-correction-notifications-block
+  profile: web/firebase
+  category: correction
+  question: >-
+    Our push config is `notifications: { vapidKey: "...", serviceWorkerPath: "/firebase-messaging-sw.js" }`
+    and push doesn't register. The 2024 runbook says that's all that's needed. What are we missing?
+  expect:
+    contains: ["getMessaging(firebaseApp)", "hydra-fcm"]
+    judge:
+      - q: "Does the answer say the notifications block needs a messaging property built with getMessaging on your own Firebase app?"
+        want: "yes"
+      - q: "Does the answer recommend a notifications block with only vapidKey and serviceWorkerPath?"
+        want: "no"
+  source: web/firebase.md › Modules › Push (P3, ⚠️ Correction)
+
+- id: web-firebase-correction-sw-template
+  profile: web/firebase
+  category: correction
+  question: >-
+    The 2024 runbook says Capillary will send us a firebase-messaging-sw.js template. We've
+    been waiting. Where do we get the service worker file?
+  expect:
+    contains: ["push-notification-web", "firebase-messaging-sw.js"]
+    judge:
+      - q: "Does the answer say to copy the published firebase-messaging-sw.js (from the push-notification-web docs) rather than wait for a template from Capillary?"
+        want: "yes"
+      - q: "Does the answer say to replace only the YOUR_* values in the Firebase config block and not rename the file or change its logic?"
+        want: "yes"
+  source: web/firebase.md › Modules › Push (P4, ⚠️ Correction)
+
+- id: web-firebase-correction-gamification-baseurl
+  profile: web/firebase
+  category: correction
+  question: >-
+    Per the 2024 guide we put gamificationWriteKey and gamificationRegion in our Remote Config
+    JSON and treated the base URL as optional. Gamification entry points never show. What do
+    we do?
+  expect:
+    contains: ["gamificationBaseUrl"]
+    judge:
+      - q: "Does the answer say all three gamificationWriteKey, gamificationRegion and gamificationBaseUrl are required together in the Remote Config JSON?"
+        want: "yes"
+      - q: "Does the answer say to republish the Remote Config after adding the field?"
+        want: "yes"
+      - q: "Does the answer say gamificationBaseUrl is optional?"
+        want: "no"
+  source: web/firebase.md › Modules › Gamification (⚠️ Correction) and Known Issues (Gamification entry points not appearing)
+
+- id: web-firebase-push-app-exists
+  profile: web/firebase
+  category: push
+  question: >-
+    After enabling push we get "FirebaseError: Firebase App named '[DEFAULT]' already exists
+    (app/duplicate-app)". The SDK already uses our Firebase credentials for Remote Config.
+    How do we fix it?
+  expect:
+    contains: ["hydra-fcm"]
+    judge:
+      - q: "Does the answer say to create the push Firebase app as a separately named app (second argument to initializeApp)?"
+        want: "yes"
+  source: web/firebase.md › Modules › Push (P3) and Known Issues ("Firebase App already exists")
+
+- id: web-firebase-push-subpath-404
+  profile: web/firebase
+  category: push
+  question: >-
+    The app is hosted at https://example.com/my-app/ . DevTools shows firebase-messaging-sw.js
+    returning 404 and push isn't registering. What are the correct file location and
+    serviceWorkerPath?
+  expect:
+    contains: ["/my-app/firebase-messaging-sw.js"]
+    judge:
+      - q: "Does the answer say to put the file in public/ (or the static directory served at the site root) and match serviceWorkerPath to its real location?"
+        want: "yes"
+  source: web/firebase.md › Modules › Push (P3 table, P4) and Known Issues (Service worker 404)
+
+- id: web-firebase-push-self-firebase-undefined
+  profile: web/firebase
+  category: known-issue
+  question: >-
+    The service worker console says self.firebase is undefined and nothing is delivered. We
+    haven't touched the file except pasting it into public/. What's the cause?
+  expect:
+    contains: ["YOUR_", "gstatic.com"]
+    judge:
+      - q: "Does the answer say the YOUR_* placeholders must be replaced and importScripts may have failed because gstatic.com is not reachable (CSP)?"
+        want: "yes"
+  source: web/firebase.md › Known Issues (self.firebase is undefined)
+
+- id: web-firebase-push-sw-no-notification
+  profile: web/firebase
+  category: edge-case
+  question: >-
+    A developer added `const body = await event.data.text()` logging into the push listener
+    of our service worker. Since then pushes arrive but nothing is displayed. Why?
+  expect:
+    contains: ["firebase-messaging-sw.js"]
+    judge:
+      - q: "Does the answer say the push body can only be read once so Firebase's handler throws, and to not modify the worker logic?"
+        want: "yes"
+  source: web/firebase.md › Modules › Push (P4) and Known Issues (No notification shown at all)
+
+- id: web-firebase-push-title-icon
+  profile: web/firebase
+  category: push
+  question: >-
+    Our test push shows up with an empty title and body, and the notification icon is missing.
+    The campaign has title and body filled in. What's going on?
+  expect:
+    contains: ["data", "logo192.png"]
+    judge:
+      - q: "Does the answer say title and body must be sent as data fields, not in the notification payload?"
+        want: "yes"
+      - q: "Does the answer say icon and badge fall back to /logo192.png, which must exist in public/ or have its fallback paths changed?"
+        want: "yes"
+  source: web/firebase.md › Modules › Push (P4) and Known Issues (title/body missing; icon missing)
+
+- id: web-firebase-push-dlr-stale-worker
+  profile: web/firebase
+  category: troubleshooting
+  question: >-
+    Delivery receipts (received, clicked, dismissed) have stopped being recorded after we
+    shipped a new build. Where are they stored and what do we try?
+  expect:
+    contains: ["Unregister", "WebSDK_DLR_SW"]
+    judge:
+      - q: "Does the answer say an old service worker may be cached and to unregister it in DevTools (Application, Service Workers) and reload?"
+        want: "yes"
+  source: web/firebase.md › Modules › Push (P4) and Known Issues (DLR events not recorded)
+
+- id: web-firebase-push-vapid
+  profile: web/firebase
+  category: push
+  question: >-
+    Where in the Firebase console do we generate the VAPID key for web push, and which SDK
+    option takes it?
+  expect:
+    contains: ["Generate key pair", "vapidKey"]
+    judge:
+      - q: "Does the answer mention Project Settings, Cloud Messaging, Web configuration, Web Push certificates?"
+        want: "yes"
+  source: web/firebase.md › Modules › Push (P1) and _shared/firebase-setup.md › 4
+
+- id: web-firebase-gamification-hook
+  profile: web/firebase
+  category: gamification
+  question: >-
+    Marketing set up a NATIVE_BANNER container for our product pages. What do we add to the
+    page, with what id, and does it have to exist when the page first loads?
+  expect:
+    contains: ["hookId"]
+    judge:
+      - q: "Does the answer say to add a div whose id is the hookId from the dashboard / Capillary team?"
+        want: "yes"
+      - q: "Does the answer say these hooks are SPA-safe because a MutationObserver waits for them, so they need not exist at page load?"
+        want: "yes"
+  source: web/firebase.md › Modules › Gamification (Containers; Inline hooks)
+
+- id: web-firebase-loyalty-embed-token
+  profile: web/firebase
+  category: gamification
+  question: >-
+    Our loyalty iframe doesn't render. The div exists in our footer component, which only
+    mounts well after login. What do we need to get right, and how does the token get to the
+    iframe?
+  expect:
+    contains: ["embedId", "setCapToken"]
+    judge:
+      - q: "Does the answer say the div id must match the embedId and be in the DOM at render time (before or shortly after identify()), otherwise the embed is silently skipped?"
+        want: "yes"
+      - q: "Does the answer say the token is appended as a capToken query parameter to the iframe URL and is cleared on reset()?"
+        want: "yes"
+  source: web/firebase.md › Modules › Gamification (loyalty embeds, Capillary token) and Known Issues (Loyalty iframe not rendering)
+
+- id: web-firebase-gamification-path-rules
+  profile: web/firebase
+  category: gamification
+  question: >-
+    What do the dashboard URL path rules "/", "product/*" and "https://example.com/cart/*"
+    each match? Will "/cart/*" match /cartoons?
+  expect:
+    contains: ["cartoons"]
+    judge:
+      - q: "Does the answer say a rule of just '/' matches only the exact root path, not every page?"
+        want: "yes"
+      - q: "Does the answer say a wildcard rule requires at least one child segment, so /cart/* does not match /cartoons?"
+        want: "yes"
+  source: web/firebase.md › Modules › Gamification (URL path rules table)
+
+- id: web-firebase-gamification-webview-manual-tracking
+  profile: web/firebase
+  category: gamification
+  question: >-
+    Our web app lives in a native shell where routing never changes the real URL, so no
+    gamification entry point ever matches. What can we do?
+  expect:
+    contains: ["enablePagePathTracking(false)", "onScreenChanged"]
+    judge:
+      - q: "Does the answer say to call onScreenChanged(screenName) on every navigation once manual tracking is on?"
+        want: "yes"
+  source: web/firebase.md › Modules › Gamification and Known Issues (webview / custom router)
+
+- id: web-firebase-gamification-suppress
+  profile: web/firebase
+  category: gamification
+  question: >-
+    Can we temporarily stop gamification popups on the checkout page without disabling the
+    inline banners? And how do we check the current state?
+  expect:
+    contains: ["setGamificationSuppressed", "isGamificationSuppressed"]
+    judge:
+      - q: "Does the answer say suppression affects overlay containers (POP_UP, BOTTOM_SHEET, CHAT_BOX, ICON_BUTTON) but not EMBEDDED, NATIVE_BANNER or loyalty embeds?"
+        want: "yes"
+  source: web/firebase.md › Modules › Gamification (Suppression) and API Reference
+
+- id: web-firebase-csp-allowlist
+  profile: web/firebase
+  category: setup
+  question: >-
+    Our site's CSP is locked down. Which domains must we allow for Hydra in connect-src,
+    script-src and frame-src? Do the Google/Firebase ones depend on whether we use push?
+  expect:
+    contains: ["https://*.capillarytech.com", "https://*.gstatic.com", "https://*.posthog.com"]
+    judge:
+      - q: "Does the answer say the googleapis.com, firebaseio.com and firebaseapp.com connect-src entries are always needed in this Remote Config mode?"
+        want: "yes"
+      - q: "Does the answer say gstatic.com in script-src is needed for push only, and that the entries should be added to existing directives rather than replacing them?"
+        want: "yes"
+  source: web/firebase.md › Steps › 8
+
+- id: web-firebase-smoke-checks
+  profile: web/firebase
+  category: verification
+  question: >-
+    What should we run to confirm the integration works before production? I set debugLevel to
+    DEBUG in the Remote Config console and saved, but I see no extra logs.
+  expect:
+    contains: ["Verbose", "trackPageView"]
+    judge:
+      - q: "Does the answer say to republish the Remote Config change and to enable the Verbose level in the DevTools Console filter?"
+        want: "yes"
+      - q: "Does the answer include checks for page view (outbound POST to the baseURL), custom event, identify, reset and consent?"
+        want: "yes"
+      - q: "Does the answer mention that init errors are logged as `Failed to initialize SDK:` plus the error?"
+        want: "yes"
+  source: web/firebase.md › Verification and Known Issues (debugLevel "DEBUG" shows nothing extra)
+
+- id: web-firebase-rollback
+  profile: web/firebase
+  category: edge-case
+  question: >-
+    The SDK is causing trouble in production and we need to back it out quickly. What's the
+    order of steps?
+  expect:
+    contains: ["disableTracking", "npm uninstall cap-hydra-web-sdk"]
+    judge:
+      - q: "Does the answer include removing the SDK service import from the app entry point and optionally clearing IndexedDB in affected browsers?"
+        want: "yes"
+  source: web/firebase.md › Known Issues (Rollback)
+
+- id: web-firebase-init-fields-split
+  profile: web/firebase
+  category: init
+  question: >-
+    Which options go in the initialize() call and which belong in the Remote Config JSON?
+    What are the default session timeout and batch size?
+  expect:
+    contains: ["retryDelays", "sessionTimeoutMinutes", "batchSize"]
+    judge:
+      - q: "Does the answer say initialize() takes firebaseConfig, remoteConfigKey, appVersion, retryDelays and notifications, while Capillary and gamification fields are set in the Remote Config JSON?"
+        want: "yes"
+      - q: "Does the answer say the defaults are 30 minutes for sessionTimeoutMinutes and 50 for batchSize?"
+        want: "yes"
+  source: web/firebase.md › API Reference
+
+- id: web-firebase-trap-mobile-remote-config-keys
+  profile: web/firebase
+  category: trap
+  question: >-
+    Our Flutter app stores hydra_account_id, hydra_base_url, hydra_ssl_public_key and
+    hydra_remote_log_level as separate Remote Config parameters. Should we create the same
+    parameters for the web app?
+  expect:
+    contains: ["JSON"]
+    judge:
+      - q: "Does the answer say web uses a single Remote Config parameter (any name) whose value is a JSON object with camelCase fields such as accountId, baseURL and orgId?"
+        want: "yes"
+      - q: "Does the answer tell the web developer to create hydra_account_id, hydra_base_url or hydra_ssl_public_key parameters for web?"
+        want: "no"
+  source: _shared/firebase-setup.md › 3 (Remote Config table) and web/firebase.md › Steps › 3
+
+- id: web-firebase-trap-apns-safari
+  profile: web/firebase
+  category: trap
+  question: >-
+    We want push on Safari for the website. Do we need to create an APNs key in the Apple
+    developer account and upload it to Firebase Cloud Messaging like we did for our iOS app?
+  expect:
+    contains: ["VAPID"]
+    judge:
+      - q: "Does the answer say the web push setup uses a VAPID key (Web Push certificates) and the service worker, as documented for web?"
+        want: "yes"
+      - q: "Does the answer instruct the web developer to create or upload an APNs key for web push?"
+        want: "no"
+  source: web/firebase.md › Modules › Push (P1) and _shared/firebase-setup.md › 4 vs 6
+
+- id: web-firebase-trap-service-account-android
+  profile: web/firebase
+  category: trap
+  question: >-
+    For push, do we have to create a Firebase custom role with fcmdata.deliverydata.list and
+    friends, create a service account and send Capillary its JSON key, like our Android team did?
+  expect:
+    contains: ["Capillary"]
+    judge:
+      - q: "Does the answer tell the web developer to create the custom role and service-account JSON key as a required step for web push?"
+        want: "no"
+      - q: "Does the answer say the web guides list nothing for this (the web items are the VAPID key, Firebase config and service worker), or say to check with Capillary?"
+        want: "yes"
+  source: _shared/firebase-setup.md › 7 (Android) and _shared/prerequisites.md (For Web, Capillary registers the app)
+
+- id: web-firebase-gap-customerglu-csp
+  profile: web/firebase
+  category: gap
+  question: >-
+    Our gamificationBaseUrl from Capillary is on customerglu.com. Do we need to allowlist that
+    domain in connect-src?
+  expect:
+    contains: ["customerglu"]
+    judge:
+      - q: "Does the answer state definitively that customerglu.com must (or must not) be allowlisted, as established fact?"
+        want: "no"
+      - q: "Does the answer say this isn't documented or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: web/firebase.md › Steps › 8 (⚠️ Gap)
+
+- id: web-firebase-gap-realtime-db
+  profile: web/firebase
+  category: gap
+  question: >-
+    Our config has a databaseURL. Do we also have to create a Realtime Database (region,
+    security rules) and check that Cloud Messaging is enabled in the Firebase console?
+  expect:
+    contains: ["Capillary"]
+    judge:
+      - q: "Does the answer state definitively that a Realtime Database must be created, or definitively that it is not needed, as established fact?"
+        want: "no"
+      - q: "Does the answer say it is unclear / not documented whether those older checks are still needed, or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: web/firebase.md › Steps › 4 (⚠️ Gap) and _shared/firebase-setup.md › 5
+
+- id: web-firebase-gap-versions
+  profile: web/firebase
+  category: gap
+  question: >-
+    Which Node.js version do we need, and which firebase npm package version matches the SDK?
+    If we only use Remote Config and no push, do we still have to install firebase?
+  expect:
+    contains: ["Capillary"]
+    judge:
+      - q: "Does the answer state a specific minimum Node.js version as fact?"
+        want: "no"
+      - q: "Does the answer state definitively whether firebase must be installed for Remote Config without push?"
+        want: "no"
+      - q: "Does the answer say this isn't documented or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: web/firebase.md › Requirements (⚠️ Gap)
+
+- id: web-firebase-gap-push-prompt-test
+  profile: web/firebase
+  category: gap
+  question: >-
+    Which code triggers the browser's notification permission prompt, how are foreground push
+    messages handled, and how do we send a test push to our browser?
+  expect:
+    contains: ["Capillary"]
+    judge:
+      - q: "Does the answer give a specific method or procedure for the permission prompt, foreground messages or a test push as documented fact?"
+        want: "no"
+      - q: "Does the answer say these aren't documented or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: web/firebase.md › Modules › Push (⚠️ Gap) and Verification (⚠️ Gap)
+
+- id: web-firebase-gap-inapp-inbox
+  profile: web/firebase
+  category: gap
+  question: >-
+    How do we render in-app messages and a notification inbox in our web app with the Hydra
+    SDK?
+  expect:
+    contains: ["Capillary"]
+    judge:
+      - q: "Does the answer provide specific SDK methods or setup steps for web in-app messages or an inbox as fact?"
+        want: "no"
+      - q: "Does the answer say in-app / inbox isn't documented for Web or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: web/firebase.md › Modules › In-App and Inbox (⚠️ Gap)
+
+- id: web-firebase-prereq-values-where
+  profile: web/firebase
+  category: prerequisites
+  question: >-
+    Capillary sent us an Account Id, Base URL, Org Id and gamification details. Where in our
+    web setup do each of these go?
+  expect:
+    contains: ["accountId", "baseURL", "orgId"]
+    judge:
+      - q: "Does the answer say these go into the Remote Config JSON (not into code or the initialize() call)?"
+        want: "yes"
+      - q: "Does the answer say the gamification write key, region and base URL (gamificationWriteKey, gamificationRegion, gamificationBaseUrl) all go in together if gamification is used?"
+        want: "yes"
+  source: web/firebase.md › Prerequisites and _shared/prerequisites.md
+
+- id: web-firebase-prereq-eu-base-url-ssl
+  profile: web/firebase
+  category: prerequisites
+  question: >-
+    Our org is on the EU cluster. Which Base URL do we put in the Remote Config JSON, and do
+    we also need an SSL public key like the mobile apps?
+  expect:
+    contains: ["https://mapp-eucrm.api.capillarytech.com/"]
+    judge:
+      - q: "Does the answer say the SSL public key is for mobile only and not needed for Web?"
+        want: "yes"
+      - q: "Does the answer say to use the Base URL that Capillary confirms for the org?"
+        want: "yes"
+  source: _shared/prerequisites.md › Base URL by cluster and Capillary gives the client
+
+- id: web-firebase-escalation-info
+  profile: web/firebase
+  category: troubleshooting
+  question: >-
+    We've exhausted the Known Issues list. What do we need to include when we escalate to
+    Capillary support?
+  expect:
+    contains: ["Hydra SDK version"]
+    judge:
+      - q: "Does the answer ask for the platform, the exact error and logs or screenshots, and what has already been checked?"
+        want: "yes"
+  source: _shared/troubleshooting.md › 6. What to send when you escalate

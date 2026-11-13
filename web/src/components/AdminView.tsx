@@ -1,8 +1,10 @@
 import { LifeBuoy, Send } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api";
-import type { Escalation } from "../types";
+import type { DocGap, Escalation, IssueDraft } from "../types";
 import styles from "./admin.module.css";
+import { DocGaps } from "./DocGaps";
+import { IssueDrafts } from "./IssueDrafts";
 import { PageHeader } from "./PageHeader";
 import { ui } from "./controls";
 
@@ -70,17 +72,24 @@ function EscalationCard({ item, onAnswer }: { item: Escalation; onAnswer: (id: s
   );
 }
 
-/** Engineers' queue: sessions paused on "talk to a human". Opened with /?admin=1 (no login yet). */
+type Tab = "escalations" | "drafts" | "gaps";
+
+/** Engineers' workspace: escalations, issue drafts to approve, and documentation gaps. Opened with /?admin=1 (no login yet). */
 export function AdminView() {
-  const [items, setItems] = useState<Escalation[] | null>(null);
+  const [tab, setTab] = useState<Tab>("escalations");
+  const [escalations, setEscalations] = useState<Escalation[] | null>(null);
+  const [drafts, setDrafts] = useState<IssueDraft[]>([]);
+  const [gaps, setGaps] = useState<DocGap[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      setItems(await api.listEscalations());
+      const [e, d, g] = await Promise.all([api.listEscalations(), api.listIssueDrafts(), api.listDocGaps()]);
+      setEscalations(e);
+      setDrafts(d);
+      setGaps(g);
       setError(null);
     } catch {
-      setItems(null);
       setError("Couldn't reach the server.");
     }
   }, []);
@@ -91,29 +100,53 @@ export function AdminView() {
 
   const answer = async (id: string, text: string) => {
     await api.answerEscalation(id, text);
-    setItems((current) => current?.filter((i) => i.id !== id) ?? null);
+    setEscalations((current) => current?.filter((i) => i.id !== id) ?? null);
   };
+
+  const tabs: { id: Tab; label: string; count: number }[] = [
+    { id: "escalations", label: "Escalations", count: escalations?.length ?? 0 },
+    { id: "drafts", label: "Issue drafts", count: drafts.length },
+    { id: "gaps", label: "Doc gaps", count: gaps.length },
+  ];
 
   return (
     <>
-      <PageHeader title="Escalations" subtitle="Clients waiting for an engineer" />
+      <PageHeader title="Review" subtitle="Clients waiting for an engineer, and what the assistant learned" />
       <div className={styles.page}>
-        {items === null ? (
-          <p className={styles.empty}>{error ?? "Loading…"}</p>
-        ) : items.length === 0 ? (
-          <p className={styles.empty}>
-            <LifeBuoy size={18} /> Nothing waiting. New requests appear here when a client asks for a human.
-            <button type="button" className={`${ui.button} ${ui.small}`} onClick={load}>
-              Refresh
+        <div className={styles.tabs} role="tablist">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.id}
+              className={tab === t.id ? styles.tabActive : styles.tab}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label} {t.count > 0 && <span className={styles.badge}>{t.count}</span>}
             </button>
-          </p>
-        ) : (
-          <ul className={styles.list}>
-            {items.map((item) => (
-              <EscalationCard key={item.id} item={item} onAnswer={answer} />
-            ))}
-          </ul>
-        )}
+          ))}
+          <button type="button" className={`${ui.button} ${ui.small} ${styles.refresh}`} onClick={load}>
+            Refresh
+          </button>
+        </div>
+        {error && <p role="alert" className={styles.error}>{error}</p>}
+        {tab === "escalations" &&
+          (escalations === null ? (
+            <p className={styles.empty}>{error ? "" : "Loading…"}</p>
+          ) : escalations.length === 0 ? (
+            <p className={styles.empty}>
+              <LifeBuoy size={18} /> Nothing waiting. New requests appear here when a client asks for a human.
+            </p>
+          ) : (
+            <ul className={styles.list}>
+              {escalations.map((item) => (
+                <EscalationCard key={item.id} item={item} onAnswer={answer} />
+              ))}
+            </ul>
+          ))}
+        {tab === "drafts" && <IssueDrafts drafts={drafts} onChange={load} />}
+        {tab === "gaps" && <DocGaps gaps={gaps} onChange={load} />}
       </div>
     </>
   );
