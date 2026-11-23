@@ -13,6 +13,9 @@
 #           identifiers that aren't secrets. Never use it for keys or tokens.
 # validator the client can upload the file in the portal and the system checks it
 #           (app/validators/firebase_files.py): google_services_json | google_service_info_plist.
+# group     (client items) give = the client sends it to Capillary; omitted = something the client sets up
+#           themselves. Used by the Prerequisites tab.
+# short     one line for the Prerequisites tab (the long `how` stays for the chat checklist and the kit)
 # source    where the fact comes from (file › heading). Every item must trace to the knowledge
 #           base; `tests/test_prereq_engine.py` checks the files exist. Edit with SME review.
 #
@@ -22,7 +25,9 @@ items:
   # ── The client gives Capillary (to register the app) ──────────────────────────────────────
   - id: android_application_id
     title: Send Capillary your Android application ID (package name)
+    short: "The `applicationId` in your app's `build.gradle`."
     owner: client
+    group: give
     blocking: true
     value: true
     format: android_application_id
@@ -33,7 +38,9 @@ items:
 
   - id: ios_bundle_id
     title: Send Capillary your iOS bundle ID
+    short: "The Bundle Identifier in Xcode (target → General)."
     owner: client
+    group: give
     blocking: true
     value: true
     format: ios_bundle_id
@@ -44,7 +51,9 @@ items:
 
   - id: android_sha256
     title: Send Capillary your Android app signature (SHA256)
+    short: "From your Android signing report, for the build you'll run. A mismatch stops the SDK from starting."
     owner: client
+    group: give
     blocking: true
     value: true
     format: sha256_fingerprint
@@ -58,7 +67,9 @@ items:
 
   - id: android_signature_native
     title: Send Capillary your Android app signature (SHA256), to be confirmed
+    short: "The same SHA256 from the signing report. The native guides don't list it, so confirm with your Capillary contact."
     owner: client
+    group: give
     blocking: false
     value: true
     format: sha256_fingerprint
@@ -72,7 +83,9 @@ items:
 
   - id: push_firebase_project
     title: Send Capillary your Firebase project ID and service account (push)
+    short: "Project ID, service-account email and credentials file. Send the file only through the secure channel Capillary names."
     owner: client
+    group: give
     blocking: false
     how: >-
       Capillary needs your Firebase project ID, the service-account email and the service-account credentials
@@ -87,6 +100,7 @@ items:
   # ── SDK package access ────────────────────────────────────────────
   - id: android_repo_access
     title: Get access to the Android SDK repository
+    short: "Ask Capillary for read access to the repo, then create a GitHub token with `read:packages`. Keep it on your machine."
     owner: client
     blocking: true
     how: >-
@@ -99,6 +113,7 @@ items:
 
   - id: ios_repo_access
     title: Get access to the iOS SDK repository
+    short: "Ask Capillary for access to the iOS packages repo, then add your GitHub account in Xcode (or use a token)."
     owner: client
     blocking: true
     how: >-
@@ -111,6 +126,7 @@ items:
 
   - id: rn_package_access
     title: Check whether you need credentials for Capillary's React Native packages
+    short: "The public docs list no credentials (iOS isn't stated). If an install is denied, ask your Capillary contact for a GitHub token."
     owner: client
     blocking: false
     how: >-
@@ -125,6 +141,7 @@ items:
 
   - id: ssl_key_updatable
     title: Plan to update the SSL public key without an app release
+    short: "The key expires about every 9 months. Keep it in remote config so you can swap it without a release."
     owner: client
     blocking: false
     how: >-
@@ -138,6 +155,7 @@ items:
   # ── Firebase (Firebase mode only) ─────────────────────────────────────────────────────────
   - id: firebase_project
     title: Create a Firebase project and register your app(s)
+    short: "Firebase Console → Add project, then register each app."
     owner: client
     blocking: true
     how: Firebase Console → Add project, then register each app. Skip the project step if you already have one.
@@ -149,6 +167,7 @@ items:
 
   - id: google_services_json
     title: Download google-services.json for your Android app
+    short: "Download it when you register the Android app in Firebase. Skip the code changes Firebase suggests."
     owner: client
     blocking: true
     validator: google_services_json
@@ -159,6 +178,7 @@ items:
 
   - id: google_service_info_plist
     title: Download GoogleService-Info.plist for your iOS app
+    short: "Download it when you register the iOS app in Firebase. Skip the code changes Firebase suggests."
     owner: client
     blocking: true
     validator: google_service_info_plist
@@ -169,6 +189,7 @@ items:
 
   - id: web_firebase_config
     title: Register your web app in Firebase and copy its config object
+    short: "Firebase dashboard → Web icon → Register app, then copy the config object."
     owner: client
     blocking: true
     how: Project dashboard → Web icon (`</>`) → enter a nickname → Register app, then copy the Firebase configuration object.
@@ -180,6 +201,7 @@ items:
 
   - id: remote_config_values
     title: Add Capillary's values to Firebase Remote Config and publish
+    short: "Add Capillary's values as Remote Config parameters, with the exact names from your platform guide, then publish."
     owner: client
     blocking: false
     how: >-
@@ -192,6 +214,7 @@ items:
   # ── CRM ───────────────────────────────────────────────────────────────────────────────────
   - id: crm_account_linking
     title: "Set the CRM Account Linking Identifier to {customer_id_type}"
+    short: "Set in Capillary CRM (MAPP_SDK channel settings). Must match the customerId your app sends at sign-in."
     owner: client
     blocking: false
     how: >-
@@ -204,6 +227,7 @@ items:
   # ── Web push ──────────────────────────────────────────────────────────────────────────────
   - id: web_vapid_key
     title: Generate a VAPID key for web push
+    short: "Firebase project settings → Cloud Messaging → Web configuration → Web Push certificates → Generate key pair."
     owner: client
     blocking: false
     how: Firebase project settings → Cloud Messaging → Web configuration → Web Push certificates → Generate key pair.
@@ -215,6 +239,7 @@ items:
   # ── Loyalty View ──────────────────────────────────────────────────────────────────────────
   - id: cap_token
     title: Plan how your app gets the Capillary B2B short-lived token (Loyalty View only)
+    short: "Passed with `setCapToken` after login. How to get it isn't documented; ask your Capillary contact."
     owner: client
     blocking: false
     how: >-
@@ -227,6 +252,7 @@ items:
   # ── Capillary gives the client ────────────────────────────────────────────────────────────
   - id: account_id
     title: Account Id
+    short: "The Source Account Id of your MAPP_SDK channel account."
     owner: capillary
     blocking: true
     how: Capillary sends it once your app is registered.
@@ -234,6 +260,7 @@ items:
 
   - id: base_url
     title: Base URL
+    short: "Specific to your Capillary cluster; use the one for UAT or production."
     owner: capillary
     blocking: true
     how: Capillary sends it once your app is registered.
@@ -241,6 +268,7 @@ items:
 
   - id: ssl_public_key
     title: SSL Public Key
+    short: "Mobile only. Expires about every 9 months."
     owner: capillary
     blocking: true
     how: Capillary sends it once your app is registered (mobile apps only).
@@ -250,6 +278,7 @@ items:
 
   - id: org_id
     title: Org Id
+    short: "Web, and Android, iOS and React Native in direct mode. In other setups mainly for guest users; your platform guide says."
     owner: capillary
     blocking: true
     how: Capillary sends it once your app is registered.
@@ -261,6 +290,7 @@ items:
 
   - id: gamification_key
     title: Gamification Key (write key)
+    short: "Needed for gamification."
     owner: capillary
     blocking: true
     how: Capillary sends it for gamification.
@@ -270,6 +300,7 @@ items:
 
   - id: gamification_region
     title: Gamification Region
+    short: "IN, US or ME. Capillary confirms which."
     owner: capillary
     blocking: true
     how: One of IN, US or ME (web examples use lower case). Capillary confirms which.
@@ -279,15 +310,29 @@ items:
 
   - id: gamification_base_url
     title: Gamification Base URL
+    short: "Required with the key and region on Flutter, React Native and Web."
+    owner: capillary
+    blocking: true
+    how: Required together with the Gamification Key and Region on Flutter, React Native and Web (to be confirmed with a Capillary engineer; `_shared/prerequisites.md` Gap).
+    when:
+      - platforms: [flutter, react-native, web]
+        modules: [gamification]
+    source: _shared/prerequisites.md › Capillary gives the client
+
+  - id: gamification_base_url_native
+    title: Gamification Base URL (optional)
+    short: "Optional on Android. On iOS, either this or the region is enough."
     owner: capillary
     blocking: false
-    how: Optional on most platforms; your platform guide says whether you need it.
+    how: Optional on Android; on iOS either the Gamification Region or the Base URL is enough. Your platform guide says which to use.
     when:
-      - modules: [gamification]
+      - platforms: [android, ios]
+        modules: [gamification]
     source: _shared/prerequisites.md › Capillary gives the client
 
   - id: gamification_view_ids
     title: Banner / Embedded / Loyalty view IDs (only for the views you use)
+    short: "Only for the views you use. Banner and Embedded IDs are in the gamification dashboard; the Loyalty ID comes from Capillary."
     owner: capillary
     blocking: false
     how: Banner and Embedded IDs come from the gamification dashboard's entry-point settings; the Loyalty ID from the Capillary team.

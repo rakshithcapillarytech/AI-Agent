@@ -121,3 +121,57 @@ export type IssueEdit = Partial<Pick<IssueDraft["payload"], "error_signature" | 
   platform?: string;
   config_mode?: string;
 };
+
+/** One row of the Prerequisites tab's key lists (app/rules/requirements.py). */
+export interface PrereqRow {
+  id: string;
+  title: string;
+  how: string;
+  /** false = optional, or can come later. */
+  required: boolean;
+  /** Modules that make it necessary; empty when it applies whatever features are chosen. */
+  needed_for: Module[];
+  source: string;
+}
+
+export interface VersionRow {
+  label: string;
+  value: string;
+  note: string | null;
+  /** Common platform knowledge that Capillary's docs don't state. */
+  general: boolean;
+}
+
+export interface Prerequisites {
+  platform: Platform;
+  config_mode: ConfigMode;
+  modules: Module[];
+  from_capillary: PrereqRow[];
+  give_capillary: PrereqRow[];
+  setup: PrereqRow[];
+  versions: VersionRow[];
+  computer: VersionRow[];
+  computer_gap: string;
+  gaps: string[];
+}
+
+export interface FaqCategory {
+  id: string;
+  label: string;
+}
+
+/** One FAQ entry (app/rules/faq.py). `platforms: null` means it applies to every platform. */
+export interface FaqItem {
+  id: string;
+  category: string;
+  question: string;
+  answer: string;
+  platforms: Platform[] | null;
+  /** The guide files the answer comes from. */
+  sources: string[];
+}
+
+export interface Faq {
+  categories: FaqCategory[];
+  items: FaqItem[];
+}

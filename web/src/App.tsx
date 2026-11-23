@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
 import { AdminView } from "./components/AdminView";
+import { FaqView } from "./components/FaqView";
 import { Home } from "./components/Home";
+import { PrerequisitesView } from "./components/PrerequisitesView";
 import styles from "./components/layout.module.css";
 import { Rail } from "./components/Rail";
 import { SessionView } from "./components/SessionView";
@@ -10,12 +12,14 @@ import { platformShort } from "./lib/catalog";
 import { recentSessions, userName as storedName } from "./lib/recent";
 import type { Profile } from "./types";
 
-type View = { kind: "home" } | { kind: "admin" } | { kind: "session"; id: string; startProfile?: Profile };
+type View = { kind: "home" } | { kind: "admin" } | { kind: "prerequisites" } | { kind: "faq" } | { kind: "session"; id: string; startProfile?: Profile };
 
 /** The session id lives in the URL (?session=…), so a link reopens that onboarding. */
 function viewFromUrl(): View {
   const params = new URLSearchParams(window.location.search);
   if (params.has("admin")) return { kind: "admin" };
+  if (params.has("prerequisites")) return { kind: "prerequisites" };
+  if (params.has("faq")) return { kind: "faq" };
   const id = params.get("session");
   return id ? { kind: "session", id } : { kind: "home" };
 }
@@ -37,12 +41,18 @@ export default function App() {
         ? `?session=${encodeURIComponent(next.id)}`
         : next.kind === "admin"
           ? "?admin=1"
-          : window.location.pathname;
+          : next.kind === "prerequisites"
+            ? "?prerequisites=1"
+            : next.kind === "faq"
+              ? "?faq=1"
+              : window.location.pathname;
     window.history.pushState(null, "", url);
     setView(next);
   }, []);
 
   const goHome = useCallback(() => navigate({ kind: "home" }), [navigate]);
+  const openPrerequisites = useCallback(() => navigate({ kind: "prerequisites" }), [navigate]);
+  const openFaq = useCallback(() => navigate({ kind: "faq" }), [navigate]);
   const openSession = useCallback((id: string) => navigate({ kind: "session", id }), [navigate]);
 
   const startOnboarding = useCallback(
@@ -68,7 +78,15 @@ export default function App() {
 
   return (
     <div className={styles.app}>
-      <Rail homeActive={view.kind === "home"} onHome={goHome} userName={name} />
+      <Rail
+        homeActive={view.kind === "home"}
+        onHome={goHome}
+        prereqActive={view.kind === "prerequisites"}
+        onPrereq={openPrerequisites}
+        faqActive={view.kind === "faq"}
+        onFaq={openFaq}
+        userName={name}
+      />
       <Sidebar
         recent={recent}
         activeId={view.kind === "session" ? view.id : null}
@@ -78,6 +96,10 @@ export default function App() {
       <main className={styles.main}>
         {view.kind === "admin" ? (
           <AdminView />
+        ) : view.kind === "prerequisites" ? (
+          <PrerequisitesView />
+        ) : view.kind === "faq" ? (
+          <FaqView />
         ) : view.kind === "home" ? (
           <Home userName={name} recent={recent} onStart={startOnboarding} onOpen={openSession} />
         ) : (

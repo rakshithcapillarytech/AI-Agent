@@ -1,4 +1,4 @@
-import type { DocGap, Escalation, IssueDraft, IssueEdit, Profile, SessionState } from "./types";
+import type { ConfigMode, DocGap, Faq, Escalation, IssueDraft, IssueEdit, Module, Platform, Prerequisites, Profile, SessionState } from "./types";
 
 const BASE = "/api";
 const JSON_TYPE = "application/json";
@@ -63,6 +63,16 @@ async function streamTurn(
 }
 
 export const api = {
+  /** Frequently asked questions. Needs no session. */
+  faq: (signal?: AbortSignal) => fetch(`${BASE}/faq`, { signal }).then((r) => json<Faq>(r)),
+
+  /** Keys, access, minimum versions and tools for one platform. Needs no session. */
+  prerequisites: (platform: Platform, mode: ConfigMode, modules: Module[], signal?: AbortSignal) => {
+    const query = new URLSearchParams({ platform, mode });
+    modules.forEach((m) => query.append("modules", m));
+    return fetch(`${BASE}/prerequisites?${query}`, { signal }).then((r) => json<Prerequisites>(r));
+  },
+
   /** Admin queue: escalations waiting for an engineer. No login yet. */
   listEscalations: () => fetch(`${BASE}/admin/escalations`).then((r) => json<Escalation[]>(r)),
 

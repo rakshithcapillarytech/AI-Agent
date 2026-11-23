@@ -5,6 +5,7 @@ import logging
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import Response, StreamingResponse
@@ -20,10 +21,12 @@ from app.graph.builder import build_graph
 from app.graph.messages import message_text
 from app.graph.nodes.guardrails import redact
 from app.graph.nodes.phase_transition import phase_transition
-from app.graph.state import IntegrationProfile
+from app.graph.state import ConfigMode, IntegrationProfile, Module, Platform
 from app.kb.guide import GuideNotReady, build_guide, guide_filename
 from app.learning.issues import clean, lint_issue, publish_issue
 from app.learning.store import DOC_GAP, ISSUE_DRAFT, PostgresLearningStore
+from app.rules.faq import faq_view
+from app.rules.requirements import build_prerequisites
 from app.validators.upload import MAX_UPLOAD_BYTES, UPLOAD_HEADER, process_upload, safe_filename
 
 log = logging.getLogger(__name__)
@@ -182,6 +185,20 @@ async def _sync_learning(session_id: str) -> None:
 @app.get("/health")
 async def health() -> dict:
     return {"ok": True}
+
+
+@app.get("/prerequisites")
+async def prerequisites(
+    platform: Platform, mode: ConfigMode = "firebase", modules: Annotated[list[Module] | None, Query()] = None
+) -> dict:
+    """Keys, access, minimum versions and tools for one platform. Needs no session and holds no client data."""
+    return build_prerequisites(get_settings().knowledge_base_dir, platform, mode, modules or [])
+
+
+@app.get("/faq")
+async def faq() -> dict:
+    """Frequently asked questions with the guides they come from. Needs no session."""
+    return faq_view(get_settings().knowledge_base_dir)
 
 
 @app.post("/sessions")

@@ -96,6 +96,8 @@ export function guideLabel(path: string): string {
     "_shared/overview.md": "Experience+ overview",
     "_shared/prerequisites.md": "Before you start",
     "_shared/firebase-setup.md": "Firebase setup",
+    "_shared/push.md": "Push notifications",
+    "_shared/troubleshooting.md": "Troubleshooting",
   };
   if (shared[path]) return shared[path];
   const [platform, file] = path.split("/");

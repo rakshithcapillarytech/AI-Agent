@@ -63,8 +63,10 @@ class PrereqRule(BaseModel):
     owner: Literal["client", "capillary"]
     blocking: bool
     how: str
+    short: str | None = None  # one-line version for the Prerequisites tab
     source: str
     value: bool = False
+    group: Literal["give"] | None = None  # client items only: what the client sends Capillary
     format: Format | None = None
     validator: Validator | None = None
     when: list[Condition] = Field(default_factory=list)

@@ -1,5 +1,15 @@
 # Knowledge base changelog
 
+## FAQ file for the FAQ tab (2026-11-23)
+- New `faq.yaml`: 22 questions in 4 topics (basics, keys and setup, push, common problems), trimmed from a first draft of about 55 to the ones teams hit most; some are tagged to one platform. Every answer restates the guides and lists `evidence` (a file and a sentence that must still be in it); `tests/test_faq.py` fails when a guide changes and the answer doesn't. Where the guides have a Gap (registration time, Loyalty token, ME base URL, changing identifiers), the answer says it isn't documented and points to the Capillary contact.
+- A line-by-line comparison of the answers with their guides caught and fixed several overstatements before release (push "in both cases", UAT/production keys, token rationale, "dropped" events).
+
+## Requirements file for the Prerequisites tab (2026-11-23)
+- New `requirements.yaml`: minimum versions, tools to install and open Gaps per platform, for the portal's Prerequisites tab. Nothing new was added to the guides: each fact is already in a platform file's Requirements section, and `tests/test_requirements.py` fails if a guide changes and this file doesn't.
+- `prerequisites.yaml`: the five "client sends Capillary" rules got `group: give` so the tab can separate them from accounts and access the client sets up.
+- Fact-check of the tab's short descriptions against the guides found and fixed: **Gamification Base URL** was shown as "optional on most platforms" but `_shared/prerequisites.md` says it is required with key and region on Flutter, React Native and Web (split into `gamification_base_url` and `gamification_base_url_native`, still to be confirmed by an SME, see the Gap there); the React Native Xcode row implied a stated minimum (none is); the Android SDK note claimed "minimum for gamification", which only the Firebase guide says; Org Id and package-credential wording tightened.
+- Minimum computer specs (RAM, disk, CPU) are not in any source; the tab says so instead of inventing numbers. The "Xcode needs a Mac" note is tagged as general knowledge.
+
 ## Deep evaluation and fixes (2026-11-13)
 A full evaluation of the knowledge base and the kits built from it.
 - **Deterministic audit** (`uv run python -m evals.audit_kb`, no model): 11 checks (fences, embedded JSON/YAML, step numbering and references, cross-references, secrets and internal leaks, cross-platform contamination, leftover markers, front matter vs content, prerequisite rules, evals answerable from their kit, 43 kit combinations). Clean. It found sample `@capillarytech.com` emails in four files (replaced with `user@example.com`).

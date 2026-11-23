@@ -1,0 +1,188 @@
+# Minimum versions, tools and known gaps per platform, shown on the portal's Prerequisites tab.
+#
+# Every fact must already be written in the platform guides (`<platform>/<mode>.md › Requirements`).
+# `check` is a string that must appear in the guide of every config mode the item applies to;
+# tests/test_requirements.py fails when a guide changes and this file doesn't (or the reverse), so the
+# tab can't drift from the knowledge base. Edit with SME review, together with the guide.
+#
+# Item fields:
+#   label / value   what the client sees. `{sdk_version}` in a value is replaced with the guide's front-matter version.
+#   note            optional one-line explanation.
+#   modes           firebase | direct. Omitted = both.
+#   modules         the item shows only when one of these modules is selected (e.g. push). Omitted = always.
+#   check           text that must appear in the guide (see above).
+#   general         true = common platform knowledge that Capillary's docs don't state (for example "Xcode runs only
+#                   on macOS"). Shown with a "general" tag; no `check`.
+# `gaps` are copied from the guides' "⚠️ Gap:" callouts: things Capillary hasn't documented.
+
+platforms:
+  android:
+    versions:
+      - label: Hydra SDK version
+        value: "{sdk_version} or later"
+        note: Beta, for UAT and POC.
+        check: "1.9.22-beta02"
+      - label: Minimum Android version (minSdk)
+        value: "21 or above"
+        check: "minSdk 21"
+      - label: targetSdkVersion and compileSdkVersion
+        value: "34"
+        check: "targetSdkVersion 34"
+      - label: Gradle settings
+        value: "A settings file that uses dependencyResolutionManagement"
+        modes: [direct]
+        check: "dependencyResolutionManagement"
+      - label: Gradle version catalog
+        value: "Enable it on Gradle 7.4 and below (on by default from 7.4)"
+        modes: [firebase]
+        check: "preview feature on Gradle 7.4 and below"
+      - label: Google Firebase account
+        value: "Required"
+        modes: [firebase]
+        check: "Google Firebase account"
+    computer:
+      - label: Android SDK platform 34 installed
+        value: "For compileSdk 34"
+        check: "compileSdkVersion 34"
+    gaps:
+      - "AGP, Kotlin and exact Gradle versions."
+
+  ios:
+    versions:
+      - label: Hydra SDK version
+        value: "{sdk_version} or later"
+        note: Beta; the minimum for gamification.
+        check: "Beta for UAT/POC"
+      - label: Minimum iOS deployment target
+        value: "iOS 13.0"
+        check: "iOS 13.0"
+      - label: Devices
+        value: "iPhone and iPad"
+        check: "iPhone (iOS) and iPad (iPadOS)"
+      - label: Xcode
+        value: "14 or later"
+        check: "Xcode 14 or later"
+      - label: Language
+        value: "Swift (Objective-C apps need a small Swift file)"
+        check: "an Objective-C app needs a small Swift file"
+    computer:
+      - label: A Mac with Xcode
+        value: "Xcode runs only on macOS"
+        general: true
+    gaps:
+      - "Swift and CocoaPods versions, and the minimum Firebase SDK for push."
+
+  react-native:
+    versions:
+      - label: Hydra SDK version
+        value: "Latest release of @capillarytech/react-native-hydra-lib (no version pinned)"
+        check: "@capillarytech/react-native-hydra-lib"
+      - label: React Native
+        value: "0.77.0 or later"
+        check: "| React Native | 0.77.0 or later |"
+      - label: iOS
+        value: "15.0 or later"
+        check: "| iOS | 15.0 or later |"
+      - label: Android
+        value: "API 21 (Android 5.0) or later"
+        check: "| Android | API 21 (Android 5.0) or later |"
+      - label: Node.js
+        value: "18.0.0 or later"
+        check: "| Node.js | 18.0.0 or later |"
+      - label: targetSdk and compileSdk
+        value: "31 or later"
+        check: "| targetSdk / compileSdk | 31 or later |"
+      - label: Xcode
+        value: "Before 16 can break Objective-C imports; no minimum is stated"
+        check: "Xcode earlier than 16 can break Objective-C imports"
+      - label: Google Services Gradle plugin (push)
+        value: "4.4.2"
+        modules: [push]
+        check: "`com.google.gms:google-services` Gradle plugin `4.4.2`"
+    computer:
+      - label: Node.js and npm or Yarn
+        value: "Node.js 18.0.0 or later"
+        check: "| Node.js | 18.0.0 or later |"
+      - label: CocoaPods (iOS builds)
+        value: "Swift Package Manager is optional"
+        check: "CocoaPods (Swift Package Manager optional"
+      - label: A Mac with Xcode (iOS builds)
+        value: "Xcode runs only on macOS"
+        general: true
+    gaps:
+      - "The docs require React Native 0.77.0 or later but ship sample apps for 0.72 to 0.76. No SDK or Gradle minimum is stated."
+
+  flutter:
+    versions:
+      - label: Hydra SDK packages
+        value: "capillary_hydra and capillary_hydra_platform_interface (same version)"
+        check: "kept on the **same version**"
+      - label: Flutter
+        value: ">= 3.3.0 (Dart >= 3.0)"
+        check: "| Flutter | >= 3.3.0 (Dart >= 3.0) |"
+      - label: iOS
+        value: ">= 15.0"
+        check: "| iOS | >= 15.0 |"
+      - label: Android
+        value: ">= API 23 (Android 6.0)"
+        check: ">= API 23 (Android 6.0)"
+      - label: Google Services Gradle plugin
+        value: "4.4.2"
+        check: "Google Services Gradle plugin `4.4.2`"
+      - label: Firebase project
+        value: "Required in every config mode"
+        check: "A Firebase project with"
+      - label: iOS dependencies
+        value: "CocoaPods with use_frameworks!, or Swift Package Manager"
+        check: "CocoaPods with `use_frameworks!`"
+      - label: Apple developer account access (push)
+        value: "Access to developer.apple.com (capabilities, extension, App Group)"
+        modules: [push]
+        check: "access to `developer.apple.com`"
+    computer:
+      - label: Flutter SDK
+        value: ">= 3.3.0 (Dart >= 3.0)"
+        check: "| Flutter | >= 3.3.0 (Dart >= 3.0) |"
+      - label: A Mac with Xcode (iOS builds)
+        value: "Xcode runs only on macOS"
+        general: true
+    gaps:
+      - "Android compileSdk, AGP, Gradle and Kotlin versions, and Xcode and CocoaPods versions."
+
+  web:
+    versions:
+      - label: Hydra SDK package
+        value: "cap-hydra-web-sdk from npm (latest, or beta for testing)"
+        check: "cap-hydra-web-sdk@beta"
+      - label: Browsers
+        value: "Modern evergreen browsers. Internet Explorer is not supported"
+        check: "Internet Explorer is not supported"
+      - label: Chrome (push)
+        value: "109 or later"
+        modules: [push]
+        check: "| Chrome | 109+ |"
+      - label: Firefox (push)
+        value: "140 or later (ESR)"
+        modules: [push]
+        check: "| Firefox | 140+ (ESR) |"
+      - label: Safari (push)
+        value: "26.3 or later"
+        modules: [push]
+        check: "| Safari | 26.3+ |"
+      - label: Edge, Chromium (push)
+        value: "149 or later"
+        modules: [push]
+        check: "| Edge (Chromium) | 149+ |"
+      - label: Firebase JS SDK (push)
+        value: "Install firebase yourself; the SDK doesn't bundle it"
+        modules: [push]
+        check: "the Firebase JS SDK (`firebase`)"
+    computer:
+      - label: Node.js and a package manager
+        value: "npm, yarn, pnpm or bun"
+        check: "pnpm add cap-hydra-web-sdk"
+    gaps:
+      - "Node.js, bundler and framework versions, and the matching firebase npm version."
+
+# Not in any platform guide. Shown at the bottom of the tab's computer section for every platform.
+computer_gap: "No minimum computer specs (RAM, disk, CPU) are published. Ask your Capillary contact if you need numbers."

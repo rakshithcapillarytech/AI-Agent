@@ -44,7 +44,9 @@ Add `--model gemini-3.5-flash-lite` to test a specific model, or `--case <id>` f
 **Kept, optional: the hosted Gemini chat assistant** (built under the first plan; still accessible in the portal, UI unchanged, works and tested, not extended): discovery chat that records the profile, phase machine and step plan, in-portal checklist and `google-services.json` / plist checks, keyword search tools, troubleshooting tools, `escalate_to_human` with an engineers' queue, reply guardrail, session persistence in Postgres, and the streaming chat UI. Table of what is reused: PLAN.md §14.
 
 Not built yet (see the PLAN.md §8 timeline):
-- **Kit v1** (phase A): prerequisites checklist, AI operating rules (agentic and chat-only), troubleshooting and escalation protocol, learned issues and report-back instructions in the guide; a stateless `POST /kit`; a "Your integration kit" portal page; wizard and home copy for the new flow
+- **Prerequisites tab** (built, 2026-11-23): a reference page at `/?prerequisites=1` (rail item "Prerequisites") listing, per platform, config mode and features, the keys Capillary sends, what the client sends Capillary, accounts and access, minimum versions and tools; data from `prerequisites.yaml` and `requirements.yaml`, served by `GET /prerequisites`
+- **FAQ tab** (built, 2026-11-23): `/?faq=1`, 22 searchable questions filtered by app and topic, answered from the guides (`faq.yaml`, `GET /faq`); every answer is tied to guide text by tests
+- **Kit v1** (phase A, rest): prerequisites checklist inside the guide, AI operating rules (agentic and chat-only), troubleshooting and escalation protocol, learned issues and report-back instructions in the guide; a stateless `POST /kit`; a "Your integration kit" portal page; wizard and home copy for the new flow
 - **Kit tests** (phase B): evals and scenario checks with the guide as the model's context
 - **Report-back form** (phase D)
 - SME review of the drafts, `prerequisites.yaml`, seeded issues and golden Q&A

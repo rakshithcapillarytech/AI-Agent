@@ -1,0 +1,204 @@
+# Frequently asked questions, shown on the portal's FAQ tab.
+#
+# Every answer restates something the guides already say; nothing here is new knowledge. Each item lists
+# `evidence`: a file and a piece of text that must still appear in it. tests/test_faq.py fails when a guide
+# changes and the answer doesn't (or the reverse). Where the guides have a Gap, the answer says so and sends
+# the client to their Capillary contact. Edit with SME review, together with the guide.
+#
+#   platforms  the item shows only for these platforms (android, ios, react-native, flutter, web). Omit = all.
+#   answer     short; `backticks` show as code; a new line starts a new line on the page.
+
+categories:
+  - { id: basics, label: Basics }
+  - { id: keys, label: Keys and setup }
+  - { id: push, label: Push notifications }
+  - { id: problems, label: Common problems }
+
+
+items:
+  - id: with-or-without-firebase
+    category: basics
+    question: What is the difference between "with Firebase" and "without Firebase"?
+    answer: "With Firebase, the SDK's settings come from Firebase Remote Config. Without it, you pass the settings straight into the SDK's init call. Push goes through Firebase Cloud Messaging (on native Android, only in the Firebase setup)."
+    evidence:
+      - { file: _shared/overview.md, text: "The SDK's settings come from **Firebase Remote Config**" }
+      - { file: _shared/overview.md, text: "The settings are passed straight into the SDK's init call instead of Remote Config" }
+      - { file: _shared/overview.md, text: "Push uses Firebase Cloud Messaging" }
+      - { file: _shared/overview.md, text: "On native Android, push is **not available** in direct mode" }
+
+  - id: integration-order
+    category: basics
+    question: In what order is an integration done?
+    answer: "First Firebase and the push gateway (your mobile team sets up Firebase, Capillary configures the gateway). Then your Capillary contact configures the MAPP_SDK source account. Then, in the app: install the SDK, initialise it, sign users in, and add push, in-app, inbox and gamification."
+    evidence:
+      - { file: _shared/overview.md, text: "How an integration is set up (order)" }
+      - { file: _shared/overview.md, text: "configures the MAPP_SDK source account in Capillary CRM" }
+
+  - id: where-account-id
+    category: keys
+    question: Where does my Account Id come from?
+    answer: It is the Source Account Id of your MAPP_SDK channel account, generated automatically when Capillary registers your app. You put it in the SDK.
+    evidence:
+      - { file: _shared/push.md, text: "**This is the Account Id the client puts in the SDK.**" }
+
+  - id: which-base-url
+    category: keys
+    question: Which Base URL should I use?
+    answer: "It depends on the cluster your org lives on, for example `https://mapp-incrm.api.capillarytech.com/` for IN / APAC. Use the one Capillary confirms for your org. No endpoint is listed for the ME region, so ask your contact."
+    evidence:
+      - { file: _shared/prerequisites.md, text: "https://mapp-incrm.api.capillarytech.com/" }
+      - { file: _shared/prerequisites.md, text: "no endpoint is listed for the `ME` region" }
+
+  - id: sha256-format
+    category: keys
+    question: How do I get the Android app signature (SHA256)?
+    answer: "Copy it from your Android app signing report, for the exact build you will run. The report prints colon-separated pairs; Capillary stores it as `SHA256 - ` followed by the 64-character hex value without colons. Which keys count (debug, release, CI, Play App Signing) isn't documented, so use the build you are running."
+    evidence:
+      - { file: _shared/troubleshooting.md, text: "the signing report prints the same value as colon-separated pairs" }
+      - { file: _shared/troubleshooting.md, text: "Capillary stores the signature as `SHA256 - ` followed by the 64-character hex fingerprint without colons" }
+      - { file: _shared/push.md, text: "don't list which keys count (debug, release, CI, Play App Signing)" }
+
+  - id: account-linking
+    category: keys
+    question: What is the Account Linking Identifier, and why does it matter?
+    answer: It is the customer identifier configured in Capillary CRM (mobile, email, InTouchUserId, externalId or FCMToken). The `customerId` your app sends at sign-in must match it, or the user isn't linked to the right CRM customer.
+    platforms: [android, ios, react-native, flutter]
+    evidence:
+      - { file: _shared/prerequisites.md, text: "must match the **Account Linking Identifier**" }
+      - { file: _shared/prerequisites.md, text: "`mobile`, `email`, `InTouchUserId`, `externalId` or `FCMToken`" }
+
+  - id: ssl-key-expiry
+    category: keys
+    question: Does the SSL public key expire?
+    answer: Yes, about every 9 months. When it does, the SDK fails with a certificate pinning failure. Don't hardcode it; keep it in Firebase Remote Config or another remote setting so you can replace it without an app release. Capillary gives you the new key.
+    platforms: [android, ios, react-native, flutter]
+    evidence:
+      - { file: _shared/prerequisites.md, text: "**expires about every 9 months**" }
+      - { file: _shared/prerequisites.md, text: "**Don't hardcode it.**" }
+
+  - id: registration-time
+    category: keys
+    question: How long does registration take?
+    answer: It isn't documented. Ask your Capillary contact. Until Capillary finishes the gateway setup, push won't send even if your app is correct.
+    evidence:
+      - { file: _shared/push.md, text: "how long the gateway setup takes, aren't documented" }
+      - { file: _shared/push.md, text: "Until that is done, push won't send even when the app is correct." }
+
+  - id: share-secrets
+    category: keys
+    question: Can I send my Firebase service-account file, or a GitHub token, in chat or email?
+    answer: No. The service-account file contains a private key, so share it only through the secure channel your Capillary contact names. Keep GitHub tokens on your machine too (environment variables, a git-ignored file or CI secrets) and never share them in chat, email or git.
+    evidence:
+      - { file: _shared/push.md, text: "**Never put the Firebase service-account file in chat, email, a ticket or git.**" }
+      - { file: _shared/prerequisites.md, text: "**Tokens stay on the client's machine**" }
+
+  - id: github-token-why
+    category: keys
+    question: Why do I need a GitHub token?
+    answer: Native Android and iOS install from Capillary's private repositories, so you need access from Capillary's access team (a GitHub token with `read:packages` on Android). React Native and Flutter install from public registries (npm and pub.dev); whether React Native on iOS still needs a token isn't stated.
+    evidence:
+      - { file: _shared/prerequisites.md, text: "GitHub username + Personal Access Token with `read:packages` scope" }
+      - { file: _shared/prerequisites.md, text: "pub.dev packages `capillary_hydra` and `capillary_hydra_platform_interface`" }
+      - { file: _shared/prerequisites.md, text: "Whether React Native on iOS still needs a GitHub token isn't stated." }
+
+  - id: push-token-no-push
+    category: push
+    question: I can see an FCM token in the logs, but no push arrives. What do I check first?
+    answer: "That your app's Firebase project (the one in `google-services.json` or `GoogleService-Info.plist`) is the one registered at Capillary as the FCM Project ID. Then send a test message from the Firebase console to the same token: if it arrives, the problem is in the registration at Capillary; if not, check your app's Firebase config and permissions."
+    platforms: [android, ios, react-native, flutter]
+    evidence:
+      - { file: _shared/push.md, text: "The app's Firebase project isn't the one registered at Capillary" }
+      - { file: _shared/push.md, text: "send a test message from the Firebase console" }
+
+  - id: push-reachability
+    category: push
+    question: I signed in a few minutes ago, but my test campaign skipped me. Why?
+    answer: A user becomes reachable for push about one day after their first sign-in. Audience lists made before then need their reachability refreshed after the day has passed.
+    platforms: [android, ios, react-native, flutter]
+    evidence:
+      - { file: _shared/push.md, text: "roughly **1 day after they first sign in**" }
+
+  - id: push-late
+    category: push
+    question: A campaign ended days ago, but a user got the notification when they opened the app. Is that a bug?
+    answer: No. A push that can't be delivered in real time is pulled when the user next opens the app, within the campaign TTL (15 days by default). After the TTL it is discarded.
+    platforms: [android, ios, react-native, flutter]
+    evidence:
+      - { file: _shared/push.md, text: "campaign TTL" }
+      - { file: _shared/push.md, text: "15 days by default" }
+
+  - id: push-skipped-reasons
+    category: push
+    question: What do the "skipped" reasons in a push campaign report mean?
+    answer: "Profile Not Found: the user's profile isn't tied to this account's Firebase project.\nUnsubscribe: the user is unsubscribed from push.\nRequest Entity Not Found: the FCM token expired; log out and in again.\nNotRegistered: sign in again on the current build.\nHTTP 401: the Firebase credentials Capillary holds have expired; send renewed ones securely.\nGateway Not Found: Capillary's push gateway setup is incomplete."
+    platforms: [android, ios, react-native, flutter]
+    evidence:
+      - { file: _shared/push.md, text: "## Why Capillary skipped a message" }
+      - { file: _shared/push.md, text: "`Gateway Not Found`" }
+
+  - id: source-not-found
+    category: problems
+    question: The log shows "Client Credentials Generation Failed" and "source not found" (400). What does it mean?
+    answer: "On Android, the App Signature registered at Capillary doesn't match your build's signature. Compare the SHA256 of the exact build you run with the registered one and ask Capillary to update it. The Account Id and bundle ID are also sent, so check those against the registration too."
+    platforms: [android, react-native, flutter]
+    evidence:
+      - { file: _shared/troubleshooting.md, text: "Client Credentials Generation Failed" }
+      - { file: _shared/troubleshooting.md, text: "Compare all three with section 1" }
+
+  - id: cert-pinning
+    category: problems
+    question: The SDK stopped connecting after months of working, or shows a certificate pinning failure.
+    answer: The SSL public key has probably expired (about every 9 months) or belongs to another cluster. Get the current key from Capillary and update it.
+    platforms: [android, ios, react-native, flutter]
+    evidence:
+      - { file: _shared/troubleshooting.md, text: "`Certificate pinning failure`" }
+
+  - id: registration-must-match
+    category: problems
+    question: What must match between my app and Capillary's registration?
+    answer: "Your Account Id (Source Account Id), your Android application ID or iOS bundle ID (Bundle Name), the SHA256 of your Android build (App Signature), the Firebase project (FCM Project ID), and the Base URL and SSL key for your cluster."
+    evidence:
+      - { file: _shared/troubleshooting.md, text: "## 1. The app and Capillary's registration must match" }
+      - { file: _shared/troubleshooting.md, text: "**FCM Project ID**" }
+
+  - id: android-gradle-401
+    category: problems
+    question: Gradle can't resolve the Hydra SDK (401 or 403 from maven.pkg.github.com). Why?
+    answer: "GitHub rejected the credentials. Check that the token has `read:packages`, that your account has access to `Capillary/hydra-sdk-android-maven`, and that `github.properties` sits next to `settings.gradle` with `username` and `token`. On CI, generate that file from secrets, because it is git-ignored."
+    platforms: [android]
+    evidence:
+      - { file: android/direct.md, text: "PAT lacks `read:packages`" }
+      - { file: android/direct.md, text: "generate `github.properties` from CI secrets" }
+
+  - id: events-missing
+    category: problems
+    question: Why don't my events show up in Capillary?
+    answer: Events only count after a sign-in or sign-up, so an event reported before any sign-in or after sign-out doesn't count. The event must also exist in Capillary first (Organisation settings → Master Data Management → Data Model → Behavioural events).
+    evidence:
+      - { file: _shared/overview.md, text: "they only count after a sign-in or sign-up" }
+      - { file: _shared/overview.md, text: "Behavioural events must exist in Capillary before the app sends them" }
+
+  - id: gamification-not-showing
+    category: problems
+    question: My gamification campaigns (popup, floating button, bottom sheet) don't appear. Why?
+    answer: Usually the current screen isn't being reported, it was reported before sign-in, or the gamification key and region are missing. In React Native, report the screen after identify, with the 500 ms delay.
+    platforms: [android, ios, react-native, flutter]
+    evidence:
+      - { file: react-native/direct.md, text: "screen not reported, reported before sign-in, or reported without the 500 ms delay" }
+      - { file: flutter/direct.md, text: "Key / region missing in the initializer, or screens not reported" }
+
+  - id: loyalty-view-empty
+    category: problems
+    question: The Loyalty View is empty. Why?
+    answer: The Capillary token wasn't set before the view was shown. Call `setCapToken` after login, before rendering the Loyalty View.
+    evidence:
+      - { file: android/direct.md, text: "call `setCapToken(token)` first" }
+      - { file: react-native/direct.md, text: "`Hydra.setCapToken(...)` before showing it" }
+      - { file: flutter/direct.md, text: "`setCapToken` **before** mounting the view" }
+
+  - id: before-escalating
+    category: problems
+    question: What should I send when I contact Capillary about a problem?
+    answer: "A short summary of the problem, the platform and Hydra SDK version, the exact error and the SDK logs, screenshots, and what you have already checked. For delivery problems, also your app stack, Android or iOS, the SSL key and its expiry, the account configuration and the Firebase configuration."
+    evidence:
+      - { file: _shared/troubleshooting.md, text: "## 6. What to send when you escalate" }
