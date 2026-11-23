@@ -20,6 +20,7 @@ dependencies = [
     "python-dotenv",
     "python-frontmatter",
     "pyyaml",
+    "markdown-it-py>=4.3.0",
 ]
 
 [dependency-groups]

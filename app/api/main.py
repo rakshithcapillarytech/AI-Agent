@@ -23,6 +23,7 @@ from app.graph.nodes.guardrails import redact
 from app.graph.nodes.phase_transition import phase_transition
 from app.graph.state import ConfigMode, IntegrationProfile, Module, Platform
 from app.kb.guide import GuideNotReady, build_guide, guide_filename
+from app.kb.humanguide import build_steps_html, guide_steps_filename
 from app.learning.issues import clean, lint_issue, publish_issue
 from app.learning.store import DOC_GAP, ISSUE_DRAFT, PostgresLearningStore
 from app.rules.faq import faq_view
@@ -289,13 +290,18 @@ async def upload_file(
     return _stream_turn(session_id, update)
 
 
-@app.get("/sessions/{session_id}/guide")
-async def download_guide(session_id: str) -> Response:
-    """The client's integration guide as one Markdown file, for their own AI assistant."""
+async def _guide_profile(session_id: str) -> IntegrationProfile:
+    """The session's profile for a download; 404 before the onboarding starts."""
     values = await _values(session_id)
     if not values.get("messages"):
         raise HTTPException(status_code=404, detail="This onboarding hasn't started.")
-    profile = IntegrationProfile.model_validate(values.get("profile") or {})
+    return IntegrationProfile.model_validate(values.get("profile") or {})
+
+
+@app.get("/sessions/{session_id}/guide")
+async def download_guide(session_id: str) -> Response:
+    """The client's integration guide as one Markdown file, for their own AI assistant."""
+    profile = await _guide_profile(session_id)
     try:
         markdown = build_guide(profile, get_settings().knowledge_base_dir)
     except GuideNotReady as error:
@@ -305,6 +311,21 @@ async def download_guide(session_id: str) -> Response:
         media_type="text/markdown; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{guide_filename(profile)}"'},
     )
+
+
+@app.get("/sessions/{session_id}/steps")
+async def download_steps(session_id: str, download: bool = False, full: bool = False) -> Response:
+    """The steps as a styled web page for people: a short summary, or the long version with all code (`?full=1`).
+
+    Open it, print it to PDF, or save it (`?download=1`)."""
+    profile = await _guide_profile(session_id)
+    try:
+        page = build_steps_html(profile, get_settings().knowledge_base_dir, full=full)
+    except GuideNotReady as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    name = guide_steps_filename(profile, full)
+    headers = {"Content-Disposition": f'attachment; filename="{name}"'} if download else {}
+    return Response(page, media_type="text/html; charset=utf-8", headers=headers)
 
 
 # ── Admin: the escalation queue (no authentication yet: SSO/login comes later, PLAN.md §11) ──

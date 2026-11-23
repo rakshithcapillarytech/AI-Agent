@@ -1,0 +1,89 @@
+android/direct:
+  "1":
+    do: "Create `github.properties` in the project root, next to `settings.gradle`, with `username` and `token` set to your GitHub username and personal access token. Add it to `.gitignore`; in CI, generate it from secrets before the Gradle build."
+    evidence: ["github.properties", "same level as `settings.gradle`", "generate `github.properties` from secrets"]
+  "2":
+    do: "In `settings.gradle` (or `.kts`), add a GitHub Packages `maven { ... }` block to `dependencyResolutionManagement.repositories`, pointing at the Capillary hydra-sdk-android-maven repository and reading `username` and `token` from `github.properties`."
+    evidence: ["dependencyResolutionManagement.repositories", "maven.pkg.github.com/Capillary/hydra-sdk-android-maven", "github.properties"]
+  "3":
+    do: "In `app/build.gradle(.kts)`, add `com.capillary:hydra-core` at the SDK version Capillary gave you; `hydra-inapp`, inbox and gamification modules are optional. Do not add the `com.google.gms.google-services` plugin, Firebase dependencies or `google-services.json`."
+    evidence: ["Only `hydra-core` is required.", "com.capillary:hydra-core", "do NOT add the `com.google.gms.google-services` plugin"]
+  "4":
+    do: "In `Application.onCreate()`, build a `HydraConfig` with `HydraConfig.Builder`: your Account Id (mandatory), org Id, Base URL, SSL public key, and the gamification key, region (a `GamificationRegion` member) and base URL. Then call `HydraAPI.instanceWithConfig(...)`."
+    evidence: ["HydraAPI.instanceWithConfig(applicationContext, hydraConfig)", "`accountId` is mandatory", "`GamificationRegion` enum member"]
+  "5":
+    do: "In `app/src/main/AndroidManifest.xml`, set `android:name=\".MyApplication\"` (your Application class) on the `<application>` element so the SDK initialisation in step 4 runs."
+    evidence: ["<application", ".MyApplication"]
+  "6":
+    do: "At sign-up and sign-in call `hydraAPI?.pushUserSignin(...)` with a unique `cuid` (phone, email or external ID) that matches the Account Linking Identifier set in Capillary CRM; other fields are optional. At sign-out call `pushUserSignOut` with the `cuid`."
+    evidence: ["pushUserSignin(", "Account Linking Identifier", "pushUserSignOut("]
+  "7":
+    do: "When a user registers, call `hydraAPI?.pushUserSignup(...)` with their `cuid`, name, email, phone and custom attributes. When their profile changes, call `pushUserUpdate(...)` with the same six arguments (only `cuid` is mandatory)."
+    evidence: ["pushUserSignup(", "`pushUserUpdate(...)` takes the same six arguments"]
+  "8":
+    do: "Optional: first create the custom event in Capillary, then call `hydraAPI?.pushEvent(\"your_event_name\", attributes)`. Events count only after a sign-in or sign-up, and the event name must be non-empty."
+    evidence: ["pushEvent(", "Events are valid **only after a sign-in or sign-up**", "Create the event in Capillary first"]
+  "9":
+    do: "Required for gamification: in `Application.onCreate()` after SDK initialisation, create a `GamificationUIManager`, register activity lifecycle callbacks calling `onScreenChanged` and `onActivityDestroyed`, and add a `ProcessLifecycleOwner` observer."
+    evidence: ["onScreenChanged", "ProcessLifecycleOwner", "The docs show this wiring in Kotlin only."]
+  "10":
+    do: "If you use the Loyalty View, call `hydraAPI?.setCapToken(token)` with the short-lived Capillary B2B token before the Loyalty View renders (before the screen is reported). Without a valid token, loyalty content may not appear."
+    evidence: ["setCapToken(token)", "**before** the Loyalty View renders"]
+android/firebase:
+  "1":
+    do: "Create `github.properties` in the project root, next to `settings.gradle`, with `username` and `token` set to your GitHub username and personal access token. Add it to `.gitignore`."
+    evidence: ["github.properties", "same level as `settings.gradle`", "add it to `.gitignore`"]
+  "2":
+    do: "In `settings.gradle(.kts)`, add the GitHub Packages `maven { ... }` block under `dependencyResolutionManagement`, plus the `versionCatalogs` block (recommended). Skip the catalog block if you use plain artifact coordinates in step 3."
+    evidence: ["`versionCatalogs` block is the recommended path", "maven.pkg.github.com/Capillary/hydra-sdk-android-maven", "skip it if you use plain artifact coordinates"]
+  "3":
+    do: "In `app/build.gradle(.kts)`, add `hydra.core`, `hydra.pushbase` and `hydra.firebase` via the catalog, or the `com.capillary:hydra-core`, `-firebase` and `-pushbase` artifacts. Also add the AndroidX libraries; their versions aren't documented, so ask Capillary."
+    evidence: ["implementation(hydra.pushbase)", "com.capillary:hydra-firebase", "the AndroidX library versions are shown only as `xxx`"]
+  "4":
+    do: "Create the Firebase project and set up Cloud Messaging per Firebase's Android docs, then add the Firebase dependencies and `google-services.json` to the app. The Gradle lines for the Google Services plugin are not documented; confirm them with Capillary."
+    evidence: ["`google-services.json` in the app", "Cloud Messaging", "don't give the Gradle lines"]
+  "5":
+    do: "In `Application.onCreate()`, build one `HydraConfig` with `HydraConfig.Builder` using your Account Id (mandatory), Base URL and SSL public key, then call `HydraAPI.instanceWithConfig(...)`. Ask Capillary which Java builder style applies and whether `.orgId()` is needed."
+    evidence: ["HydraAPI.instanceWithConfig(applicationContext, hydraConfig)", "`accountId` is mandatory", "Create one SDK instance per application"]
+  "6":
+    do: "In `app/src/main/AndroidManifest.xml`, set `android:name=\".MyApplication\"` (your Application class) on the `<application>` element."
+    evidence: ["<application", ".MyApplication"]
+  "7":
+    do: "At sign-up and sign-in call `pushUserSignin(...)` with a unique `cuid` matching the Account Linking Identifier in Capillary CRM; use `pushUserSignup(...)` and `pushUserUpdate(...)` for registration and profile changes. At sign-out call `pushUserSignOut`."
+    evidence: ["pushUserSignin(", "pushUserSignOut(", "passUserPreferences("]
+  "8":
+    do: "Optional: create the custom event in Capillary first, then call `hydraAPI?.pushEvent(\"event name\", attributes)`. Events count only after a sign-in or sign-up, and the event name must be non-empty."
+    evidence: ["pushEvent(", "Events are valid **only after a sign-in or sign-up**", "Create the event in Capillary first"]
+  "9":
+    do: "On Android 13 and above, call `HydraPushApi.getInstance().requestPushPermission(context)` so the app asks the user for notification permission; the helper also sets up the required notification channel."
+    evidence: ["HydraPushApi.getInstance().requestPushPermission(context)", "From Android 13"]
+  "10":
+    do: "Pick one option. A: the SDK registers tokens: use `.fcmConfig(FcmConfig(true))` and add `HydraFirebaseMessagingService` to the manifest. B: your own messaging service: use `FcmConfig(false)` and forward tokens and payloads with `passPushToken` and `passPushPayload`."
+    evidence: ["FcmConfig(true)", "FcmConfig(false)", "HydraFirebaseAPI.getInstance().passPushToken(applicationContext, token)"]
+  "11":
+    do: "Optional: pass a `NotificationConfig` to the same `HydraConfig.Builder` via `.notificationConfig(...)` to set `smallIcon`, `notificationColor` and `isMultipleNotificationInDrawerEnabled` (default `true`; set `false` for a single notification)."
+    evidence: ["isMultipleNotificationInDrawerEnabled", "NotificationConfig(", "Set `false` to show a single notification."]
+  "12":
+    do: "In `Application.onCreate()`, after `HydraAPI` is initialised, implement `HydraPushNotificationListener` and register it with `registerPushNotificationListener(...)`; this listener is mandatory. The token and non-Hydra payload listeners are optional."
+    evidence: ["registerPushNotificationListener", "**The push notification listener is mandatory.**", "Token callback (optional"]
+  "13":
+    do: "For deep links in push, add an intent filter (VIEW action, DEFAULT and BROWSABLE categories, a `<data>` entry) to the target activity in `AndroidManifest.xml`. Optional rich push: add the `hydra.richnotification` dependency and check exact-alarm permission."
+    evidence: ["the target activity needs an intent filter", "android.intent.action.VIEW", "AlarmPermissionUtils.canScheduleExactAlarms(context)"]
+  "14":
+    do: "Add the three gamification Remote Config keys (see the prerequisites), fetch them at runtime and pass them to `HydraConfig.Builder` only if the write key is non-empty. Then call `HydraAPI.initialize(...)`; ask Capillary whether that or `instanceWithConfig` is correct."
+    evidence: ["gamificationWriteKey(writeKey)", "HydraAPI.initialize(applicationContext, hydraConfig)", "apply them **conditionally**"]
+  "15":
+    do: "In your Application class, right after SDK initialisation, get `getGamificationManager()`, set its `callback` to your `GamificationCallback`, and store a `GamificationUIManager(flowManager, applicationContext)` in `gamificationUIManager`."
+    evidence: ["GamificationUIManager(flowManager, applicationContext)", "var gamificationUIManager: GamificationUIManager? = null", "assign your `GamificationCallback`"]
+  "16":
+    do: "In `Application.onCreate()`, register activity lifecycle callbacks calling `gamificationUIManager?.onScreenChanged(activity, ...)` in `onActivityResumed` and `onActivityDestroyed(activity)` in `onActivityDestroyed`. Screen reporting is mandatory for screen-targeted campaigns."
+    evidence: ["onScreenChanged", "screen reporting is mandatory for screen-targeted campaigns", "Calling `onActivityDestroyed` is required"]
+  "17":
+    do: "Add a `ProcessLifecycleOwner` observer that calls `gamificationUIManager?.onAppForegrounded()` in `onStart` and `onAppBackgrounded()` in `onStop`; this enables freshness checks."
+    evidence: ["ProcessLifecycleOwner", "gamificationUIManager?.onAppForegrounded()", "Enables freshness checks."]
+  "18":
+    do: "Only if the gamification keys arrive after Hydra is initialised, call `HydraAPI.updateRemoteConfig(...)` with your org Id, Account Id, Base URL, SSL public key and the three gamification values; then create `gamificationUIManager` as in step 15 if it is null."
+    evidence: ["HydraAPI.updateRemoteConfig(", "If the keys arrive **after** Hydra is initialised", "gamificationUIManager == null"]
+  "19":
+    do: "If you use the Loyalty View, call `hydra?.setCapToken(token)` with the short-lived Capillary B2B token before the Loyalty View renders (before the screen is reported). Without a valid token, loyalty content may not appear."
+    evidence: ["setCapToken(token)", "**before** the Loyalty View renders"]

@@ -1,0 +1,47 @@
+# Which numbered steps in each platform guide belong to one feature only.
+#
+# The short "steps" document for people (app/kb/humanguide.py) lists a platform's steps and leaves out the ones
+# for features the client didn't choose. A step not listed here is always shown. `title` is a word or phrase that
+# must still appear in that step's heading: tests/test_humanguide.py fails when a guide renumbers or renames steps,
+# so a wrong step can't be hidden silently. Edit with SME review, together with the guide.
+
+android/firebase:
+  "9": { modules: [push], title: "notification permission" }
+  "10": { modules: [push], title: "push token" }
+  "11": { modules: [push], title: "notification options" }
+  "12": { modules: [push], title: "push listeners" }
+  "13": { modules: [push], title: "rich push" }
+  "14": { modules: [gamification], title: "gamification Remote Config keys" }
+  "15": { modules: [gamification], title: "GamificationUIManager" }
+  "16": { modules: [gamification], title: "current screen" }
+  "17": { modules: [gamification], title: "foreground/background" }
+  "18": { modules: [gamification], title: "late gamification keys" }
+  "19": { modules: [gamification], title: "Loyalty View" }
+
+android/direct:
+  "9": { modules: [gamification], title: "current screen" }
+  "10": { modules: [gamification], title: "Loyalty View" }
+
+ios/direct:
+  "9": { modules: [gamification], title: "current screen" }
+  "11": { modules: [gamification], title: "Loyalty View" }
+
+ios/firebase:
+  "9": { modules: [gamification], title: "current screen" }
+  "11": { modules: [gamification], title: "Loyalty View" }
+
+react-native/direct:
+  "7": { modules: [push], title: "Notification Service Extension" }
+  "9": { modules: [push], title: "Firebase file" }
+  "13": { modules: [push], title: "push permission" }
+  "15": { modules: [gamification], title: "current screen" }
+  "16": { modules: [gamification], title: "Loyalty View" }
+
+react-native/firebase:
+  "7": { modules: [push], title: "Notification Service Extension" }
+  "9": { modules: [push], title: "Firebase file" }
+  "13": { modules: [push], title: "push permission" }
+  "G1": { modules: [gamification], title: "package version" }
+  "G2": { modules: [gamification], title: "Remote Config" }
+  "G3": { modules: [gamification], title: "current screen" }
+  "G4": { modules: [gamification], title: "Loyalty View" }

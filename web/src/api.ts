@@ -118,6 +118,18 @@ export const api = {
   /** Same-origin URL of the session's downloadable Markdown guide (served as an attachment). */
   guideUrl: (id: string) => `${BASE}/sessions/${encodeURIComponent(id)}/guide`,
 
+  /**
+   * Same-origin URL of the readable steps page: a short summary, or `full` for the long version with all the code.
+   * Add `#print` to open the print dialog (save as PDF).
+   */
+  stepsUrl: (id: string, options: { download?: boolean; full?: boolean } = {}) => {
+    const query = new URLSearchParams();
+    if (options.download) query.set("download", "1");
+    if (options.full) query.set("full", "1");
+    const suffix = query.size > 0 ? `?${query}` : "";
+    return `${BASE}/sessions/${encodeURIComponent(id)}/steps${suffix}`;
+  },
+
   createSession: () =>
     fetch(`${BASE}/sessions`, { method: "POST" }).then((r) => json<{ session_id: string }>(r)),
 

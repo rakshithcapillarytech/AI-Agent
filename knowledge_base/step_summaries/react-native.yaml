@@ -1,0 +1,104 @@
+react-native/direct:
+  "1":
+    do: "The npm package and the Android SDK (Maven Central) need no registry entry or token. Whether iOS still needs a GitHub token isn't stated; if an install is denied, ask your Capillary contact. If you used the old `@capillary` package, uninstall it and remove its registry entries."
+    evidence: ["needs no registry entry or token", "comes from Maven Central"]
+  "2":
+    do: "In the project root, run `npm install @capillarytech/react-native-hydra-lib` (or `yarn add @capillarytech/react-native-hydra-lib`). Use this package name, not the old `@capillary/react-native-hydra-lib`."
+    evidence: ["npm install @capillarytech/react-native-hydra-lib", "yarn add @capillarytech/react-native-hydra-lib"]
+  "3":
+    do: "Create `capillary/hydra-config.json` in the project root with the flags for the features you use. For push add a `hydra_notification_small_icon` image in `capillary/icons/`; add placeholder images there if you turn on in-app or Inbox UI."
+    evidence: ["capillary/hydra-config.json", "hydra_notification_small_icon", "hydra_inbox_ui_placeholder"]
+  "4":
+    do: "In `ios/Podfile`, add the `HydraPods.rb` require block below the React Native `require`, add `hydra_pods` below `config = use_native_modules!`, and for push add a `HydraRichNotification` target with `extension_pods`. Skip this if there is no iOS target."
+    evidence: ["hydra_pods", "extension_pods", "Skip the iOS steps if there is no iOS target."]
+  "5":
+    do: "In Xcode, check what exists and add only what is missing for push: `GoogleService-Info.plist` in the app target, Push Notifications, Background Modes, a Notification Service Extension target, and App Groups on both. Skip if the app has no push."
+    evidence: ["Check first; do only what's missing.", "Notification Service Extension", "Background Modes"]
+  "6":
+    do: "From the project root, run `cd ios && pod install && cd ..`. Run it again after you add the Notification Service Extension target."
+    evidence: ["cd ios && pod install && cd ..", "again after adding the extension target"]
+  "7":
+    do: "Push only: in the Notification Service Extension, replace the whole generated `NotificationService` file with the Hydra code shown for your language (`NotificationService.swift`, or `NotificationService.mm` if your AppDelegate is Objective-C)."
+    evidence: ["Replace the whole generated `NotificationService` file", "NotificationService.swift"]
+  "8":
+    do: "In `AppDelegate.swift` (or `.mm`), after `super.application(...)`, call `Hydra.sharedInstance().initialize(...)` with a `HydraNativeRemoteConfig` (Account Id, Base URL, SSL public key, log level 0-5; `nil` for unused). The 0.76+ template has no `super` call: ask Capillary where it goes."
+    evidence: ["Pass the values with a `HydraNativeRemoteConfig`", "Keep `super.application(", "pass `nil` for any you don't use"]
+  "9":
+    do: "Push only, Android: put `google-services.json` in `android/app/`, add `classpath 'com.google.gms:google-services:4.4.2'` in `android/build.gradle`, and apply the `com.google.gms.google-services` plugin in `android/app/build.gradle`. Skip if no Android or push."
+    evidence: ["classpath 'com.google.gms:google-services:4.4.2'", "Skip if there is no Android target (or no push)."]
+  "10":
+    do: "In `MainApplication.kt`, in `onCreate()` after the default generated code, call `Hydra.initialize(this, remoteConfig = remoteConfig)` with a `HydraRemoteConfig.Builder` of your Account Id, Base URL, SSL public key and log level (0-5)."
+    evidence: ["Hydra.initialize(this, remoteConfig = remoteConfig)", "Inside `onCreate()` of `MainApplication.kt`", "Don't call `Hydra.initialize(this)`"]
+  "11":
+    do: "Create a `HydraContainer` component that registers the SDK's event listeners (always the initialisation result one); mount it near the app root, e.g. in `App.tsx`. Keep only blocks for features you enabled; skip the push block if you don't use Firebase."
+    evidence: ["mount it near the app root", "without Firebase, leave the push block out"]
+  "12":
+    do: "After initialisation succeeds, call `Hydra.identify` with a `HydraUserDetails` whose `customerId` is the Account Linking Identifier set in Capillary CRM, and call `Hydra.reset(customerId)` on sign-out. With several Hydra accounts, set the account first."
+    evidence: ["`customerId` is required", "Account Linking Identifier", "Hydra.reset(customerId)"]
+  "13":
+    do: "Push only: once after the SDK is initialised, at a sensible point in the user flow, call `HydraPushNotification.requestPermission()`."
+    evidence: ["HydraPushNotification.requestPermission()", "Once, after the SDK is initialised"]
+  "14":
+    do: "Before calling other Hydra APIs outside `HydraContainer`, check `HydraCore.isSdkInitialized()` and, if not ready, register `addHydraSdkInitializationResultListener`. Calls like `passFCMToken` and `setHydraAccountConfig` fail before initialisation."
+    evidence: ["HydraCore.isSdkInitialized()", "These reject before initialisation"]
+  "15":
+    do: "Only for gamification campaigns: after sign-in, call `Hydra.gamificationScreenAppeared(screenName)` when a screen shows and `Hydra.gamificationScreenDisappeared(screenName)` with the same name when it goes. Ask Capillary which screen names campaigns target."
+    evidence: ["Hydra.gamificationScreenAppeared(screenName)", "with the **same** name", "which `screenName` values campaigns target isn't documented"]
+  "16":
+    do: "Only if you show the Loyalty View: call `Hydra.setCapToken(token)` with the Capillary token before showing `GamificationLoyaltyView`."
+    evidence: ["Hydra.setCapToken(token);", "Before showing `GamificationLoyaltyView`"]
+react-native/firebase:
+  "1":
+    do: "The npm package and the Android SDK (Maven Central) need no registry entry or token. Whether iOS still needs a GitHub token isn't stated; if an install is denied, ask your Capillary contact. If you used the old `@capillary` package, uninstall it and remove its registry entries."
+    evidence: ["needs no registry entry or token", "comes from Maven Central"]
+  "2":
+    do: "In the project root, run `npm install @capillarytech/react-native-hydra-lib` (or `yarn add @capillarytech/react-native-hydra-lib`). Use this package name, not the old `@capillary/react-native-hydra-lib`."
+    evidence: ["npm install @capillarytech/react-native-hydra-lib", "yarn add @capillarytech/react-native-hydra-lib"]
+  "3":
+    do: "Create `capillary/hydra-config.json` in the project root with the flags for the features you use. For push add a `hydra_notification_small_icon` image in `capillary/icons/`; add placeholder images there if you turn on in-app or Inbox UI."
+    evidence: ["capillary/hydra-config.json", "hydra_notification_small_icon", "hydra_inbox_ui_placeholder"]
+  "4":
+    do: "In `ios/Podfile`, add the `HydraPods.rb` require block below the React Native `require`, add `hydra_pods` below `config = use_native_modules!`, and for push add a `HydraRichNotification` target with `extension_pods`. Skip this if there is no iOS target."
+    evidence: ["hydra_pods", "extension_pods", "Skip the iOS steps if there is no iOS target."]
+  "5":
+    do: "In Xcode, check what exists and add only what is missing for push: `GoogleService-Info.plist` in the app target, Push Notifications, Background Modes, a Notification Service Extension target, and App Groups on both. Skip if the app has no push."
+    evidence: ["Check first; do only what's missing.", "Notification Service Extension", "Background Modes"]
+  "6":
+    do: "From the project root, run `cd ios && pod install && cd ..`. Run it again after you add the Notification Service Extension target."
+    evidence: ["cd ios && pod install && cd ..", "again after adding the extension target"]
+  "7":
+    do: "Push only: in the Notification Service Extension, replace the whole generated `NotificationService` file with the Hydra code shown for your language (`NotificationService.swift`, or `NotificationService.mm` if your AppDelegate is Objective-C)."
+    evidence: ["Replace the whole generated `NotificationService` file", "NotificationService.swift"]
+  "8":
+    do: "Add Remote Config parameters `hydra_account_id`, `hydra_base_url`, `hydra_ssl_public_key`, `hydra_remote_log_level` with Capillary's values, then call `Hydra.sharedInstance().initialize(...)` in `AppDelegate` after `super.application(...)`. The 0.76+ template has no `super`: ask Capillary."
+    evidence: ["names exactly as shown", "hydra_account_id", "Keep `super.application("]
+  "9":
+    do: "Push only, Android: put `google-services.json` in `android/app/`, add `classpath 'com.google.gms:google-services:4.4.2'` in `android/build.gradle`, and apply the `com.google.gms.google-services` plugin in `android/app/build.gradle`. Skip if no Android or push."
+    evidence: ["classpath 'com.google.gms:google-services:4.4.2'", "Skip if there is no Android target (or no push)."]
+  "10":
+    do: "In `MainApplication.kt`, in `onCreate()` after the default generated code, call `Hydra.initialize(this)`; it reads the Remote Config keys from step 8 by default name. With custom key names, pass a `HydraFirebaseRemoteConfigKeys`."
+    evidence: ["Hydra.initialize(this)", "Inside `onCreate()` of `MainApplication.kt`", "Custom key names:"]
+  "11":
+    do: "Create a `HydraContainer` component that registers the SDK's event listeners (always the initialisation result listener) and mount it near the app root, for example in `App.tsx`. Keep only the blocks for the features you enabled, such as push, in-app or Inbox."
+    evidence: ["mount it near the app root", "Keep only the blocks for the features you enabled."]
+  "12":
+    do: "After initialisation succeeds, call `Hydra.identify` with a `HydraUserDetails` whose `customerId` is the Account Linking Identifier set in Capillary CRM, and call `Hydra.reset(customerId)` on sign-out. With several Hydra accounts, set the account first."
+    evidence: ["`customerId` is required", "Account Linking Identifier", "Hydra.reset(customerId)"]
+  "13":
+    do: "Push only: once after the SDK is initialised, at a sensible point in the user flow, call `HydraPushNotification.requestPermission()`."
+    evidence: ["HydraPushNotification.requestPermission()", "Once, after the SDK is initialised"]
+  "14":
+    do: "Before calling other Hydra APIs outside `HydraContainer`, check `HydraCore.isSdkInitialized()` and, if not ready, register `addHydraSdkInitializationResultListener`. Calls like `passFCMToken` and `setHydraAccountConfig` fail before initialisation."
+    evidence: ["HydraCore.isSdkInitialized()", "These reject before initialisation"]
+  "G1":
+    do: "Gamification only: nothing to install, since Gamification is part of the package from step 2. The minimum package version for Gamification is not stated in the public docs, so confirm it with Capillary."
+    evidence: ["Gamification is part of the package from step 2.", "the public docs state no minimum"]
+  "G2":
+    do: "Gamification only: in Firebase Remote Config add `hydra_gamification_key`, `hydra_gamification_region` and `hydra_gamification_base_url` with values from Capillary; all three are required. With custom key names, pass them in the `keyForGamification` arguments."
+    evidence: ["hydra_gamification_region", "Gamification requires all three"]
+  "G3":
+    do: "Only for gamification campaigns: after sign-in, call `Hydra.gamificationScreenAppeared(screenName)` when a screen shows and `Hydra.gamificationScreenDisappeared(screenName)` with the same name when it goes. Ask Capillary which screen names campaigns target."
+    evidence: ["Hydra.gamificationScreenAppeared(screenName)", "with the **same** name", "which `screenName` values campaigns target isn't documented"]
+  "G4":
+    do: "Only if you show the Loyalty View: call `Hydra.setCapToken(token)` with the Capillary token before showing `GamificationLoyaltyView`."
+    evidence: ["Hydra.setCapToken(token);", "Before showing `GamificationLoyaltyView`"]

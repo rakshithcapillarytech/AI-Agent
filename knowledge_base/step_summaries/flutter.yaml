@@ -1,0 +1,98 @@
+flutter/direct:
+  "1":
+    do: "Register the app in Firebase and download `google-services.json` and `GoogleService-Info.plist`, without applying any code changes the console suggests. The docs link points to an AppSheet help article, so confirm the right guide with Capillary."
+    evidence: ["download `google-services.json` and `GoogleService-Info.plist`", "Don't make any code changes the Firebase console suggests"]
+  "2":
+    do: "Run `flutter pub add capillary_hydra capillary_hydra_platform_interface` to add the latest release of both packages, and keep the two on the same version."
+    evidence: ["flutter pub add capillary_hydra capillary_hydra_platform_interface", "Keep both packages on the same version"]
+  "3":
+    do: "Create a `capillary` folder at the Flutter project root and add `hydra-config.json` with the sample keys. Keep `enable_in_app_messaging_in_flutter` `false`; the remote log level is set in the native initializer, not here."
+    evidence: ["Create a `capillary` folder at the Flutter project root", "Currently non-functional. Don't enable in production."]
+  "4":
+    do: "In `pubspec.yaml`, list `capillary/` under `flutter: assets:`, and add `capillary/icons/` too once you add icon images (Push, In-App or Inbox UI)."
+    evidence: ["Add `capillary/icons/` once you add icon images", "- capillary/icons/"]
+  "5":
+    do: "Run `flutter pub get` in the project to fetch the packages you added."
+    evidence: ["flutter pub get"]
+  "6":
+    do: "In `lib/main.dart`, call `HydraInitializer.initialize()` in `main()` after `WidgetsFlutterBinding.ensureInitialized()` and before `runApp`. This is the Dart initializer, not the native Android one in step 12."
+    evidence: ["HydraInitializer.initialize();", "WidgetsFlutterBinding.ensureInitialized();"]
+  "7":
+    do: "iOS with CocoaPods only (skip if Swift Package Manager is enabled): in `ios/Podfile`, add the `require_relative` line from the step at the top and `hydra_pods` inside the `Runner` target. The docs give no Swift Package Manager steps."
+    evidence: ["Skip steps 7–8 if Swift Package Manager is enabled.", "hydra_pods"]
+  "8":
+    do: "iOS with CocoaPods only (skip if Swift Package Manager is enabled): run `pod install` in the `ios` folder."
+    evidence: ["pod install", "In the `ios` folder:"]
+  "9":
+    do: "iOS: add the `GoogleService-Info.plist` you downloaded in step 1 to the iOS project using Xcode."
+    evidence: ["Add `GoogleService-Info.plist` (step 1) to the iOS project using Xcode."]
+  "10":
+    do: "iOS: in `AppDelegate.swift`, after `GeneratedPluginRegistrant.register(with: self)`, build a `HydraRemoteConfig` from your Capillary values and call `HydraNativeAPI.shared.initApplication`. With UIScene, do this in `didInitializeImplicitFlutterEngine(_:)`."
+    evidence: ["HydraNativeAPI.shared.initApplication", "Call it **after** `GeneratedPluginRegistrant.register(...)`", "didInitializeImplicitFlutterEngine(_:)"]
+  "11":
+    do: "Android: put `google-services.json` from step 1 in `android/app`, declare `com.google.gms.google-services` (version `4.4.2`, `apply false`) in the root `plugins` block of `android/settings.gradle`, and apply it in `android/app/build.gradle`."
+    evidence: ["Add `google-services.json` (step 1) to the `android/app` folder.", "id 'com.google.gms.google-services' version '4.4.2' apply false"]
+  "12":
+    do: "Android: create an Application class extending `HydraApplication`, build a `HydraRemoteConfig` with its `Builder` from your Capillary values, and call `HydraInitializer.initialize(this, hydraRemoteConfig)` right after `super.onCreate()`."
+    evidence: ["HydraInitializer.initialize(this, hydraRemoteConfig)", "immediately after `super.onCreate()`"]
+  "13":
+    do: "Android: in `android/app/src/main/AndroidManifest.xml`, set `android:name` on `<application>` to your class's fully qualified name (package plus class), not to `com.capillary.plugins.hydra.HydraApplication` itself."
+    evidence: ["android:name=\"<your.package>.ExampleApplication\"", "fully qualified name"]
+  "14":
+    do: "Android: in `AndroidManifest.xml`, set `android:theme` on `<application>` to an AppCompat theme such as `@style/Theme.AppCompat.DayNight.NoActionBar`; the Hydra plugin requires it."
+    evidence: ["android:theme=\"@style/Theme.AppCompat.DayNight.NoActionBar\"", "derive from AppCompat"]
+  "15":
+    do: "Write a class that extends `HydraNativeEventHandler` and register it with `HydraNativeEvents.addEventHandler(handler)`. Wait for `onHydraSdkInitializationResult` to report success before calling any other `capillary_hydra` API."
+    evidence: ["HydraNativeEvents.addEventHandler(handler);", "onHydraSdkInitializationResult"]
+  "16":
+    do: "Call `Hydra.identify` with a `HydraUserDetails` whose `customerId` matches the Account Linking Identifier in Capillary CRM, `Hydra.track` for events and `Hydra.reset` to reset the user. With several accounts, set the account before `identify`."
+    evidence: ["Account Linking Identifier", "Hydra.identify(userDetails: userDetails)", "Hydra.reset(customerId: '8888888888')"]
+  "17":
+    do: "Optional: call `HydraCore.updateUser`, `HydraCore.updateGeoConfig` and `HydraCore.updatePushPreferences` (with the signed-in user's `customerId`) to update the user, geo config and push preferences."
+    evidence: ["HydraCore.updateUser(", "HydraCore.updateGeoConfig(config: geoConfig)", "HydraCore.updatePushPreferences("]
+flutter/firebase:
+  "1":
+    do: "Register the app in Firebase, download `google-services.json` and `GoogleService-Info.plist`, and add Remote Config `hydra_account_id`, `hydra_base_url`, `hydra_ssl_public_key`, `hydra_remote_log_level` (0 to 5) with Capillary's values. Add `hydra_org_id` only for the visitor flow."
+    evidence: ["hydra_account_id", "hydra_remote_log_level", "with these exact names"]
+  "2":
+    do: "Run `flutter pub add capillary_hydra capillary_hydra_platform_interface` to add the latest release of both packages, and keep the two on the same version."
+    evidence: ["flutter pub add capillary_hydra capillary_hydra_platform_interface", "Keep both packages on the same version"]
+  "3":
+    do: "Create a `capillary` folder at the Flutter project root and add `hydra-config.json` with the sample keys. Keep `enable_in_app_messaging_in_flutter` `false`; the remote log level is `hydra_remote_log_level` in Remote Config."
+    evidence: ["Create a `capillary` folder at the Flutter project root", "is set separately with `hydra_remote_log_level` in Remote Config (step 1)"]
+  "4":
+    do: "In `pubspec.yaml`, list `capillary/` under `flutter: assets:`, and add `capillary/icons/` too once you add icon images (Push, In-App or Inbox UI)."
+    evidence: ["Add `capillary/icons/` once you add icon images", "- capillary/icons/"]
+  "5":
+    do: "Run `flutter pub get` in the project to fetch the packages you added."
+    evidence: ["flutter pub get"]
+  "6":
+    do: "In `lib/main.dart`, call `HydraInitializer.initialize()` in `main()` after `WidgetsFlutterBinding.ensureInitialized()` and before `runApp`. This is the Dart initializer, not the native Android one in step 11."
+    evidence: ["HydraInitializer.initialize();", "WidgetsFlutterBinding.ensureInitialized();"]
+  "7":
+    do: "iOS with CocoaPods only (skip if Swift Package Manager is enabled): in `ios/Podfile`, add the `require_relative` line from the step at the top and `hydra_pods` inside the `Runner` target. The docs give no Swift Package Manager steps."
+    evidence: ["Skip steps 7–8 if Swift Package Manager is enabled.", "hydra_pods"]
+  "8":
+    do: "iOS with CocoaPods only (skip if Swift Package Manager is enabled): run `pod install` in the `ios` folder."
+    evidence: ["pod install", "In the `ios` folder:"]
+  "9":
+    do: "iOS: add the `GoogleService-Info.plist` from step 1 to the iOS project using Xcode. No Hydra code is needed in `AppDelegate.swift`; the plugin starts the SDK itself from the default Remote Config keys."
+    evidence: ["Add `GoogleService-Info.plist` (step 1) to the iOS project using Xcode.", "You don't need any Hydra code in `AppDelegate.swift`"]
+  "10":
+    do: "Android: put `google-services.json` from step 1 in `android/app`, declare `com.google.gms.google-services` (version `4.4.2`, `apply false`) in the root `plugins` block of `android/settings.gradle`, and apply it in `android/app/build.gradle`."
+    evidence: ["Add `google-services.json` (step 1) to the `android/app` folder.", "id 'com.google.gms.google-services' version '4.4.2' apply false"]
+  "11":
+    do: "Android: with no Application class, set `android:name` to `com.capillary.plugins.hydra.HydraApplication`; otherwise extend `HydraApplication`, point `android:name` at it and call `HydraInitializer.initializeUsingFirebaseRemoteConfig(this)` after `super.onCreate()`."
+    evidence: ["android:name=\"com.capillary.plugins.hydra.HydraApplication\"", "HydraInitializer.initializeUsingFirebaseRemoteConfig(this)", "immediately after `super.onCreate()`"]
+  "12":
+    do: "Android: in `AndroidManifest.xml`, set `android:theme` on `<application>` to an AppCompat theme such as `@style/Theme.AppCompat.DayNight.NoActionBar`; the Hydra plugin requires it."
+    evidence: ["android:theme=\"@style/Theme.AppCompat.DayNight.NoActionBar\"", "derive from AppCompat"]
+  "13":
+    do: "Write a class that extends `HydraNativeEventHandler` and register it with `HydraNativeEvents.addEventHandler(handler)`. Wait for `onHydraSdkInitializationResult` to report success before calling any other `capillary_hydra` API."
+    evidence: ["HydraNativeEvents.addEventHandler(handler);", "onHydraSdkInitializationResult"]
+  "14":
+    do: "Call `Hydra.identify` with a `HydraUserDetails` whose `customerId` matches the Account Linking Identifier in Capillary CRM, `Hydra.track` for events and `Hydra.reset` to reset the user. With several accounts, set the account before `identify`."
+    evidence: ["Account Linking Identifier", "Hydra.identify(userDetails: userDetails)", "Hydra.reset(customerId: '8888888888')"]
+  "15":
+    do: "Optional: call `HydraCore.updateUser`, `HydraCore.updateGeoConfig` and `HydraCore.updatePushPreferences` (with the signed-in user's `customerId`) to update the user, geo config and push preferences."
+    evidence: ["HydraCore.updateUser(", "HydraCore.updateGeoConfig(config: geoConfig)", "HydraCore.updatePushPreferences("]

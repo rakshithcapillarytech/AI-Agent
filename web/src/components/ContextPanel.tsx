@@ -3,7 +3,7 @@ import { MODULES, PHASES, guideLabel, labelOf, phaseIndex, platformShort } from 
 import type { SessionState } from "../types";
 import { Checklist } from "./Checklist";
 import { ui } from "./controls";
-import { GuideDownload } from "./GuideDownload";
+import { GuideDownload, StepsDownload } from "./GuideDownload";
 import { PromptCopy } from "./PromptCopy";
 import { Steps } from "./Steps";
 import styles from "./session.module.css";
@@ -59,6 +59,12 @@ export function ContextPanel({ sessionId, session, busy, onUpload }: ContextPane
         </p>
         <GuideDownload sessionId={sessionId} ready={session.guide_ready} variant="panel" />
         <PromptCopy profile={profile} ready={session.guide_ready} />
+      </section>
+
+      <section className={styles.guideCard}>
+        <h3 className={styles.contextTitle}>Read the steps yourself</h3>
+        <p>A short summary for you and your team: what to get ready, the minimum versions and the steps in order.</p>
+        <StepsDownload sessionId={sessionId} ready={session.guide_ready} />
       </section>
 
       <section>

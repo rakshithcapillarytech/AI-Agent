@@ -1,6 +1,7 @@
-import { Download } from "lucide-react";
+import { Download, FileText } from "lucide-react";
 import { api } from "../api";
 import { ui } from "./controls";
+import styles from "./session.module.css";
 
 interface GuideDownloadProps {
   sessionId: string;
@@ -33,5 +34,40 @@ export function GuideDownload({ sessionId, ready, variant }: GuideDownloadProps)
     >
       <Download size={15} /> {label}
     </a>
+  );
+}
+
+/** A short readable summary of the steps: save it as a PDF from the browser, keep the .html, or open the long version. */
+export function StepsDownload({ sessionId, ready }: { sessionId: string; ready: boolean }) {
+  if (!ready) {
+    return (
+      <div className={styles.stepsButtons}>
+        <button type="button" className={`${ui.button} ${ui.primary} ${ui.block}`} disabled title={NOT_READY}>
+          <FileText size={15} /> Save steps as PDF
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className={styles.stepsButtons}>
+      <a
+        className={`${ui.button} ${ui.primary} ${ui.block}`}
+        href={`${api.stepsUrl(sessionId)}#print`}
+        target="_blank"
+        rel="noreferrer"
+        title="Opens your short summary and the print window; choose Save as PDF"
+      >
+        <FileText size={15} /> Save steps as PDF
+      </a>
+      <span className={styles.stepsLinks}>
+        <a href={api.stepsUrl(sessionId, { download: true })} download>
+          Download .html
+        </a>
+        <span aria-hidden="true">·</span>
+        <a href={`${api.stepsUrl(sessionId, { full: true })}#print`} target="_blank" rel="noreferrer" title="Every section with all the code (long)">
+          Full version with code
+        </a>
+      </span>
+    </div>
   );
 }

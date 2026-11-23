@@ -1,0 +1,68 @@
+ios/direct:
+  "1":
+    do: "Add your GitHub account in Xcode under Settings (Preferences) > Accounts, and make sure it can open `Capillary/hydra-sdk-ios-packages`. Or use the package URL with your GitHub username and a Personal Access Token, kept only on your machine."
+    evidence: ["Xcode → Settings (Preferences) → Accounts", "Capillary/hydra-sdk-ios-packages"]
+  "2":
+    do: "Add the SDK frameworks for the modules you use (always `HydraCore`) with one method: Swift Package Manager, Xcode **File → Add Packages…**, or CocoaPods with `pod install`. Use the SDK version stated for this integration, not `1.1.0`."
+    evidence: ["Use any one of the three methods.", "File → Add Packages…", "Run `pod install`"]
+  "3":
+    do: "In `AppDelegate`'s `application(_:didFinishLaunchingWithOptions:)`, build `HydraConfiguration` from your Capillary values (Account Id, Base URL, SSL key, Org Id, gamification), then call `Hydra.generate(with:)` once. Objective-C apps need a Swift file."
+    evidence: ["Hydra.generate(with: hydraConfig)", "Create one SDK instance per application."]
+  "4":
+    do: "Call `update(customerID:)` whenever the customer ID changes, `update(deviceToken:)` with the push token, and `update(interfaceID:)` with the FCM token whenever it changes. Use `setPromotionalPushOpted` and `setTransactionalPushOpted` for opt-in."
+    evidence: ["hydraCore.update(interfaceID:", "setPromotionalPushOpted"]
+  "5":
+    do: "When a user signs up or signs in, call `reportUserSignUp` or `reportUserSignIn` with a `UserDetails` object. `customerId`, `firstName`, `lastName` and `phone` are mandatory; `customerId` must match the Account Linking Identifier in Capillary CRM."
+    evidence: ["public func reportUserSignUp(data: UserSignUpGenerator", "Account Linking Identifier in Capillary CRM"]
+  "6":
+    do: "When a user changes their profile, call `reportUserProfileUpdate` with a `UserDetails` object; only `customerId` is mandatory. Optionally pass the user's subscription list as `HydraSubscription` items."
+    evidence: ["reportUserProfileUpdate(data: UserProfileUpdateGenerator", "HydraSubscription(channel:"]
+  "7":
+    do: "When the user signs out, call `hydra.reportUserSignOut(customData:)`, passing `[:]` if you have no extra data. This removes the user's details from the session."
+    evidence: ["hydra.reportUserSignOut(customData: customAttributes)", "Removes the user's details"]
+  "8":
+    do: "To track custom events, call `hydra.reportBehavioralEvent(name:customAttributes:)` with a non-empty event name. Events count only after a sign-in or sign-up is reported, and the events must also be configured in the Hydra config and organisation settings."
+    evidence: ["Events count only after a sign-in or sign-up has been reported", "reportBehavioralEvent(name: String"]
+  "9":
+    do: "Needed for gamification: report each screen the user sees. In UIKit call `hydra.gamificationScreenAppeared(...)` in `viewDidAppear` and `gamificationScreenDisappeared(...)` in `viewWillDisappear`; in SwiftUI add `.gamificationScreen(...)` to the screen's view."
+    evidence: ["hydra.gamificationScreenAppeared(", ".gamificationScreen(", "[HydraGamificationUI reportScreen:"]
+  "10":
+    do: "Optional: set log levels with `updateConsoleLogLevel(level:)` (default `debug`) and `updateRemoteLogLevel(level:)` (default `none`). The docs' examples for these calls are inconsistent, so confirm the exact call with Capillary."
+    evidence: ["func updateConsoleLogLevel(level: LogLevel)", "default: debug"]
+  "11":
+    do: "Only if you use a Loyalty View: call `hydra.setCapToken(token)` (Objective-C: `[HydraGamificationUI setCapToken:token]`) with the Capillary short-lived token before the view appears. Without a valid token it renders empty; skip this step otherwise."
+    evidence: ["hydra.setCapToken(token)", "renders empty"]
+ios/firebase:
+  "1":
+    do: "Add your GitHub account in Xcode under Settings (Preferences) > Accounts, and make sure it can open `Capillary/hydra-sdk-ios-packages`. Or use the package URL with your GitHub username and a Personal Access Token, kept only on your machine."
+    evidence: ["Xcode → Settings (Preferences) → Accounts", "Capillary/hydra-sdk-ios-packages"]
+  "2":
+    do: "Add the SDK frameworks for the modules you use (always `HydraCore`) with one method: Swift Package Manager, Xcode **File → Add Packages…**, or CocoaPods with `pod install`. Use the SDK version stated for this integration, not `1.1.0`."
+    evidence: ["Use any one of the three methods.", "File → Add Packages…", "Run `pod install`"]
+  "3":
+    do: "Add `hydra_gamification_key` and `hydra_gamification_region` or `hydra_gamification_base_url` to Remote Config. In `AppDelegate`, fetch the values, pass them to `HydraConfiguration`, call `Hydra.generate(with:)` once. Ask Capillary for the other key names."
+    evidence: ["hydra_gamification_key", "Hydra.generate(with: configuration)", "Fetch the values from Remote Config at runtime"]
+  "4":
+    do: "Call `update(customerID:)` whenever the customer ID changes, `update(deviceToken:)` with the push token, and `update(interfaceID:)` with the FCM token whenever it changes. Use `setPromotionalPushOpted` and `setTransactionalPushOpted` for opt-in."
+    evidence: ["hydraCore.update(interfaceID:", "setPromotionalPushOpted"]
+  "5":
+    do: "When a user signs up or signs in, call `reportUserSignUp` or `reportUserSignIn` with a `UserDetails` object. `customerId`, `firstName`, `lastName` and `phone` are mandatory; `customerId` must match the Account Linking Identifier in Capillary CRM."
+    evidence: ["public func reportUserSignUp(data: UserSignUpGenerator", "Account Linking Identifier in Capillary CRM"]
+  "6":
+    do: "When a user changes their profile, call `reportUserProfileUpdate` with a `UserDetails` object; only `customerId` is mandatory. Optionally pass the user's subscription list as `HydraSubscription` items."
+    evidence: ["reportUserProfileUpdate(data: UserProfileUpdateGenerator", "HydraSubscription(channel:"]
+  "7":
+    do: "When the user signs out, call `hydra.reportUserSignOut(customData:)`, passing `[:]` if you have no extra data. This removes the user's details from the session."
+    evidence: ["hydra.reportUserSignOut(customData: customAttributes)", "Removes the user's details"]
+  "8":
+    do: "To track custom events, call `hydra.reportBehavioralEvent(name:customAttributes:)` with a non-empty event name. Events count only after a sign-in or sign-up is reported, and the events must also be configured in the Hydra config and organisation settings."
+    evidence: ["Events count only after a sign-in or sign-up has been reported", "reportBehavioralEvent(name: String"]
+  "9":
+    do: "Needed for gamification: report each screen the user sees. In UIKit call `hydra.gamificationScreenAppeared(...)` in `viewDidAppear` and `gamificationScreenDisappeared(...)` in `viewWillDisappear`; in SwiftUI add `.gamificationScreen(...)` to the screen's view."
+    evidence: ["hydra.gamificationScreenAppeared(", ".gamificationScreen(", "[HydraGamificationUI reportScreen:"]
+  "10":
+    do: "Optional: set log levels with `updateConsoleLogLevel(level:)` (default `debug`) and `updateRemoteLogLevel(level:)` (default `none`). The docs' examples for these calls are inconsistent, so confirm the exact call with Capillary."
+    evidence: ["func updateConsoleLogLevel(level: LogLevel)", "default: debug"]
+  "11":
+    do: "Only if you use a Loyalty View: call `hydra.setCapToken(token)` (Objective-C: `[HydraGamificationUI setCapToken:token]`) with the Capillary short-lived token before the view appears. Without a valid token it renders empty; skip this step otherwise."
+    evidence: ["hydra.setCapToken(token)", "renders empty"]

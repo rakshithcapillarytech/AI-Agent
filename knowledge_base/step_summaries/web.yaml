@@ -1,0 +1,53 @@
+web/direct:
+  "1":
+    do: "Install `cap-hydra-web-sdk` with the package manager your project already uses (pick it from the lock file in the project root; npm if there is none). For push notifications, also install `firebase`."
+    evidence: ["Use the lock file in the project root", "For push, also install `firebase`."]
+  "2":
+    do: "Create one SDK service file (for example `src/services/sdkService.ts`) that wraps every SDK call and calls `HydraSDK.initialize()` at the top level with your Account Id, Base URL and Org Id from Capillary. Import it from the app entry point."
+    evidence: ["src/services/sdkService.ts", "IMPORTANT: Initialize at module load"]
+  "3":
+    do: "At login and at sign-up, call `sdkService.identifyUser(...)` with `\"USER_REGISTER\"` as the action type, the identifier type (`\"email\"`, `\"mobile\"` or `\"externalId\"`) and the user's value for it. Traits are optional."
+    evidence: ["Use `\"USER_REGISTER\"` for **both** login and sign-up.", "sdkService.identifyUser(\"email\""]
+  "4":
+    do: "Optional: when a user changes their profile, call `sdkService.identifyUser(...)` again with `\"USER_UPDATE\"` as the action type. Use it for profile changes only, never at login."
+    evidence: ["Same call with `\"USER_UPDATE\"`", "never at login"]
+  "5":
+    do: "In your sign-out flow, call `sdkService.reset()`. This clears the user context and the Capillary token, and tracking goes back to anonymous."
+    evidence: ["sdkService.reset();", "tracking returns to anonymous"]
+  "6":
+    do: "Wherever the app has a custom event worth tracking, call `sdkService.trackEvent(name, properties)` with the event name and an optional properties object."
+    evidence: ["sdkService.trackEvent(\"test_event\"", "Track custom events"]
+  "7":
+    do: "Call `sdkService.trackPageView()` on every route change. With no arguments it captures the current URL and title; pass `{ url, title, category, properties }` to override any of them."
+    evidence: ["Call on every route change.", "sdkService.trackPageView();"]
+  "8":
+    do: "Optional, for cookie consent: call `sdkService.disableTracking()` when consent is not given and `sdkService.enableTracking()` when it is. Save the consent decision in your own storage and restore it on app load."
+    evidence: ["sdkService.disableTracking();", "Persist the consent decision in your own storage"]
+  "9":
+    do: "Skip this if the site has no Content Security Policy. Otherwise add the SDK's domains to your existing directives without replacing them: `connect-src`, `script-src`, `frame-src`, `img-src` and `worker-src`, using the entries in the step."
+    evidence: ["Add these to the existing directives; don't replace them.", "worker-src 'self' blob: data:;"]
+web/firebase:
+  "1":
+    do: "Skip this if the Firebase project already exists. Otherwise go to the Firebase console, choose \"Add project\", enter a project name, enable Google Analytics if desired (recommended) and click \"Create project\"."
+    evidence: ["https://console.firebase.google.com/", "\"Create project\""]
+  "2":
+    do: "Skip this if the web app is already registered. Otherwise click the Web icon (`</>`) in the project dashboard, enter an app nickname and click \"Register app\". Copy the whole config object; you need every value in step 6."
+    evidence: ["\"Register app\"", "Copy the config object; you need every value"]
+  "3":
+    do: "In **Remote Config**, add a parameter with a key of your choice (this is your `remoteConfigKey`) whose default value is the Hydra JSON with your Account Id, Base URL and Org Id from Capillary. Save, then click \"Publish changes\" (and again after every edit)."
+    evidence: ["**Parameter key**", "\"Save\" → **\"Publish changes\"**. Republish after every edit."]
+  "4":
+    do: "Open Remote Config in the Firebase console and confirm your parameter shows as published. The step also notes it is unclear whether Cloud Messaging or a Realtime Database are still needed; ask a Capillary engineer."
+    evidence: ["Remote Config: confirm your parameter is published."]
+  "5":
+    do: "Install `cap-hydra-web-sdk` with the package manager your project already uses (pick it from the lock file in the project root; npm if there is none). For push notifications, also install `firebase`."
+    evidence: ["Use the lock file in the project root", "For push, also install `firebase`."]
+  "6":
+    do: "Create one SDK service file (for example `src/services/sdkService.ts`) that calls `HydraSDK.initialize()` at the top level with your Firebase config and `remoteConfigKey`, not the Capillary values. Import it from the app entry point, not inside `useEffect`."
+    evidence: ["src/services/sdkService.ts", "remoteConfigKey: \"MY_REMOTE_CONFIG_KEY\""]
+  "7":
+    do: "Call the service: `sdkService.trackPageView()` on every route change, `sdkService.trackEvent(...)` for custom events, `identifyUser(...)` with `\"USER_REGISTER\"` at login and sign-up, and `sdkService.reset()` at logout."
+    evidence: ["Every route change", "Login **and** sign-up", "Profile update only"]
+  "8":
+    do: "Skip this if the site has no Content Security Policy. Otherwise add the SDK's domains to your existing directives without replacing them: `connect-src`, `script-src`, `frame-src`, `img-src` and `worker-src`, using the entries in the step."
+    evidence: ["Add these to the existing directives; don't replace them.", "worker-src 'self' blob: data:;"]
