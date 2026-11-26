@@ -173,7 +173,7 @@ def test_a_value_that_only_one_platform_changed_is_not_applied_to_the_other(tmp_
 
 
 def test_a_page_without_its_own_key_fact_rides_on_a_value_found_elsewhere(tmp_path):
-    repo, kb = make_repo(tmp_path)
+    _, kb = make_repo(tmp_path)
     site = Site(PAGES)
     config, store = baseline(kb, site)
     all_bumped(site)

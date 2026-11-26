@@ -208,6 +208,14 @@ export interface SourcesAdmin {
   stale_guides: Record<string, string[]>;
   anchors: { total: number; failing: FailingFact[] };
   last_run: { failed?: Record<string, string> } | null;
+  /** The latest automatic update (`python -m app.sync update`): what it changed by itself and what it left for a person. */
+  last_proposal: {
+    status: string;
+    created_at: string;
+    detail: string;
+    applied: { slug: string; values: string[] }[];
+    needs_person: Record<string, string>;
+  } | null;
 }
 
 /** The small public view: how fresh the knowledge is (GET /sources/status). */

@@ -74,7 +74,10 @@ uv run python -m app.sync status   # what changed, which guides and key facts ne
 uv run python -m app.sync check    # the key facts only (exit 1 if any fail): good for CI
 uv run python -m app.sync accept --all   # after updating the guides: these pages are now reviewed
 uv run python -m app.sync draft    # optional: AI-drafted edit suggestions for changed pages (never applied)
+uv run python -m app.sync update   # fetch, then update the guides by themselves where only a version-like value changed
 ```
+
+**Automatic updates.** `update` (or `propose`, which stops before merging) prepares the change on git branches: a page whose *whole* change is a version-like number that moved in place (an anchored fact, say `1.10.6` to `1.10.7`) is applied to the guides and everything built from them (FAQ, requirements, step texts, evals), then the tests, template lint, audit and key facts must pass before it is merged and the page counts as reviewed. If a check fails, the guides stay as they were, the pages stay flagged and the attempt is kept on its own branch. Names, prose, steps and any page with other changes are left to a person (with an optional AI draft). It never pushes: run it from a scheduled job on a clean checkout, then deploy. Tried end to end on a simulated bump of all 11 pages that state the SDK version: 15 files updated, all checks passed, 18 seconds.
 
 Set `DOCS_SYNC_INTERVAL_HOURS` (for example 24) to have the running API fetch on a schedule; the admin screen (`/?admin=1`, tab "Online docs") shows the changes with their diffs and has "Check the online docs now" and "Mark reviewed". Which pages feed which guide is in `knowledge_base/sources.yaml`; the key facts are in `knowledge_base/anchors.yaml`. Internal-only knowledge (Confluence runbooks, KT notes) is not on that site and stays in the guides as reviewed text until it has an online source. The old offline PDFs in `knowledge_base/source/` are legacy (see its README).
 

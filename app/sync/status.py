@@ -68,6 +68,7 @@ def sync_status(kb_dir: Path) -> dict:
                 ],
             },
             "last_run": store.read_json("last-run.json"),
+            "last_proposal": store.read_json("last-proposal.json"),
         }
     except Exception as error:  # noqa: BLE001  # status must never break a page
         return {"synced": False, "reason": f"{type(error).__name__}: {error}"}

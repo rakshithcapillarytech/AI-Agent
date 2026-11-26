@@ -1,5 +1,8 @@
 # Knowledge base changelog
 
+## Automatic value updates (2026-11-26)
+`python -m app.sync update` (and `propose`): when an online page changes only by a version-like value, the new value is written into the guides and the files built from them, behind the tests, template lint, audit and key facts; everything else stays flagged for a person. See README "Keeping the knowledge current" and PLAN.md section 15.
+
 ## Online docs sync (2026-11-26)
 The SDK facts now come from Capillary's public docs through a pipeline instead of hand-collected offline documents (`app/sync/`, PLAN.md §15).
 - `sources.yaml` (which online pages feed which guide), `anchors.yaml` (48 key facts, each checked against the online page and our guides), and the snapshot in `source/capillary-docs/` (59 pages, including the four in-app pages the site's index leaves out).

@@ -59,6 +59,15 @@ export function DocChanges({ data, onChange }: { data: SourcesAdmin | null; onCh
     <div className={styles.list}>
       {header}
       {message && <p className={styles.note}>{message}</p>}
+      {data.last_proposal && (
+        <p className={styles.meta}>
+          Last automatic update ({data.last_proposal.created_at.slice(0, 8)}): {data.last_proposal.status}.
+          {data.last_proposal.applied.length > 0 &&
+            ` Updated by itself: ${[...new Set(data.last_proposal.applied.flatMap((a) => a.values))].join(", ")}.`}
+          {Object.keys(data.last_proposal.needs_person).length > 0 &&
+            ` Left for a person: ${Object.keys(data.last_proposal.needs_person).length} page(s).`}
+        </p>
+      )}
       {Object.keys(data.last_run?.failed ?? {}).length > 0 && (
         <p role="alert" className={styles.error}>
           Couldn't fetch: {Object.keys(data.last_run?.failed ?? {}).join(", ")}. Their old copies were kept.
