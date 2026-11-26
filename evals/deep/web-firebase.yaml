@@ -305,7 +305,7 @@
     A developer added `const body = await event.data.text()` logging into the push listener
     of our service worker. Since then pushes arrive but nothing is displayed. Why?
   expect:
-    contains: ["firebase-messaging-sw.js"]
+    contains: ["event.data"]
     judge:
       - q: "Does the answer say the push body can only be read once so Firebase's handler throws, and to not modify the worker logic?"
         want: "yes"

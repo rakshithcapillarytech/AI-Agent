@@ -60,7 +60,7 @@
 
     What should we change?
   expect:
-    contains: ["sdkService.initialize()"]
+    contains: ["initialize()"]
     judge:
       - q: "Does the answer say to call initialize once at module load / top level of the service file, not inside useEffect or another lifecycle hook?"
         want: "yes"

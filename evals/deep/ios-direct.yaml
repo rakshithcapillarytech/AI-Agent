@@ -514,9 +514,9 @@
   expect:
     contains: ["HTTP 401", "service-account"]
     judge:
-      - q: "Does the answer say the Firebase credentials Capillary holds for the project have expired?"
+      - q: "Does the answer say Capillary has no valid service-account key for the project, so Google issues no access token and the send is rejected?"
         want: "yes"
-      - q: "Does the answer say to share the renewed credential only via the secure channel Capillary names (not in chat, email or git)?"
+      - q: "Does the answer say to share the key only by a one-time vault link or a restricted file-share link (not in chat, email or git)?"
         want: "yes"
   source: "_shared/push.md › Why Capillary skipped a message"
 
