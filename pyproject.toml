@@ -21,6 +21,7 @@ dependencies = [
     "python-frontmatter",
     "pyyaml",
     "markdown-it-py>=4.3.0",
+    "httpx>=0.28.1",
 ]
 
 [dependency-groups]

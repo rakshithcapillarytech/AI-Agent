@@ -53,6 +53,31 @@ Not built yet (see the PLAN.md §8 timeline):
 - SME review of the drafts, `prerequisites.yaml`, seeded issues and golden Q&A
 - new-doc ingestion (`kb propose`), promoting recurring issues into Known Issues
 
+## Keeping the knowledge current: the online docs sync
+
+Capillary's public developer docs (`docs.capillarytech.com`) are the **source of truth for the SDK facts**; the app no longer relies on hand-collected offline documents for them. The guides are still reviewed text (nothing unreviewed reaches a client), but a pipeline keeps them tied to the online pages:
+
+```
+docs site (llms.txt index + page.md)
+  -> fetch      mirror the "SDKs" branch, plus pages the index leaves out but the mirrored pages link to
+  -> snapshot   knowledge_base/source/capillary-docs/  (pages, manifest, the version a person last reviewed)
+  -> compare    which pages changed since the last review, with a diff
+  -> check      48 key facts (anchors.yaml): still on the page? still in our guides?
+  -> report     CHANGES.md and the admin screen: changed pages, affected guides, FAQ answers and step texts
+  -> review     a person updates the guides, runs the tests, then marks the pages reviewed
+  -> serve      kits and the Prerequisites and FAQ pages say when they were last checked, and warn if a source page changed
+```
+
+```bash
+uv run python -m app.sync run      # fetch (about 80 seconds, polite), update the snapshot, write the report
+uv run python -m app.sync status   # what changed, which guides and key facts need attention
+uv run python -m app.sync check    # the key facts only (exit 1 if any fail): good for CI
+uv run python -m app.sync accept --all   # after updating the guides: these pages are now reviewed
+uv run python -m app.sync draft    # optional: AI-drafted edit suggestions for changed pages (never applied)
+```
+
+Set `DOCS_SYNC_INTERVAL_HOURS` (for example 24) to have the running API fetch on a schedule; the admin screen (`/?admin=1`, tab "Online docs") shows the changes with their diffs and has "Check the online docs now" and "Mark reviewed". Which pages feed which guide is in `knowledge_base/sources.yaml`; the key facts are in `knowledge_base/anchors.yaml`. Internal-only knowledge (Confluence runbooks, KT notes) is not on that site and stays in the guides as reviewed text until it has an online source. The old offline PDFs in `knowledge_base/source/` are legacy (see its README).
+
 ## Setup
 
 **1. Install the tools (macOS, with Homebrew):**

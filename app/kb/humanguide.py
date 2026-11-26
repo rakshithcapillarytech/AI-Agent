@@ -41,6 +41,7 @@ from app.kb.loader import files_for_profile, render_versions
 from app.kb.sections import split_sections
 from app.rules.prereq_engine import load_rules
 from app.rules.requirements import build_prerequisites, load_requirements
+from app.sync.status import source_notice
 
 # What a person needs from a platform file. Left out: Coverage (for maintainers) and API Reference.
 STEP_MODULES_FILE = "step_modules.yaml"
@@ -165,6 +166,11 @@ def _checklist_markdown(profile: IntegrationProfile, kb_dir: Path, compact: bool
         "",
     ]
     return "\n".join(out)
+
+
+def _notice_lines(kb_dir: Path, profile: IntegrationProfile) -> list[str]:
+    lines = source_notice(kb_dir, files_for_profile(profile))
+    return ["", *lines] if lines else []
 
 
 def _ready(profile: IntegrationProfile) -> None:
@@ -299,6 +305,7 @@ def build_summary_markdown(profile: IntegrationProfile, kb_dir: Path, today: dat
         f"# Hydra SDK integration steps: {_cell(profile.company or 'your app')}",
         "",
         f"Prepared by the Experience+ Integration Copilot on {today.isoformat()}. A short summary for your setup only.",
+        *_notice_lines(kb_dir, profile),
         "",
         "## Your setup",
         "",
@@ -339,6 +346,7 @@ def build_full_markdown(profile: IntegrationProfile, kb_dir: Path, today: date |
         f"# Hydra SDK integration steps: {_cell(profile.company or 'your app')}",
         "",
         f"Prepared by the Experience+ Integration Copilot on {today.isoformat()}. It covers only your setup.",
+        *_notice_lines(kb_dir, profile),
         "",
         "## Your setup",
         "",

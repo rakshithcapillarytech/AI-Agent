@@ -1,8 +1,9 @@
 import { LifeBuoy, Send } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api";
-import type { DocGap, Escalation, IssueDraft } from "../types";
+import type { DocGap, Escalation, IssueDraft, SourcesAdmin } from "../types";
 import styles from "./admin.module.css";
+import { DocChanges } from "./DocChanges";
 import { DocGaps } from "./DocGaps";
 import { IssueDrafts } from "./IssueDrafts";
 import { PageHeader } from "./PageHeader";
@@ -72,7 +73,7 @@ function EscalationCard({ item, onAnswer }: { item: Escalation; onAnswer: (id: s
   );
 }
 
-type Tab = "escalations" | "drafts" | "gaps";
+type Tab = "escalations" | "drafts" | "gaps" | "sources";
 
 /** Engineers' workspace: escalations, issue drafts to approve, and documentation gaps. Opened with /?admin=1 (no login yet). */
 export function AdminView() {
@@ -80,14 +81,21 @@ export function AdminView() {
   const [escalations, setEscalations] = useState<Escalation[] | null>(null);
   const [drafts, setDrafts] = useState<IssueDraft[]>([]);
   const [gaps, setGaps] = useState<DocGap[]>([]);
+  const [sources, setSources] = useState<SourcesAdmin | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const [e, d, g] = await Promise.all([api.listEscalations(), api.listIssueDrafts(), api.listDocGaps()]);
+      const [e, d, g, src] = await Promise.all([
+        api.listEscalations(),
+        api.listIssueDrafts(),
+        api.listDocGaps(),
+        api.adminSources(),
+      ]);
       setEscalations(e);
       setDrafts(d);
       setGaps(g);
+      setSources(src);
       setError(null);
     } catch {
       setError("Couldn't reach the server.");
@@ -107,6 +115,7 @@ export function AdminView() {
     { id: "escalations", label: "Escalations", count: escalations?.length ?? 0 },
     { id: "drafts", label: "Issue drafts", count: drafts.length },
     { id: "gaps", label: "Doc gaps", count: gaps.length },
+    { id: "sources", label: "Online docs", count: (sources?.changed.length ?? 0) + (sources?.anchors.failing.length ?? 0) },
   ];
 
   return (
@@ -147,6 +156,7 @@ export function AdminView() {
           ))}
         {tab === "drafts" && <IssueDrafts drafts={drafts} onChange={load} />}
         {tab === "gaps" && <DocGaps gaps={gaps} onChange={load} />}
+        {tab === "sources" && <DocChanges data={sources} onChange={load} />}
       </div>
     </>
   );

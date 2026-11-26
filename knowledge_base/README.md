@@ -3,6 +3,8 @@
 The source of truth for the Integration Kit: the guide generator (`app/kb/guide.py`) copies the files that match a client's profile into the guide the client gives their own AI assistant. Every file here is written for **one platform and one config
 mode**, so information from different platforms never mixes (see `../PLAN.md` §2.1 and §5).
 
+**Where the knowledge comes from.** The SDK facts come from Capillary's public developer docs: `sources.yaml` says which online pages each guide is built from, `python -m app.sync run` mirrors them into `source/capillary-docs/`, and `anchors.yaml` lists the key facts that are checked against those pages. Internal-only knowledge (runbooks, KT notes) lives in the guides as reviewed text with its Corrections and Gaps. See the README's section "Keeping the knowledge current".
+
 | Path | What it is |
 |---|---|
 | `_shared/overview.md` | What Hydra / Experience+ is, its modules, a glossary |

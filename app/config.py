@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://hydra:hydra@localhost:5432/hydra"
     api_base_url: str = "http://localhost:8000"
     knowledge_base_dir: Path = ROOT / "knowledge_base"
+    # Re-fetch Capillary's online docs every N hours while the API runs (0 = never; run `python -m app.sync run` yourself).
+    docs_sync_interval_hours: float = 0
 
 
 @lru_cache

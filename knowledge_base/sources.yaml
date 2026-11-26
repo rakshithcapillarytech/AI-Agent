@@ -1,0 +1,45 @@
+# Where the knowledge comes from, and which online pages each guide is built from.
+#
+# The public developer docs at docs.capillarytech.com are the source of truth for the SDK facts. `python -m app.sync run`
+# mirrors the pages listed here into knowledge_base/source/capillary-docs/ (see app/sync/), compares them with what was
+# last reviewed, checks the key facts in anchors.yaml, and tells reviewers which guides, FAQ answers and step texts
+# need a look. The guides themselves stay reviewed text: nothing reaches a client without that review.
+#
+# Internal-only knowledge (Confluence runbooks, KT notes) is not on this site; it stays in the guides as reviewed text
+# (push.md, troubleshooting.md and the Corrections/Gaps) until it has an online source of its own.
+
+source: capillary-docs
+base_url: https://docs.capillarytech.com
+index_path: /llms.txt           # the site's own page index (Markdown list with a tree of pages)
+root_title: SDKs                # mirror this branch of the index
+
+# The site's index leaves some pages out (the in-app pages, for example). Also fetch pages that the mirrored pages
+# link to when the page name matches one of these patterns. Capped so a bad link can't pull in the whole site.
+follow:
+  slug_patterns: ["in-app", "sdk", "gamification", "hydra", "push-notif", "notification-center", "firebase", "source-account", "gateway", "xiaomi"]
+  max_extra_pages: 40
+
+# Be polite: the site rate-limits bursts (HTTP 429). One request at a time with a pause; back off when told to.
+fetch:
+  delay_seconds: 0.8
+  timeout_seconds: 30
+  max_retries: 4
+  user_agent: "capillary-hydra-copilot-docs-sync/1.0 (documentation mirror for integration guides)"
+
+# Guide file -> the pages (slugs) it is built from. A change to any of these pages makes the guide "needs review".
+# The reviewers' audit of 2026-11-26 (knowledge_base/audits/) produced these lists.
+guides:
+  android/direct.md: &android [android-sdk, android-sdk-getting-started, set-up-source-account, configure-gateway, installing-sdk, sdk-initialisation, android-sdk-api-reference, gamification-android, in-app-messaging, configure-notification-center, configure-firebase, push-notification, xiaomi-push-notification]
+  android/firebase.md: *android
+  ios/direct.md: &ios [ios-sdk, ios-sdk-getting-started, set-up-source-account-ios, configure-gateway-ios, install-sdk, initialise-ios-sdk, core-features, configure-push-notifications, rich-push-notifications, configure-notification-center_ios, gamification-ios, ios-sdk-api-reference, in-app-messaging_ios]
+  ios/firebase.md: *ios
+  react-native/direct.md: &rn [setting-up-react-native-project-for-hydra-sdk, react-native-sdk-getting-started, react-native-sdk-install, react-native-sdk-advanced-setup, react-native-sdk-setup-overview, react-native-sdk-push-notifications, react-native-sdk-notification-center, gamification-react-native, react-native-sdk-anonymous-visitor-flow, react-native-sdk-api-reference, react-native-sdk-in-app-messaging]
+  react-native/firebase.md: *rn
+  flutter/direct.md: &flutter [flutter-sdk, flutter-sdk-getting-started, flutter-sdk-install, flutter-sdk-advanced-setup, flutter-setup-overview, flutter-sdk-push-notifications, configuring-notification-center, gamification-flutter, flutter-sdk-api-reference, flutter-sdk-in-app-messaging]
+  flutter/firebase.md: *flutter
+  web/direct.md: &web [web-sdk, web-sdk-getting-started, prerequisites, web-sdk-install, web-sdk-initialisation, configure-firebase-web, push-notification-web, gamification-web, web-sdk-api-reference, web-sdk-ai-integration-guide, web-sdk-troubleshooting]
+  web/firebase.md: *web
+  _shared/firebase-setup.md: [configure-firebase, configure-firebase-web, push-notification, configure-push-notifications]
+  _shared/push.md: [set-up-source-account, set-up-source-account-ios, configure-gateway, configure-gateway-ios, configure-firebase, push-notification, configure-push-notifications]
+  _shared/prerequisites.md: [set-up-source-account, set-up-source-account-ios, installing-sdk, install-sdk, react-native-sdk-install, flutter-sdk-install]
+  _shared/overview.md: [sdks]

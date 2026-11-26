@@ -1,0 +1,276 @@
+# Key facts that would break an integration if they changed, checked against Capillary's online docs.
+#
+# `python -m app.sync check` (and the sync run) test two things for each:
+#   - the exact `text` is still on the online page `page`  -> if not, Capillary changed it: the guides may now be wrong;
+#   - the guides in `used_in` still carry the fact         -> if not, a guide drifted from the page.
+# `guide_text` is what the guides contain when it differs from the page's wording (for example a version in front matter).
+# Add an anchor whenever a fact is important enough that a silent change online would hurt a client.
+
+anchors:
+  # ── Android ──────────────────────────────────────────────────────────────────────────────
+  - id: android-sdk-version
+    fact: Android SDK version 1.10.6 (every module)
+    page: android-sdk-getting-started
+    text: "1.10.6"
+    guide_text: "sdk_version: 1.10.6"
+    used_in: [android/direct.md, android/firebase.md]
+  - id: android-maven-group
+    fact: Android artifacts use the Maven group com.capillarytech
+    page: installing-sdk
+    text: "com.capillarytech:hydra-core:1.10.6"
+    guide_text: "com.capillarytech:hydra-core"
+    used_in: [android/direct.md, android/firebase.md]
+  - id: android-catalog
+    fact: The version catalog is com.capillarytech:hydra-catalog
+    page: installing-sdk
+    text: "com.capillarytech:hydra-catalog:1.10.6"
+    guide_text: "com.capillarytech:hydra-catalog"
+    used_in: [android/firebase.md]
+  - id: android-maven-repo
+    fact: The Android SDK comes from the GitHub Packages repository hydra-sdk-android-maven
+    page: installing-sdk
+    text: "https://maven.pkg.github.com/Capillary/hydra-sdk-android-maven"
+    used_in: [android/direct.md, android/firebase.md]
+  - id: android-min-sdk
+    fact: Android minimum SDK is 21
+    page: android-sdk-getting-started
+    text: "Android SDK version V21 or above"
+    guide_text: "minSdk 21"
+    used_in: [android/direct.md, android/firebase.md]
+  - id: android-gamification-min
+    fact: Gamification on Android needs SDK 1.10.6 or later
+    page: gamification-android
+    text: "Minimum SDK version: `1.10.6`"
+    guide_text: "1.10.6"
+    used_in: [android/direct.md, android/firebase.md]
+  - id: android-messaging-service
+    fact: The manifest service is com.capillarytech.hydra.firebase.HydraFirebaseMessagingService
+    page: push-notification
+    text: "com.capillarytech.hydra.firebase.HydraFirebaseMessagingService"
+    used_in: [android/firebase.md]
+  - id: android-xiaomi-kit
+    fact: The Xiaomi push kit is com.capillarytech:hydra-mi-push-kit
+    page: xiaomi-push-notification
+    text: "com.capillarytech:hydra-mi-push-kit:1.10.6"
+    guide_text: "hydra-mi-push-kit"
+    used_in: [android/firebase.md]
+  - id: android-signature-required
+    fact: The app signature is required for Android apps (source account)
+    page: set-up-source-account
+    text: "required only for Android apps"
+    used_in: [_shared/push.md]
+
+  # ── Firebase service account for Capillary ───────────────────────────────────────────────
+  - id: firebase-role
+    fact: The service account role is Firebase Cloud Messaging API Admin
+    page: configure-firebase
+    text: "roles/firebasecloudmessaging.admin"
+    used_in: [_shared/firebase-setup.md, prerequisites.yaml, android/firebase.md]
+  - id: firebase-custom-role
+    fact: A custom role needs only cloudmessaging.messages.create
+    page: configure-firebase
+    text: "cloudmessaging.messages.create"
+    used_in: [_shared/firebase-setup.md]
+  - id: firebase-fcm-v1
+    fact: The Firebase Cloud Messaging API (V1) must be enabled
+    page: configure-firebase
+    text: "Firebase Cloud Messaging API (V1)"
+    used_in: [_shared/firebase-setup.md, android/firebase.md]
+  - id: firebase-dedicated-account
+    fact: Create a dedicated service account for Capillary
+    page: configure-firebase
+    text: "Create a dedicated service account for Capillary"
+    guide_text: "dedicated"
+    used_in: [_shared/firebase-setup.md, android/firebase.md]
+  - id: firebase-key-sharing
+    fact: The key is shared by a one-time link that expires within 24 to 48 hours
+    page: configure-firebase
+    text: "24 to 48 hours"
+    used_in: [_shared/firebase-setup.md, _shared/push.md]
+
+  # ── iOS ──────────────────────────────────────────────────────────────────────────────────
+  - id: ios-sdk-version
+    fact: iOS SDK version 1.10.6
+    page: ios-sdk-getting-started
+    text: "1.10.6"
+    guide_text: "sdk_version: 1.10.6"
+    used_in: [ios/direct.md, ios/firebase.md]
+  - id: ios-public-repo
+    fact: The iOS SDK repository hydra-ios-sdk-spm is public
+    page: install-sdk
+    text: "https://github.com/Capillary/hydra-ios-sdk-spm"
+    guide_text: "hydra-ios-sdk-spm"
+    used_in: [ios/direct.md, ios/firebase.md, _shared/prerequisites.md]
+  - id: ios-no-token
+    fact: The iOS repository needs no GitHub account or token
+    page: install-sdk
+    text: "needs no GitHub account or personal access token"
+    guide_text: "no token"
+    used_in: [ios/direct.md, ios/firebase.md]
+  - id: ios-deployment-target
+    fact: Minimum iOS deployment target is 15.6
+    page: install-sdk
+    text: "platform :ios, '15.6'"
+    guide_text: "15.6"
+    used_in: [ios/direct.md, ios/firebase.md]
+  - id: ios-xcode
+    fact: Xcode 16.1 or later
+    page: install-sdk
+    text: "Xcode 16.1 or later"
+    used_in: [ios/direct.md, ios/firebase.md]
+  - id: ios-update-customer-id
+    fact: Call update(customerID:) after sign-up or sign-in
+    page: core-features
+    text: "update(customerID"
+    used_in: [ios/direct.md, ios/firebase.md]
+  - id: ios-in-app-core
+    fact: iOS in-app messaging uses InAppMessagingCore
+    page: in-app-messaging_ios
+    text: "InAppMessagingCore"
+    used_in: [ios/direct.md, ios/firebase.md]
+
+  # ── React Native ─────────────────────────────────────────────────────────────────────────
+  - id: rn-package
+    fact: The React Native package is @capillarytech/react-native-hydra-lib
+    page: react-native-sdk-install
+    text: "@capillarytech/react-native-hydra-lib"
+    used_in: [react-native/direct.md, react-native/firebase.md]
+  - id: rn-min-version
+    fact: React Native 0.77.0 or later
+    page: react-native-sdk-getting-started
+    text: "0.77.0 or later"
+    used_in: [react-native/direct.md, react-native/firebase.md]
+  - id: rn-min-node
+    fact: Node.js 18.0.0 or later
+    page: react-native-sdk-getting-started
+    text: "18.0.0 or later"
+    used_in: [react-native/direct.md, react-native/firebase.md]
+  - id: rn-min-ios
+    fact: iOS 15.0 or later (React Native)
+    page: react-native-sdk-getting-started
+    text: "15.0 or later"
+    used_in: [react-native/direct.md, react-native/firebase.md]
+  - id: rn-config-file
+    fact: Configuration file hydra-config.json in the capillary folder
+    page: react-native-sdk-install
+    text: "hydra-config.json"
+    used_in: [react-native/direct.md, react-native/firebase.md]
+  - id: rn-in-app-flag
+    fact: The in-app flag is enable_in_app_messaging
+    page: react-native-sdk-in-app-messaging
+    text: "enable_in_app_messaging"
+    used_in: [react-native/direct.md, react-native/firebase.md]
+
+  # ── Flutter ──────────────────────────────────────────────────────────────────────────────
+  - id: flutter-min-version
+    fact: Flutter >= 3.3.0 with Dart >= 3.0
+    page: flutter-sdk-getting-started
+    text: ">= 3.3.0 (Dart >= 3.0)"
+    used_in: [flutter/direct.md, flutter/firebase.md]
+  - id: flutter-min-android
+    fact: Android API 23 or higher (Flutter)
+    page: flutter-sdk-getting-started
+    text: ">= API 23"
+    used_in: [flutter/direct.md, flutter/firebase.md]
+  - id: flutter-packages
+    fact: The Flutter packages are capillary_hydra and capillary_hydra_platform_interface
+    page: flutter-sdk-install
+    text: "capillary_hydra capillary_hydra_platform_interface"
+    guide_text: "capillary_hydra_platform_interface"
+    used_in: [flutter/direct.md, flutter/firebase.md]
+  - id: flutter-in-app-placeholder
+    fact: Flutter in-app messaging needs the hydra_in_app_placeholder image
+    page: flutter-sdk-in-app-messaging
+    text: "hydra_in_app_placeholder"
+    used_in: [flutter/direct.md, flutter/firebase.md]
+
+  # ── Web ──────────────────────────────────────────────────────────────────────────────────
+  - id: web-sdk-version
+    fact: Web SDK version 1.10.6
+    page: web-sdk-getting-started
+    text: "1.10.6"
+    guide_text: "sdk_version: 1.10.6"
+    used_in: [web/direct.md, web/firebase.md]
+  - id: web-package
+    fact: The Web package is cap-hydra-web-sdk
+    page: web-sdk-install
+    text: "cap-hydra-web-sdk"
+    used_in: [web/direct.md, web/firebase.md]
+  - id: web-pageview-options
+    fact: Page-view options are page_url, page_title, referrer and page_category
+    page: web-sdk-api-reference
+    text: "page_url"
+    used_in: [web/direct.md, web/firebase.md]
+  - id: web-chrome-min
+    fact: Chrome 109+ (Web)
+    page: push-notification-web
+    text: "| Chrome          | 109+            |"
+    guide_text: "| Chrome | 109+ |"
+    used_in: [web/direct.md, web/firebase.md]
+  - id: web-firefox-min
+    fact: Firefox 140+ ESR (Web)
+    page: push-notification-web
+    text: "140+ (ESR)"
+    used_in: [web/direct.md, web/firebase.md]
+  - id: web-safari-min
+    fact: Safari 26.3+ (Web)
+    page: push-notification-web
+    text: "26.3+"
+    used_in: [web/direct.md, web/firebase.md]
+  - id: web-edge-min
+    fact: Edge 149+ (Web; the docs' own number, which looks inconsistent)
+    page: push-notification-web
+    text: "149+"
+    used_in: [web/direct.md, web/firebase.md]
+  - id: web-firebase-app-name
+    fact: The push Firebase app must be named hydra-fcm
+    page: push-notification-web
+    text: "hydra-fcm"
+    used_in: [web/direct.md, web/firebase.md]
+  - id: web-service-worker
+    fact: The service worker file is firebase-messaging-sw.js
+    page: push-notification-web
+    text: "firebase-messaging-sw.js"
+    used_in: [web/direct.md, web/firebase.md]
+  - id: web-suppress
+    fact: Gamification can be suppressed with setGamificationSuppressed
+    page: gamification-web
+    text: "setGamificationSuppressed"
+    used_in: [web/direct.md, web/firebase.md]
+
+  # ── Gamification events (all platforms) ──────────────────────────────────────────────────
+  - id: events-android
+    fact: The Game and CMS event names (Android)
+    page: gamification-android
+    text: "content_viewed"
+    used_in: [android/direct.md, android/firebase.md]
+  - id: events-ios
+    fact: The Game and CMS event names (iOS)
+    page: gamification-ios
+    text: "content_viewed"
+    used_in: [ios/direct.md, ios/firebase.md]
+  - id: events-react-native
+    fact: The Game and CMS event names (React Native)
+    page: gamification-react-native
+    text: "content_viewed"
+    used_in: [react-native/direct.md, react-native/firebase.md]
+  - id: events-flutter
+    fact: The Game and CMS event names (Flutter)
+    page: gamification-flutter
+    text: "content_viewed"
+    used_in: [flutter/direct.md, flutter/firebase.md]
+  - id: events-web
+    fact: The Game and CMS event names (Web)
+    page: gamification-web
+    text: "content_viewed"
+    used_in: [web/direct.md, web/firebase.md]
+  - id: events-mapping-android
+    fact: The event field mapping includes identifierType (Android)
+    page: gamification-android
+    text: "identifierType"
+    used_in: [android/direct.md, android/firebase.md]
+  - id: events-mapping-ios
+    fact: The event field mapping includes identifierType (iOS)
+    page: gamification-ios
+    text: "identifierType"
+    used_in: [ios/direct.md, ios/firebase.md]

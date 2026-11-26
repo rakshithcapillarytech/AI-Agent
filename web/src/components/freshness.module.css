@@ -1,0 +1,21 @@
+.line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.line svg {
+  flex: none;
+  color: var(--ok);
+}
+
+.behind {
+  color: var(--warn);
+}
+
+.behind svg {
+  color: var(--warn);
+}

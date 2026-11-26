@@ -5,6 +5,7 @@ import { PLATFORMS, guideLabel } from "../lib/catalog";
 import type { Faq, FaqItem, Platform } from "../types";
 import { Inline } from "./Inline";
 import { PageHeader } from "./PageHeader";
+import { SourceFreshness } from "./SourceFreshness";
 import styles from "./faq.module.css";
 
 type PlatformFilter = Platform | "all";
@@ -56,6 +57,7 @@ export function FaqView() {
       <PageHeader title="FAQ" subtitle="Quick answers to the questions teams ask most, taken from the integration guides" />
       <div className={styles.page}>
         <div className={styles.inner}>
+          <SourceFreshness />
           <div className={styles.controls}>
             <label className={styles.search}>
               <Search size={16} aria-hidden="true" />

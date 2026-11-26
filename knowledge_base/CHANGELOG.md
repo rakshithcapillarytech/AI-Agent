@@ -1,5 +1,12 @@
 # Knowledge base changelog
 
+## Online docs sync (2026-11-26)
+The SDK facts now come from Capillary's public docs through a pipeline instead of hand-collected offline documents (`app/sync/`, PLAN.md §15).
+- `sources.yaml` (which online pages feed which guide), `anchors.yaml` (48 key facts, each checked against the online page and our guides), and the snapshot in `source/capillary-docs/` (59 pages, including the four in-app pages the site's index leaves out).
+- `python -m app.sync run | status | check | accept | draft`; an admin tab "Online docs" with diffs and "Mark reviewed"; `GET /sources/status`; an optional scheduler (`DOCS_SYNC_INTERVAL_HOURS`).
+- Kits, the Prerequisites tab and the FAQ say when the guides were last checked against the online docs and warn if a source page changed after review.
+- The first snapshot was taken on 2026-11-26 and accepted as the reviewed baseline (the guides were synced to these pages that day, see the audit below).
+
 ## Audit against the current public docs, and the fixes (2026-11-26)
 Source: all 59 SDK pages on docs.capillarytech.com (55 in the "SDKs" branch of `llms.txt` plus four in-app pages the index doesn't list), pages dated 2026-03-04 to 2026-11-23. Full reports: `knowledge_base/audits/2026-11-26/`.
 - **Android:** Maven group is `com.capillarytech` (was `com.capillary`) and the class packages are `com.capillarytech.hydra.*`; SDK version `1.10.6` for every module (was `1.9.22-beta02`, Beta); new dedicated service-account recipe; Xiaomi kit version; subscription sample; source-account notes; `Map.of` replaced in the Java sample; Gaps for the docs' own inconsistencies.

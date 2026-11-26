@@ -6,6 +6,7 @@ import type { ConfigMode, Module, Platform, PrereqRow, Prerequisites, VersionRow
 import { Segmented } from "./controls";
 import { Inline } from "./Inline";
 import { PageHeader } from "./PageHeader";
+import { SourceFreshness } from "./SourceFreshness";
 import styles from "./prerequisites.module.css";
 
 const MODES: { id: ConfigMode; label: string }[] = [
@@ -105,6 +106,7 @@ export function PrerequisitesView() {
       />
       <div className={styles.page}>
         <div className={styles.inner}>
+          <SourceFreshness />
           <div className={styles.controls}>
             <div className={styles.control}>
               <span className={styles.controlLabel}>Your app</span>

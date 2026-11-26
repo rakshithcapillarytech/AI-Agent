@@ -175,3 +175,46 @@ export interface Faq {
   categories: FaqCategory[];
   items: FaqItem[];
 }
+
+/** An online docs page that changed after a person last reviewed it (app/sync/status.py). */
+export interface SourceChange {
+  slug: string;
+  title: string;
+  url: string;
+  updated_at: string | null;
+  reviewed_updated_at: string | null;
+  /** Guide files built from this page. */
+  guides: string[];
+  has_diff: boolean;
+  diff?: string[] | null;
+}
+
+export interface FailingFact {
+  id: string;
+  fact: string;
+  page: string;
+  problem: string;
+}
+
+export interface SourcesAdmin {
+  synced: boolean;
+  reason?: string;
+  synced_at?: string | null;
+  pages?: number;
+  base_url?: string;
+  changed: SourceChange[];
+  removed: string[];
+  unmapped: string[];
+  stale_guides: Record<string, string[]>;
+  anchors: { total: number; failing: FailingFact[] };
+  last_run: { failed?: Record<string, string> } | null;
+}
+
+/** The small public view: how fresh the knowledge is (GET /sources/status). */
+export interface SourcesStatus {
+  synced: boolean;
+  synced_at: string | null;
+  pages: number | null;
+  pages_to_review: number;
+  facts_failing: number;
+}

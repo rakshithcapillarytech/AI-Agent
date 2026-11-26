@@ -554,3 +554,15 @@ Caveats while it stays available:
 - It runs on the free Gemini tier, where Google may use prompts to improve its products. **Use synthetic data only** until `LLM_PROVIDER` is switched to Claude or a paid tier (§6.2).
 - Its answers are only as good as the model; it was seen answering from general knowledge in places (for example minSdk). The kit and its evals are where accuracy work now goes.
 - Changes to the knowledge files still reach it, so the golden evals still apply to it as well as to the kit (§12).
+
+---
+
+## 15. Keeping the knowledge current: the online docs sync (added 2026-11-26)
+
+**Decision.** Capillary's public docs site is the source of truth for SDK facts. The guides stay reviewed text, so nothing unreviewed reaches a client, but they are tied to the online pages by a pipeline instead of being refreshed by hand from offline documents.
+
+**Why not read the live pages when a client downloads.** The pages are organised by topic, not by platform and config mode; they contain errors and conflicts that the guides record as Corrections and Gaps; our FAQ, step texts and requirements are tested against the guides' wording; a download would depend on the site being up and would change between two downloads of the same profile; and an SME could not review what a client received. Sync-review-serve gives freshness without those costs.
+
+**Flow.** `app/sync/`: fetch (the site's `llms.txt` index plus links the index leaves out, one request at a time, backing off on HTTP 429) -> snapshot in git -> compare with the last reviewed version -> check the key facts in `anchors.yaml` against the pages and the guides -> report (`CHANGES.md`, admin tab "Online docs") -> a person updates the guides and files built from them, runs the tests, then `accept` -> kits and the portal pages state when the guides were last checked and warn when a source page changed since review. Optional: an AI model drafts suggested edits (`python -m app.sync draft`); they are never applied.
+
+**Not covered.** Confluence (needs a login; add it later as a second source with its own sync, read-only). Facts that appear only in internal sources. Automatic rewriting of the guides.

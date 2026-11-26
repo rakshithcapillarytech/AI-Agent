@@ -1,5 +1,6 @@
 """HTTP API for the portal: create and start sessions, stream agent replies (SSE), read state."""
 
+import asyncio
 import json
 import logging
 import uuid
@@ -28,6 +29,11 @@ from app.learning.issues import clean, lint_issue, publish_issue
 from app.learning.store import DOC_GAP, ISSUE_DRAFT, PostgresLearningStore
 from app.rules.faq import faq_view
 from app.rules.requirements import build_prerequisites
+from app.sync.diff import page_diff
+from app.sync.impact import store_for
+from app.sync.models import load_config
+from app.sync.service import run_in_background, run_periodically
+from app.sync.status import sync_status
 from app.validators.upload import MAX_UPLOAD_BYTES, UPLOAD_HEADER, process_upload, safe_filename
 
 log = logging.getLogger(__name__)
@@ -43,7 +49,13 @@ async def lifespan(app: FastAPI):
         await app.state.escalations.setup()
         app.state.learning = PostgresLearningStore(get_settings().database_url)
         await app.state.learning.setup()
-        yield
+        hours = get_settings().docs_sync_interval_hours
+        syncer = asyncio.create_task(run_periodically(get_settings().knowledge_base_dir, hours)) if hours > 0 else None
+        try:
+            yield
+        finally:
+            if syncer:
+                syncer.cancel()
 
 
 app = FastAPI(title="Experience+ Integration Copilot", lifespan=lifespan)
@@ -73,6 +85,13 @@ class IssueEdit(BaseModel):
 
 class HandleGaps(BaseModel):
     ids: list[str]
+
+
+class AcceptPages(BaseModel):
+    """Pages a reviewer has dealt with (their current version becomes the reviewed baseline). `all` accepts every page."""
+
+    slugs: list[str] = []
+    all: bool = False
 
 
 def _config(session_id: str) -> dict:
@@ -202,6 +221,16 @@ async def faq() -> dict:
     return faq_view(get_settings().knowledge_base_dir)
 
 
+@app.get("/sources/status")
+async def sources_status() -> dict:
+    """How fresh the knowledge is compared with Capillary's online docs. Public and read-only; holds no client data."""
+    status = sync_status(get_settings().knowledge_base_dir)
+    return {k: status.get(k) for k in ("synced", "synced_at", "pages", "source", "base_url")} | {
+        "pages_to_review": len(status.get("changed", [])),
+        "facts_failing": len(status.get("anchors", {}).get("failing", [])),
+    }
+
+
 @app.post("/sessions")
 async def create_session() -> dict:
     return {"session_id": str(uuid.uuid4())}
@@ -326,6 +355,43 @@ async def download_steps(session_id: str, download: bool = False, full: bool = F
     name = guide_steps_filename(profile, full)
     headers = {"Content-Disposition": f'attachment; filename="{name}"'} if download else {}
     return Response(page, media_type="text/html; charset=utf-8", headers=headers)
+
+
+# ── Admin: the online docs (no authentication yet, like the rest of /admin) ──
+
+
+@app.get("/admin/sources")
+async def admin_sources() -> dict:
+    """Pages that changed online since a person last reviewed them (with diffs), key facts that fail, and fetch problems."""
+    kb = get_settings().knowledge_base_dir
+    status = sync_status(kb)
+    if status.get("synced"):
+        store = store_for(load_config(kb), kb)
+        for page in status["changed"]:
+            page["diff"] = page_diff(store, page["slug"]) if page["has_diff"] else None
+    return status
+
+
+@app.post("/admin/sources/sync")
+async def admin_sources_sync() -> dict:
+    """Fetch the online docs now (one second per request or so; the page returns when it's done)."""
+    result = await run_in_background(get_settings().knowledge_base_dir)
+    if result is None:
+        raise HTTPException(status_code=409, detail="A sync is already running.")
+    return {"ok": result.ok, "changed": result.changed, "added": result.added, "failed": result.failed}
+
+
+@app.post("/admin/sources/accept")
+async def admin_sources_accept(body: AcceptPages) -> dict:
+    """Mark pages as reviewed after the guides have been updated."""
+    if not body.all and not body.slugs:
+        raise HTTPException(status_code=422, detail="Give page slugs or all=true.")
+    kb = get_settings().knowledge_base_dir
+    store = store_for(load_config(kb), kb)
+    manifest = store.load()
+    done = store.accept(manifest, None if body.all else body.slugs)
+    store.save(manifest)
+    return {"accepted": done}
 
 
 # ── Admin: the escalation queue (no authentication yet: SSO/login comes later, PLAN.md §11) ──

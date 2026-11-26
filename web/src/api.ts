@@ -1,4 +1,4 @@
-import type { ConfigMode, DocGap, Faq, Escalation, IssueDraft, IssueEdit, Module, Platform, Prerequisites, Profile, SessionState } from "./types";
+import type { ConfigMode, DocGap, Faq, SourcesAdmin, SourcesStatus, Escalation, IssueDraft, IssueEdit, Module, Platform, Prerequisites, Profile, SessionState } from "./types";
 
 const BASE = "/api";
 const JSON_TYPE = "application/json";
@@ -63,6 +63,26 @@ async function streamTurn(
 }
 
 export const api = {
+  /** How fresh the knowledge is compared with Capillary's online docs. */
+  sourcesStatus: (signal?: AbortSignal) => fetch(`${BASE}/sources/status`, { signal }).then((r) => json<SourcesStatus>(r)),
+
+  /** Admin: pages that changed online since a person reviewed them, with diffs, and key facts that fail. */
+  adminSources: () => fetch(`${BASE}/admin/sources`).then((r) => json<SourcesAdmin>(r)),
+
+  /** Admin: fetch the online docs now. Takes about a minute. */
+  syncSources: () =>
+    fetch(`${BASE}/admin/sources/sync`, { method: "POST" }).then((r) =>
+      json<{ ok: boolean; changed: string[]; added: string[]; failed: Record<string, string> }>(r),
+    ),
+
+  /** Admin: mark pages as reviewed (their current version becomes the baseline). */
+  acceptSources: (body: { slugs?: string[]; all?: boolean }) =>
+    fetch(`${BASE}/admin/sources/accept`, {
+      method: "POST",
+      headers: { "content-type": JSON_TYPE },
+      body: JSON.stringify(body),
+    }).then((r) => json<{ accepted: string[] }>(r)),
+
   /** Frequently asked questions. Needs no session. */
   faq: (signal?: AbortSignal) => fetch(`${BASE}/faq`, { signal }).then((r) => json<Faq>(r)),
 
