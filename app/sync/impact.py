@@ -20,11 +20,10 @@ def impact_of(config: SyncConfig, manifest: Manifest, kb_dir: Path, slugs: list[
     """Guides touched by these pages, and the FAQ answers, step texts and requirement rows that rest on those guides."""
     guides = sorted({g for slug in slugs for g in config.guides_for_page(slug)})
     platforms = sorted({g.split("/")[0] for g in guides if not g.startswith("_shared/")})
-    faq = [
-        item.id
-        for item in load_faq(kb_dir).items
-        if any(e.file in guides for e in item.evidence)
-    ]
+    try:
+        faq = [item.id for item in load_faq(kb_dir).items if any(e.file in guides for e in item.evidence)]
+    except Exception:  # noqa: BLE001  # a report must not fail because the FAQ file is missing or being edited
+        faq = []
     return {
         "guides": guides,
         "platforms": platforms,

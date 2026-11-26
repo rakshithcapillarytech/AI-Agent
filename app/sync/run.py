@@ -100,7 +100,8 @@ def run_sync(config: SyncConfig, store: SnapshotStore, fetcher: Fetcher, now: da
             result.removed.append(slug)
         elif slug in seen and record.removed:
             record.removed = False
-    manifest.synced_at = started
+    if result.added or result.changed or result.removed or manifest.synced_at is None:
+        manifest.synced_at = started  # the snapshot's own date moves only when its content does, so git stays quiet
     store.save(manifest)
     result.finished_at = datetime.now(UTC)
     store.write_json("last-run.json", result.model_dump(mode="json"))

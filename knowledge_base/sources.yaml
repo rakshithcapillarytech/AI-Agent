@@ -26,6 +26,15 @@ fetch:
   max_retries: 4
   user_agent: "capillary-hydra-copilot-docs-sync/1.0 (documentation mirror for integration guides)"
 
+# What `python -m app.sync update` may change by itself: a value that is only a version-like number (it must contain a digit)
+# and that moved in place on the page, where the page's whole change is nothing but such values. Everything else is left to
+# a person. Paths are relative to the repository root; anchors.yaml is edited per fact, not by search and replace.
+auto_update:
+  roots: [knowledge_base, evals]
+  extensions: [.md, .yaml]
+  exclude: [knowledge_base/source, knowledge_base/audits, knowledge_base/CHANGELOG.md, knowledge_base/REVIEW.md, knowledge_base/README.md, knowledge_base/anchors.yaml, evals/results]
+  min_value_length: 3
+
 # Guide file -> the pages (slugs) it is built from. A change to any of these pages makes the guide "needs review".
 # The reviewers' audit of 2026-11-26 (knowledge_base/audits/) produced these lists.
 guides:

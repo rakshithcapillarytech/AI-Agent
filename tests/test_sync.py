@@ -1,4 +1,5 @@
 import json
+import re
 import shutil
 from datetime import UTC, datetime
 
@@ -422,14 +423,15 @@ def test_admin_lists_changes_with_diffs_and_accepts_them(client, monkeypatch):
     original = store.read_page(slug)
     (store.reviewed_dir).mkdir(parents=True, exist_ok=True)
     (store.reviewed_dir / f"{slug}.md").write_text(original, encoding="utf-8")
-    changed = original.replace("1.10.6", "1.10.7", 1)
+    version = re.search(r"\d+\.\d+\.\d+", original).group(0)  # whatever version the page states
+    changed = original.replace(version, "9.9.9", 1)
     store.page_path(slug).write_text(changed, encoding="utf-8")
     manifest.pages[slug].sha256 = "f" * 64
     store.save(manifest)
 
     data = http.get("/admin/sources").json()
     assert [p["slug"] for p in data["changed"]] == [slug]
-    assert any(line.startswith("+") and "1.10.7" in line for line in data["changed"][0]["diff"])
+    assert any(line.startswith("+") and "9.9.9" in line for line in data["changed"][0]["diff"])
     assert "android/direct.md" in data["changed"][0]["guides"]
     assert http.get("/sources/status").json()["pages_to_review"] == 1
 

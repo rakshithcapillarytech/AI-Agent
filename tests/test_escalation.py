@@ -10,7 +10,13 @@ from langgraph.checkpoint.memory import InMemorySaver
 from app.api import main
 from app.escalation.store import InMemoryEscalationStore
 from app.graph.builder import build_graph
-from app.tools.troubleshoot import MAX_ATTEMPTS, escalate_to_human, log_fix_attempt, report_doc_gap, resolve_issue
+from app.tools.troubleshoot import (
+    MAX_ATTEMPTS,
+    escalate_to_human,
+    log_fix_attempt,
+    report_doc_gap,
+    resolve_issue,
+)
 from tests.test_graph_smoke import ScriptedModel
 
 

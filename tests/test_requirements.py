@@ -2,6 +2,7 @@ import asyncio
 from itertools import product
 from pathlib import Path
 
+import frontmatter
 from fastapi.testclient import TestClient
 
 from app.api.main import app, prerequisites
@@ -85,7 +86,7 @@ def test_titles_have_no_unfilled_placeholders():
 def test_versions_come_from_the_guides():
     android = build_prerequisites(KB, "android", "direct", [])
     values = {r["label"]: r["value"] for r in android["versions"]}
-    assert values["Hydra SDK version"].startswith("1.10.6")
+    assert values["Hydra SDK version"].startswith(str(frontmatter.load(KB / "android" / "direct.md").metadata["sdk_version"]))
     assert values["Minimum Android version (minSdk)"] == "21 or above"
     # mode-specific items
     assert "Gradle settings" in values

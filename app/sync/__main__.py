@@ -7,6 +7,9 @@
     uv run python -m app.sync accept --all     mark pages as reviewed (after updating the guides)
     uv run python -m app.sync accept SLUG...   mark some pages as reviewed
     uv run python -m app.sync draft            AI-drafted suggestions for the changed pages (needs an API key)
+    uv run python -m app.sync propose          fetch, then prepare the update on git branches (nothing reaches your branch)
+    uv run python -m app.sync update           propose, and merge it when the checks pass: values update by themselves,
+                                               other changes stay flagged for a person
 """
 
 import argparse
@@ -33,6 +36,10 @@ def main(argv: list[str] | None = None) -> int:
     accept.add_argument("slugs", nargs="*")
     accept.add_argument("--all", action="store_true")
     sub.add_parser("draft")
+    for name in ("propose", "update"):
+        p = sub.add_parser(name)
+        p.add_argument("--no-fetch", action="store_true", help="use the snapshot as it is")
+        p.add_argument("--draft", action="store_true", help="also write AI-drafted suggestions for changes a person must handle")
     args = parser.parse_args(argv)
 
     kb = get_settings().knowledge_base_dir
@@ -89,6 +96,33 @@ def main(argv: list[str] | None = None) -> int:
         write_report(kb)
         print(f"marked {len(done)} pages as reviewed")
         return 0
+
+    if args.command in ("propose", "update"):
+        from app.sync.propose import ProposalError, propose
+
+        drafter = None
+        if args.draft:
+            from app.llm import helper_model
+            from app.sync.draft import draft_proposals
+
+            drafter = lambda kb_dir: draft_proposals(kb_dir, helper_model())
+        try:
+            result = propose(kb.parent, kb, fetch=not args.no_fetch, merge=args.command == "update", drafter=drafter)
+        except ProposalError as error:
+            print(f"couldn't prepare the update: {error}")
+            return 3
+        print(f"{result.status}: {result.detail}".rstrip(": "))
+        for item in result.applied:
+            print(f"  updated {item['slug']}: {', '.join(item['values'])}")
+        for edit in result.edits:
+            print(f"  edited {edit.path} ({edit.replacements})")
+        for check in result.gate:
+            print(f"  check {'ok' if check.ok else 'FAILED'}: {check.name}")
+        for slug, why in result.needs_person.items():
+            print(f"  needs a person: {slug} ({why})")
+        if result.branch:
+            print(f"  branch: {result.branch}")
+        return 0 if result.status in ("nothing", "merged", "ready") else 1
 
     if args.command == "draft":
         from app.llm import helper_model

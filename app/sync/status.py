@@ -1,10 +1,22 @@
 """What the app can say about how fresh its knowledge is. Everything here is read-only and never raises."""
 
+from datetime import datetime
 from pathlib import Path
 
 from app.sync.anchors import check_anchors, failing
 from app.sync.impact import changed_pages, pages_by_guide, store_for, unmapped_pages
 from app.sync.models import SOURCES_FILE, load_config
+
+
+def last_checked(store, manifest) -> datetime | None:
+    """When the online docs were last read successfully: the last run's end, else the snapshot's own date."""
+    last = store.read_json("last-run.json") or {}
+    if last.get("index_ok") and last.get("finished_at"):
+        try:
+            return datetime.fromisoformat(last["finished_at"])
+        except ValueError:
+            pass
+    return manifest.synced_at
 
 
 def sync_status(kb_dir: Path) -> dict:
@@ -24,7 +36,8 @@ def sync_status(kb_dir: Path) -> dict:
             "synced": True,
             "source": config.source,
             "base_url": config.base_url,
-            "synced_at": manifest.synced_at.isoformat() if manifest.synced_at else None,
+            "synced_at": (checked.isoformat() if (checked := last_checked(store, manifest)) else None),
+            "snapshot_at": manifest.synced_at.isoformat() if manifest.synced_at else None,
             "pages": len([p for p in manifest.pages.values() if not p.removed]),
             "changed": [
                 {
@@ -67,11 +80,13 @@ def source_notice(kb_dir: Path, guide_files: list[str]) -> list[str]:
         if not (kb_dir / SOURCES_FILE).is_file():
             return []
         config = load_config(kb_dir)
-        manifest = store_for(config, kb_dir).load()
-        if not manifest.pages or not manifest.synced_at:
+        store = store_for(config, kb_dir)
+        manifest = store.load()
+        checked = last_checked(store, manifest)
+        if not manifest.pages or not checked:
             return []
         stale = sorted({s for g in guide_files for s in pages_by_guide(config, manifest, g)})
-        lines = [f"Checked against Capillary's online developer docs on {manifest.synced_at.date().isoformat()}."]
+        lines = [f"Checked against Capillary's online developer docs on {checked.date().isoformat()}."]
         if stale:
             names = ", ".join(f"`{s}`" for s in stale)
             lines.append(

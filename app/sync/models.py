@@ -22,6 +22,25 @@ class FetchConfig(BaseModel):
     user_agent: str = "capillary-hydra-copilot-docs-sync/1.0"
 
 
+class AutoUpdateConfig(BaseModel):
+    """What an automatic value update may touch. Paths are relative to the repository root."""
+
+    roots: list[str] = Field(default_factory=lambda: ["knowledge_base", "evals"])
+    extensions: list[str] = Field(default_factory=lambda: [".md", ".yaml"])
+    exclude: list[str] = Field(
+        default_factory=lambda: [
+            "knowledge_base/source",
+            "knowledge_base/audits",
+            "knowledge_base/CHANGELOG.md",
+            "knowledge_base/REVIEW.md",
+            "knowledge_base/README.md",
+            "knowledge_base/anchors.yaml",
+            "evals/results",
+        ]
+    )
+    min_value_length: int = 3
+
+
 class SyncConfig(BaseModel):
     source: str
     base_url: str
@@ -29,6 +48,7 @@ class SyncConfig(BaseModel):
     root_title: str
     follow: FollowConfig = Field(default_factory=FollowConfig)
     fetch: FetchConfig = Field(default_factory=FetchConfig)
+    auto_update: AutoUpdateConfig = Field(default_factory=AutoUpdateConfig)
     guides: dict[str, list[str]] = Field(default_factory=dict)
 
     def pages_for_guide(self, guide: str) -> list[str]:

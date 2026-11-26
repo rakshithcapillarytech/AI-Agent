@@ -35,6 +35,12 @@ def profile(platform="react-native", mode="firebase", modules=("core", "push", "
     )
 
 
+def android_version() -> str:
+    import frontmatter
+
+    return str(frontmatter.load(KB / "android" / "firebase.md").metadata["sdk_version"])
+
+
 def headings(markdown: str) -> list[str]:
     out, in_fence = [], False
     for line in markdown.splitlines():
@@ -77,7 +83,7 @@ def test_only_the_chosen_features_are_included():
 
 def test_corrections_and_gaps_are_kept():
     md = build_steps_markdown(profile("android", "firebase", ["core", "gamification"]), KB, full=True)
-    assert "⚠️ Correction" in md and "1.10.6" in md
+    assert "⚠️ Correction" in md and f"`{android_version()}`" in md  # the current version, whatever it is
     assert "⚠️ Gap" in md
     page = build_steps_html(profile("android", "firebase", ["core", "gamification"]), KB, full=True)
     assert 'class="callout gap"' in page and 'class="callout correction"' in page

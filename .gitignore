@@ -11,3 +11,6 @@ github.properties
 *.p8
 evals/results/
 Official docs/
+
+# operational file written by every sync run
+knowledge_base/source/*/last-run.json
