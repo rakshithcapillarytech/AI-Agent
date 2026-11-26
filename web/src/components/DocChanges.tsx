@@ -7,6 +7,12 @@ import { ui } from "./controls";
 
 const when = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleString() : "never");
 
+/** "20261203-101500" (how the update names its branch) as a readable date. */
+const stamp = (value: string) => {
+  const m = /^(\d{4})(\d{2})(\d{2})/.exec(value);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : value;
+};
+
 /**
  * Capillary's online docs against our guides: pages that changed after a person last reviewed them (with the diff),
  * key facts that no longer match, and a button to fetch the docs now. Mark pages reviewed once the guides are updated.
@@ -61,7 +67,7 @@ export function DocChanges({ data, onChange }: { data: SourcesAdmin | null; onCh
       {message && <p className={styles.note}>{message}</p>}
       {data.last_proposal && (
         <p className={styles.meta}>
-          Last automatic update ({data.last_proposal.created_at.slice(0, 8)}): {data.last_proposal.status}.
+          Last automatic update ({stamp(data.last_proposal.created_at)}): {data.last_proposal.status}.
           {data.last_proposal.applied.length > 0 &&
             ` Updated by itself: ${[...new Set(data.last_proposal.applied.flatMap((a) => a.values))].join(", ")}.`}
           {Object.keys(data.last_proposal.needs_person).length > 0 &&
