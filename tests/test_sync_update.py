@@ -24,6 +24,7 @@ INDEX = """# Docs
 - [SDKs](https://docs.example.test/docs/sdks.md)
   - [Android SDK](https://docs.example.test/docs/android-sdk.md)
     - [Install SDK](https://docs.example.test/docs/installing-sdk.md)
+    - [Extra](https://docs.example.test/docs/extra.md)
   - [Web SDK](https://docs.example.test/docs/web-sdk.md)
     - [Web start](https://docs.example.test/docs/web-start.md)
 """
@@ -52,12 +53,13 @@ PAGES = {
     "installing-sdk": page("Add `com.example:hydra-core:1.0.0` to Gradle.\nVersion: 1.0.0 (not 11.0.0 or 1.0.01)"),
     "web-sdk": page("Web"),
     "web-start": page("**SDK version:** `1.0.0`"),
+    "extra": page("This page also says 1.0.0 but no key fact is anchored to it."),
 }
 CONFIG = {
     "source": "docs",
     "base_url": BASE,
     "root_title": "SDKs",
-    "guides": {"android/direct.md": ["installing-sdk"], "web/direct.md": ["web-start"]},
+    "guides": {"android/direct.md": ["installing-sdk", "extra"], "web/direct.md": ["web-start"]},
     "auto_update": {"roots": ["kb", "evals"], "exclude": ["kb/source", "kb/anchors.yaml", "evals/results"]},
 }
 
@@ -170,6 +172,22 @@ def test_a_value_that_only_one_platform_changed_is_not_applied_to_the_other(tmp_
     assert "com.example:hydra-core:2.0.0" in anchors and "`1.0.0`" in anchors  # only the changed fact moved
 
 
+def test_a_page_without_its_own_key_fact_rides_on_a_value_found_elsewhere(tmp_path):
+    repo, kb = make_repo(tmp_path)
+    site = Site(PAGES)
+    config, store = baseline(kb, site)
+    all_bumped(site)
+    site.pages["extra"] = page("This page also says 2.0.0 but no key fact is anchored to it.", "2026-12-01")
+    run_sync(config, store, site)
+    plan = plan_changes(kb, config, store, store.load())
+    assert sorted(c.slug for c in plan.eligible) == ["extra", "installing-sdk", "web-start"] and plan.needs_person == {}
+    # the same, but this page also changed in another way: it must wait for a person
+    site.pages["extra"] = page("This page also says 2.0.0 and gained a new rule.", "2026-12-02")
+    run_sync(config, store, site)
+    plan = plan_changes(kb, config, store, store.load())
+    assert list(plan.needs_person) == ["extra"] and sorted(c.slug for c in plan.eligible) == ["installing-sdk", "web-start"]
+
+
 def test_other_changes_on_the_page_keep_it_for_a_person(tmp_path):
     repo, kb = make_repo(tmp_path)
     site = Site(PAGES)
@@ -223,6 +241,20 @@ def test_update_merges_a_value_bump_that_passes_the_checks(repo_with_baseline):
     assert changed_pages(store_for(load_config(kb), kb).load()) == []  # reviewed: nothing left to look at
     assert sync_status(kb)["changed"] == [] and (kb / "source" / "docs" / "last-proposal.json").is_file()
     assert "update values in the guides" in git(repo, "log", "--format=%s")
+
+
+def test_the_checks_see_the_final_state_with_the_pages_already_reviewed(repo_with_baseline):
+    repo, kb, site = repo_with_baseline
+    all_bumped(site)
+    seen = {}
+
+    def spy(root):
+        seen["flagged"] = [c["slug"] for c in sync_status(kb)["changed"]]
+        seen["guide"] = (kb / "android" / "direct.md").read_text()
+        return [GateResult("tests", True, "")]
+
+    propose(repo, kb, merge=False, gate_fn=spy, fetcher=site)
+    assert seen["flagged"] == [] and "sdk_version: 2.0.0" in seen["guide"]  # what clients would get after the merge
 
 
 def test_a_failing_check_keeps_the_guides_as_they_were_and_flags_the_pages(repo_with_baseline):

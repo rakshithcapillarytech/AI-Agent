@@ -46,25 +46,35 @@ class FileEdit:
 def plan_changes(kb_dir: Path, config: SyncConfig, store: SnapshotStore, manifest: Manifest) -> Plan:
     plan = Plan()
     anchors = load_anchors(kb_dir)
+    minimum = config.auto_update.min_value_length
+    pages: dict[str, tuple[str, str]] = {}
+    own: dict[str, tuple[list[Substitution], list[str]]] = {}
     for slug in changed_pages(manifest):
         old, new = store.read_reviewed(slug), store.read_page(slug)
         if old is None or new is None:
             plan.needs_person[slug] = "no reviewed copy was kept to compare with"
             continue
+        pages[slug] = (old, new)
         subs: list[Substitution] = []
         ids: list[str] = []
         for anchor in (a for a in anchors if a.page == slug):
             sub = derive(old, new, anchor.text)
-            if sub and qualifies(sub, config.auto_update.min_value_length):
+            if sub and qualifies(sub, minimum):
                 ids.append(anchor.id)
                 if sub not in subs:
                     subs.append(sub)
-        if not subs:
+        own[slug] = (subs, ids)
+    # a value found on one page (say a new SDK version) also explains pages that mention it without an anchored fact
+    known = [s for subs, _ in own.values() for s in subs]
+    known = list(dict.fromkeys(known))
+    for slug, (old, new) in pages.items():
+        subs, ids = own[slug]
+        shared = [s for s in known if count_matches(old, s)]
+        chosen = next((c for c in (subs, shared) if c and explained(old, new, c)), None)
+        if chosen is None:
             plan.needs_person[slug] = "no key fact simply moved to a new version-like value (or the page changed in other ways)"
-        elif not explained(old, new, subs):
-            plan.needs_person[slug] = "the page changed in other ways too"
         else:
-            plan.eligible.append(PageChange(slug, subs, ids, config.guides_for_page(slug)))
+            plan.eligible.append(PageChange(slug, chosen, ids, config.guides_for_page(slug)))
     return plan
 
 
@@ -103,13 +113,13 @@ def _edit_anchors(kb_dir: Path, plan: Plan) -> int:
     path = kb_dir / "anchors.yaml"
     if not path.is_file():
         return 0
-    by_id = {i: c for c in plan.eligible for i in c.anchor_ids}
+    by_page = {c.slug: c.subs for c in plan.eligible}
     parts = re.split(r"(?m)^(?=\s*- id: )", path.read_text(encoding="utf-8"))
     changed = 0
     for n, block in enumerate(parts):
-        match = re.match(r"\s*- id: (\S+)", block)
-        if match and match.group(1) in by_id:
-            new = apply_text(block, by_id[match.group(1)].subs)
+        page = re.search(r"(?m)^\s*page: (\S+)", block)
+        if re.match(r"\s*- id: ", block) and page and page.group(1) in by_page:
+            new = apply_text(block, by_page[page.group(1)])
             changed += new != block
             parts[n] = new
     path.write_text("".join(parts), encoding="utf-8")

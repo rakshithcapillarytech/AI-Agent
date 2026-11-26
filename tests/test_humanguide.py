@@ -94,7 +94,8 @@ def test_the_checklist_is_personalised():
     assert "Get access to the Android SDK repository" in md
     assert "iOS repository" not in md
     assert "Set the CRM Account Linking Identifier to Email address" in md
-    assert "gamification" not in md.split("## Placeholders")[0].lower().replace("gamification write key", "")
+    checklist = md.split("## Before you start")[1].split("## Placeholders")[0].lower()
+    assert "gamification" not in checklist.replace("gamification write key", "")  # core only: no gamification items
 
 
 def test_the_page_is_self_contained_and_printable():

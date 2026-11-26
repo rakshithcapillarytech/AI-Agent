@@ -104,16 +104,17 @@ def propose(
             values_branch = f"{branch}-values"
             _git(repo_root, "checkout", "-q", "-b", values_branch)
             proposal.edits = apply_plan(repo_root, kb_dir, config, plan)
-            proposal.gate = gate_fn(repo_root)
             proposal.applied = [
                 {"slug": c.slug, "values": [f"{s.old} -> {s.new}" for s in c.subs], "facts": c.anchor_ids} for c in plan.eligible
             ]
-            summary = "; ".join(v for a in proposal.applied for v in a["values"])
+            summary = "; ".join(dict.fromkeys(v for a in proposal.applied for v in a["values"]))
+            # the final state: the pages count as reviewed, so the checks see what clients would get after the merge
+            manifest = store.load()
+            store.accept(manifest, [c.slug for c in plan.eligible])
+            store.save(manifest)
+            write_report(kb_dir)
+            proposal.gate = gate_fn(repo_root)
             if passed(proposal.gate):
-                manifest = store.load()
-                store.accept(manifest, [c.slug for c in plan.eligible])
-                store.save(manifest)
-                write_report(kb_dir)
                 _commit(repo_root, f"Docs sync: update values in the guides ({summary})")
                 target = values_branch
             else:
