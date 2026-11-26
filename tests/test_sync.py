@@ -238,6 +238,17 @@ def test_pages_that_disappear_are_flagged_not_deleted(store):
     assert not manifest.pages["web-sdk"].changed_since_review
 
 
+def test_a_deleted_page_that_is_still_linked_is_marked_removed_not_failed(store):
+    site = FakeSite({**PAGES, "sdks": page("SDKs", "See [web](/docs/web-sdk) and [in-app](/docs/in-app-messaging).")})
+    run_sync(config(), store, site)
+    site.index = INDEX.replace("  - [Web SDK](https://docs.example.test/docs/web-sdk.md)\n", "")
+    del site.pages["web-sdk"]
+    del site.pages["in-app-messaging"]  # a hidden page that is deleted too
+    result = run_sync(config(), store, site)
+    assert sorted(result.removed) == ["in-app-messaging", "web-sdk"] and result.failed == {}, (result.removed, result.failed)
+    assert result.ok and store.load().pages["web-sdk"].removed
+
+
 def test_following_links_is_capped(store):
     links = " ".join(f"[x](/docs/in-app-{i})" for i in range(10))
     site = FakeSite({**PAGES, "sdks": page("SDKs", links), **{f"in-app-{i}": page(f"I{i}") for i in range(10)}})

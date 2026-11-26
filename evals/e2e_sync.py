@@ -299,6 +299,7 @@ def s6_pages_added_and_removed(work: Path, server: DocsServer, quick: bool) -> S
     server.index = "\n".join(line for line in server.index.splitlines() if f"/{dropped}.md" not in line) + "\n"
     new_line = "    - [A brand new feature](https://docs.capillarytech.com/docs/android-brand-new-feature.md)\n"
     server.index = server.index.replace("  - [iOS SDK]", new_line + "  - [iOS SDK]", 1)
+    del server.pages[dropped]  # gone for real: other pages still link to it, so the link now leads nowhere
     server.pages["android-brand-new-feature"] = "---\nupdatedAt: 2026-12-03T10:00:00.000Z\n---\n\n# A brand new feature\n\nUse `hydra.newFeature()`.\n"
     result = run_and_report(clone / "knowledge_base")
     s.check("the sync sees one new and one removed page", result.added == ["android-brand-new-feature"] and result.removed == [dropped], f"added={result.added} removed={result.removed}")

@@ -41,6 +41,7 @@ def run_sync(config: SyncConfig, store: SnapshotStore, fetcher: Fetcher, now: da
     in_index = all_slugs(index.text)
     queue: list[tuple[str, str, str | None, str]] = [(e.slug, e.title, e.parent, "index") for e in entries]
     seen: set[str] = set()
+    mirrored: set[str] = set()  # fetched successfully this run
     queued: set[str] = {e.slug for e in entries}
     extra = 0
     while queue:
@@ -54,10 +55,13 @@ def run_sync(config: SyncConfig, store: SnapshotStore, fetcher: Fetcher, now: da
         except FetchError as error:
             result.failed[slug] = str(error)
             continue
+        if page.status == 404 and found_via != "index":
+            continue  # a dead link to a page that is gone: nothing to mirror (if we had it, it is marked removed below)
         if page.status != 200 or not page.text.lstrip().startswith("---"):
             result.failed[slug] = f"HTTP {page.status}" if page.status != 200 else "not a Markdown page"
             continue
         result.fetched += 1
+        mirrored.add(slug)
         digest = sha256(page.text)
         previous = manifest.pages.get(slug)
         record = PageRecord(
@@ -96,10 +100,10 @@ def run_sync(config: SyncConfig, store: SnapshotStore, fetcher: Fetcher, now: da
                 result.followed.append(linked)
 
     for slug, record in manifest.pages.items():
-        if slug not in seen and not record.removed:
+        if slug not in mirrored and slug not in result.failed and not record.removed:
             record.removed = True
             result.removed.append(slug)
-        elif slug in seen and record.removed:
+        elif slug in mirrored and record.removed:
             record.removed = False
     if result.added or result.changed or result.removed or manifest.synced_at is None:
         manifest.synced_at = started  # the snapshot's own date moves only when its content does, so git stays quiet
