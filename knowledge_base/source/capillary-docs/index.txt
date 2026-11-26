@@ -1,0 +1,55 @@
+- [SDKs](https://docs.capillarytech.com/docs/sdks.md)
+  - [Android SDK](https://docs.capillarytech.com/docs/android-sdk.md)
+    - [Getting Started](https://docs.capillarytech.com/docs/android-sdk-getting-started.md): This guide provides an overview about Capillary's Android SDK.
+    - [Configure Firebase](https://docs.capillarytech.com/docs/configure-firebase.md): This section helps you with information on configurations that you need to do on Firebase.
+    - [Configure Source Account](https://docs.capillarytech.com/docs/set-up-source-account.md): This section provides you with information on how to set up a source account and set the connection between SDK and the org.
+    - [Configure Gateway](https://docs.capillarytech.com/docs/configure-gateway.md)
+    - [Install SDK](https://docs.capillarytech.com/docs/installing-sdk.md): This section provides information on how to install SDK.
+    - [Initialise SDK](https://docs.capillarytech.com/docs/sdk-initialisation.md): This section provides information on initialisation of the SDK.
+    - [Configure Push Notifications](https://docs.capillarytech.com/docs/push-notification.md): This page provides you with information on push notifications and how to configure it.
+    - [Configure Notification Center](https://docs.capillarytech.com/docs/configure-notification-center.md): This page provides information about notification center and how to configure it.
+    - [Configure Gamification (Experience+)](https://docs.capillarytech.com/docs/gamification-android.md): Add Capillary's Experience+ gamification campaigns and views to your Android app.
+    - [API Reference for Event Tracking and User Lifecycle Management](https://docs.capillarytech.com/docs/android-sdk-api-reference.md)
+    - [Xiaomi push notification (Push Amplification)](https://docs.capillarytech.com/docs/xiaomi-push-notification.md): This page provides you with information on configuring push notifications on Chinese OEM devices.
+  - [iOS SDK](https://docs.capillarytech.com/docs/ios-sdk.md)
+    - [Getting Started](https://docs.capillarytech.com/docs/ios-sdk-getting-started.md): This guide provides information on how to integrate your mobile apps with Capillary iOS SDK.
+    - [Configure Source Account](https://docs.capillarytech.com/docs/set-up-source-account-ios.md)
+    - [Configure gateway](https://docs.capillarytech.com/docs/configure-gateway-ios.md)
+    - [Install SDK](https://docs.capillarytech.com/docs/install-sdk.md): This guide provides information on how to integrate your mobile apps with Capillary's iOS SDK.
+    - [Initialise SDK](https://docs.capillarytech.com/docs/initialise-ios-sdk.md): This section provides information on initialisation of the iOS SDK.
+    - [Core Features](https://docs.capillarytech.com/docs/core-features.md)
+    - [Configure Push Notifications](https://docs.capillarytech.com/docs/configure-push-notifications.md): This page provides you with information on push notifications and how to configure it.
+    - [Configure Rich Push Notifications](https://docs.capillarytech.com/docs/rich-push-notifications.md)
+    - [Configure Notification Inbox](https://docs.capillarytech.com/docs/configure-notification-center_ios.md): This page provides information about notification inbox and how to configure it.
+    - [Configure Gamification (Experience+)](https://docs.capillarytech.com/docs/gamification-ios.md): Add Capillary's Experience+ gamification campaigns and views to your iOS app.
+    - [API Reference for Event Tracking and User Lifecycle Management](https://docs.capillarytech.com/docs/ios-sdk-api-reference.md)
+  - [React Native SDK](https://docs.capillarytech.com/docs/setting-up-react-native-project-for-hydra-sdk.md): This document describes how to set up the React Native wrapper bridge using Hydra Native SDKs.
+    - [Getting Started](https://docs.capillarytech.com/docs/react-native-sdk-getting-started.md)
+    - [Install React Native SDK](https://docs.capillarytech.com/docs/react-native-sdk-install.md)
+    - [Advanced Setup](https://docs.capillarytech.com/docs/react-native-sdk-advanced-setup.md): Use custom initialisers, run Hydra without Firebase, or connect one app to more than one Hydra account.
+    - [React Native Setup Overview](https://docs.capillarytech.com/docs/react-native-sdk-setup-overview.md)
+    - [Configure Push Notifications](https://docs.capillarytech.com/docs/react-native-sdk-push-notifications.md)
+    - [Configure Notification Center](https://docs.capillarytech.com/docs/react-native-sdk-notification-center.md): This document outlines the steps to integrate Notification Center into your React Native project using the Hydra SDK. Follow the instructions below to enable and configure Notification Center for…
+    - [Configure Gamification (Experience+)](https://docs.capillarytech.com/docs/gamification-react-native.md): Show gamification campaigns and views in your React Native app.
+    - [Anonymous/Visitor Flow](https://docs.capillarytech.com/docs/react-native-sdk-anonymous-visitor-flow.md): Track anonymous visitors and identify them later with the Hydra class in your React Native app.
+    - [API Reference for Event Tracking, Notifications, and User Lifecycle](https://docs.capillarytech.com/docs/react-native-sdk-api-reference.md)
+  - [Flutter SDK](https://docs.capillarytech.com/docs/flutter-sdk.md)
+    - [Getting Started](https://docs.capillarytech.com/docs/flutter-sdk-getting-started.md)
+    - [Install Flutter SDK](https://docs.capillarytech.com/docs/flutter-sdk-install.md)
+    - [Advanced Platform Setup](https://docs.capillarytech.com/docs/flutter-sdk-advanced-setup.md)
+    - [Flutter Setup Overview](https://docs.capillarytech.com/docs/flutter-setup-overview.md)
+    - [Configure Push Notifications](https://docs.capillarytech.com/docs/flutter-sdk-push-notifications.md)
+    - [Configure Notification Center](https://docs.capillarytech.com/docs/configuring-notification-center.md)
+    - [Configure Gamification (Experience+)](https://docs.capillarytech.com/docs/gamification-flutter.md): Add Capillary's Experience+ gamification campaigns and views to your Flutter app.
+    - [API Reference for Event Tracking, Notifications, and User Lifecycle](https://docs.capillarytech.com/docs/flutter-sdk-api-reference.md)
+  - [Web SDK](https://docs.capillarytech.com/docs/web-sdk.md)
+    - [Getting Started](https://docs.capillarytech.com/docs/web-sdk-getting-started.md): This guide provides an overview about Capillary's Web SDK.
+    - [Prerequisites](https://docs.capillarytech.com/docs/prerequisites.md)
+    - [Install SDK](https://docs.capillarytech.com/docs/web-sdk-install.md): This section provides information on how to install the SDK.
+    - [Initialise SDK](https://docs.capillarytech.com/docs/web-sdk-initialisation.md): This section provides information on initialisation of the SDK.
+    - [Configure Firebase](https://docs.capillarytech.com/docs/configure-firebase-web.md): This section provides information on setting up a Firebase project for the Web SDK.
+    - [Configure Push Notifications](https://docs.capillarytech.com/docs/push-notification-web.md): This page provides you with information on push notifications and how to configure them.
+    - [Configure Gamification (Experience+)](https://docs.capillarytech.com/docs/gamification-web.md): Add Capillary's Experience+ gamification campaigns, entry points, and loyalty embeds to your Web app.
+    - [API Reference for Event Tracking, Notifications, and User Lifecycle](https://docs.capillarytech.com/docs/web-sdk-api-reference.md): Reference for every public method on the Capillary Web SDK.
+    - [AI-Assisted Integration Guide](https://docs.capillarytech.com/docs/web-sdk-ai-integration-guide.md): A copy-paste prompt that lets an AI coding assistant (Cursor, GitHub Copilot, Claude Code, etc.) wire the Capillary Web SDK into your project automatically.
+    - [Validation, Troubleshooting & Rollback](https://docs.capillarytech.com/docs/web-sdk-troubleshooting.md): Validate your Web SDK integration, troubleshoot common issues, and roll back if needed.

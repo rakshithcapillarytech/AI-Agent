@@ -21,7 +21,7 @@ platforms:
       - label: Hydra SDK version
         value: "{sdk_version} or later"
         note: Same version for every module.
-        check: "1.10.6"
+        check: "sdk_version:"
       - label: Minimum Android version (minSdk)
         value: "21 or above"
         check: "minSdk 21"
@@ -51,7 +51,7 @@ platforms:
     versions:
       - label: Hydra SDK version
         value: "{sdk_version} or later"
-        check: "1.10.6"
+        check: "sdk_version:"
       - label: Minimum iOS deployment target
         value: "iOS 15.6"
         check: "iOS 15.6"
@@ -153,7 +153,7 @@ platforms:
     versions:
       - label: Hydra SDK version
         value: "{sdk_version} (stated in the docs; the install is unpinned)"
-        check: "1.10.6"
+        check: "sdk_version:"
       - label: Hydra SDK package
         value: "cap-hydra-web-sdk from npm (latest, or beta for testing)"
         check: "cap-hydra-web-sdk@beta"

@@ -4,7 +4,7 @@ import re
 from datetime import UTC, datetime
 
 from app.sync.client import Fetcher, FetchError
-from app.sync.index import all_slugs, branch, linked_slugs, updated_at
+from app.sync.index import all_slugs, branch, branch_lines, linked_slugs, updated_at
 from app.sync.models import PageRecord, SyncConfig, SyncResult
 from app.sync.store import SnapshotStore, sha256
 
@@ -37,6 +37,7 @@ def run_sync(config: SyncConfig, store: SnapshotStore, fetcher: Fetcher, now: da
         result.finished_at = datetime.now(UTC)
         return result
 
+    store.write_text("index.txt", "\n".join(branch_lines(index.text, config.root_title)) + "\n")  # what the site's index listed
     in_index = all_slugs(index.text)
     queue: list[tuple[str, str, str | None, str]] = [(e.slug, e.title, e.parent, "index") for e in entries]
     seen: set[str] = set()

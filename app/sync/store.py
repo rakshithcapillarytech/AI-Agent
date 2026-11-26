@@ -70,6 +70,14 @@ class SnapshotStore:
             (self.reviewed_dir / f"{slug}.md").unlink(missing_ok=True)
         return done
 
+    def write_text(self, name: str, text: str) -> None:
+        self.root.mkdir(parents=True, exist_ok=True)
+        (self.root / name).write_text(text, encoding="utf-8")
+
+    def read_text(self, name: str) -> str | None:
+        path = self.root / name
+        return path.read_text(encoding="utf-8") if path.is_file() else None
+
     def write_json(self, name: str, data: dict) -> None:
         self.root.mkdir(parents=True, exist_ok=True)
         (self.root / name).write_text(json.dumps(data, indent=1, default=str) + "\n", encoding="utf-8")

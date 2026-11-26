@@ -21,8 +21,7 @@ def slug_of(url: str) -> str:
     return url.rstrip("/").rsplit("/", 1)[-1]
 
 
-def branch(index_text: str, root_title: str) -> list[IndexEntry]:
-    """The pages under the entry titled `root_title`, with their depth and parent. Empty if it isn't there."""
+def _walk(index_text: str, root_title: str) -> list[tuple[str, IndexEntry]]:
     lines = index_text.splitlines()
     start = next(
         (i for i, line in enumerate(lines) if (m := _ENTRY.match(line)) and m["title"] == root_title), None
@@ -30,23 +29,34 @@ def branch(index_text: str, root_title: str) -> list[IndexEntry]:
     if start is None:
         return []
     root_indent = len(_ENTRY.match(lines[start])["indent"])
-    entries: list[IndexEntry] = []
+    found: list[tuple[str, IndexEntry]] = []
     stack: list[tuple[int, str]] = []  # (indent, slug)
     for line in lines[start:]:
         m = _ENTRY.match(line)
         if not m:
-            if line.strip() and entries and not line.startswith(" "):
+            if line.strip() and found and not line.startswith(" "):
                 break  # a new top-level heading ends the branch
             continue
         indent = len(m["indent"])
-        if entries and indent <= root_indent:
+        if found and indent <= root_indent:
             break
         while stack and stack[-1][0] >= indent:
             stack.pop()
         slug = slug_of(m["url"])
-        entries.append(IndexEntry(depth=(indent - root_indent) // 2, title=m["title"], slug=slug, parent=stack[-1][1] if stack else None))
+        entry = IndexEntry(depth=(indent - root_indent) // 2, title=m["title"], slug=slug, parent=stack[-1][1] if stack else None)
+        found.append((line, entry))
         stack.append((indent, slug))
-    return entries
+    return found
+
+
+def branch(index_text: str, root_title: str) -> list[IndexEntry]:
+    """The pages under the entry titled `root_title`, with their depth and parent. Empty if it isn't there."""
+    return [entry for _, entry in _walk(index_text, root_title)]
+
+
+def branch_lines(index_text: str, root_title: str) -> list[str]:
+    """The index's own lines for that branch, as written (kept in the snapshot so changes to the index show in git)."""
+    return [line for line, _ in _walk(index_text, root_title)]
 
 
 def all_slugs(index_text: str) -> set[str]:
