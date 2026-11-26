@@ -401,7 +401,7 @@ def s9_the_running_api(work: Path, server: DocsServer, quick: bool) -> Scenario:
         s.check("the admin tab lists the page with a diff and the guides it feeds", change.get("slug") == "push-notification" and any("requires" in line for line in change.get("diff") or []) and "_shared/push.md" in change.get("guides", []), str(change)[:300])
         code, status = _call("GET", base + "/sources/status")
         s.check("the public status now shows one page to review", status["pages_to_review"] == 1, str(status))
-        code, prereq = _call("GET", base + "/prerequisites?platform=android&mode=firebase")
+        code, _ = _call("GET", base + "/prerequisites?platform=android&mode=firebase")
         s.check("the Prerequisites and FAQ endpoints keep working", code == 200 and _call("GET", base + "/faq")[0] == 200)
         code, _ = _call("POST", base + "/admin/sources/accept", {})
         s.check("accepting with no pages is rejected", code == 422)
