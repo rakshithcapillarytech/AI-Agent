@@ -32,7 +32,7 @@ def test_get_checklist_groups_by_owner_and_lists_what_blocks():
     text = message.content
     assert text.index("The client does or provides") < text.index("Capillary provides")
     assert "android_application_id" in text and "account_id" in text
-    assert "Still needed from the client before integration: android_application_id, android_repo_access" in text
+    assert "Still needed from the client before integration: android_application_id, android_sha256, android_repo_access" in text
 
 
 def test_get_checklist_before_discovery_ends():
@@ -46,7 +46,7 @@ def test_record_status_and_value():
     )
     item = next(p for p in update["prerequisites"] if p["id"] == "android_application_id")
     assert item["status"] == "provided" and item["value"] == "com.demo.retail"
-    assert "before integration: android_repo_access" in message.content
+    assert "before integration: android_sha256, android_repo_access" in message.content
     # The input state isn't mutated.
     assert STATE["prerequisites"][0]["status"] == "pending"
 

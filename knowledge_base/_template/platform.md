@@ -1,7 +1,7 @@
 ---
 platform: android            # flutter | react-native | ios | android | web
 config_mode: direct          # firebase | direct
-sdk_package: com.capillary:hydra-core
+sdk_package: com.capillarytech:hydra-core
 sdk_version: 0.0.0           # code blocks use {{sdk_version}}, so a version bump is this one line
 modules_covered: [core]      # core, push, inapp, inbox_api, inbox_ui, visitor, gamification, multi_account
 modules_missing: []          # documented gaps: the agent escalates instead of guessing

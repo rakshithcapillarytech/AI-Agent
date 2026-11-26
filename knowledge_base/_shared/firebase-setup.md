@@ -1,15 +1,15 @@
 ---
 title: Firebase setup shared by every Firebase-mode platform
-sources: ["Flutter-Hydra-Integration-Guide pp.1–4, p.10 (Prerequisites, Getting Started, hydra-config.json, Push Notification, Anonymous/Visitor Flow)", "Integration document _ Experience+ pp.14–15 (Hydra WEB SDK Integration Runbook: Firebase Project Setup)", "Integration document _ Experience+ gamification key lists: p.3 (React Native), pp.8–9 and p.12 (Web), pp.27–28 and p.36 (iOS), p.39 and p.50 (Android), pp.53–54 and p.58 (Flutter)"]
+sources: ["Capillary developer docs (docs.capillarytech.com): configure-firebase (updated 2026-11-16), push-notification (2026-11-16), configure-push-notifications (2026-11-16)", "Flutter-Hydra-Integration-Guide pp.1–4, p.10 (Prerequisites, Getting Started, hydra-config.json, Push Notification, Anonymous/Visitor Flow)", "Integration document _ Experience+ pp.14–15 (Hydra WEB SDK Integration Runbook: Firebase Project Setup)", "Integration document _ Experience+ gamification key lists: p.3 (React Native), pp.8–9 and p.12 (Web), pp.27–28 and p.36 (iOS), p.39 and p.50 (Android), pp.53–54 and p.58 (Flutter)"]
 owner: TBD
 last_verified: null
 review_status: draft
 ---
 # Firebase setup (Firebase console, all platforms)
 
-Steps done in the **Firebase console**. Everything in the app's code or build files (config-file placement, Gradle, Xcode, service workers, reading Remote Config) is in the platform file. Values come from Capillary (`_shared/prerequisites.md`). Not using Remote Config? Use direct mode (`<platform>/direct.md`); Flutter and Web direct-mode apps that still use Firebase for push need sections 1, 2 and 4.
+Steps done in the **Firebase console**. Everything in the app's code or build files (config-file placement, Gradle, Xcode, service workers, reading Remote Config) is in the platform file. Values come from Capillary (`_shared/prerequisites.md`). Not using Remote Config? Use direct mode (`<platform>/direct.md`). Direct-mode apps that still use Firebase for push (Web, React Native and iOS; Flutter always) need sections 1 and 2, plus 4 for Web push, 6 for iOS push and 7 for Capillary's push setup.
 
-> ⚠️ Gap: Capillary documents the Firebase console steps in detail for Flutter, Web, iOS push (APNs) and the Android service account (below); for the other platform/step combinations the steps are the same Firebase console actions but aren't spelled out in Capillary's docs. Ask a Capillary engineer if unsure.
+> ⚠️ Gap: Capillary documents the Firebase console steps in detail for Flutter, Web, iOS push (APNs) and the service account for Android and iOS push (section 7); for the other platform/step combinations the steps are the same Firebase console actions but aren't spelled out in Capillary's docs. Ask a Capillary engineer if unsure.
 
 ## 1. Create a Firebase project (skip if one exists)
 1. Firebase Console → **Add project** (or **Create a project**).
@@ -76,12 +76,22 @@ Project settings (gear icon) → **Cloud Messaging** tab → **Web configuration
 2. Firebase Console → **Project settings** → **Cloud Messaging** → iOS app configuration → upload the APNs authentication key (or certificate).
 3. Download `GoogleService-Info.plist` for the iOS app and add it to the app target in Xcode.
 
-## 7. Android: service account for Capillary (push)
-Capillary needs a Firebase **service account** to send push through the client's project (`_shared/push.md`):
-1. In the Firebase / Google Cloud project, create a **custom role** with these permissions: `fcmdata.deliverydata.list`, `firebase.clients.get`, `firebase.clients.list`, `firebase.projects.get`, `firebasenotifications.messages.create`, `firebasenotifications.messages.delete`, `firebasenotifications.messages.get`, `firebasenotifications.messages.list`, `firebasenotifications.messages.update`, `iam.serviceAccounts.get`, `cloudmessaging.messages.create`.
-2. Create a service account with that role, named so its purpose is clear.
-3. Generate a new private key of type **JSON**. That file goes to Capillary only through the secure channel its contact names (never chat, email or git).
+## 7. Service account for Capillary (push on Android and iOS)
+Capillary sends push through Firebase Cloud Messaging (FCM) with the FCM HTTP v1 API, using a **service account** in the client's Firebase project (`_shared/push.md`). **Only Capillary's backend needs the service-account private key.** The apps never contain it; they use `google-services.json` (Android) and `GoogleService-Info.plist` (iOS).
+1. Turn on the **Firebase Cloud Messaging API (V1)** for the project.
+2. Create a **dedicated** service account for Capillary. Don't reuse an existing one, and name it so its purpose is clear.
+3. Give it one of these roles: **Firebase Cloud Messaging API Admin** (`roles/firebasecloudmessaging.admin`, which includes `cloudmessaging.messages.create`), or a custom role with only `cloudmessaging.messages.create` for the tightest scope. Don't use the Owner, Editor or Firebase Admin roles.
+4. Generate a new private key of type **JSON**.
+5. Share the key with Capillary by one of the two documented methods, never in chat, email, a ticket or git:
+   - a **one-time link** from an enterprise password manager or secrets vault (for example 1Password or HashiCorp Vault), restricted to the recipient's email address, expiring within 24 to 48 hours, single view;
+   - a **restricted link** from an enterprise file-sharing platform (for example OneDrive or Google Drive), shared only with the recipient's email address, with an expiry date, and access removed after Capillary confirms the setup.
 
-> ⚠️ Gap: Capillary's pages differ on what Capillary needs from Firebase: the service account above (Android configuration page), a Cloud Messaging **server key** (iOS and Android push pages), or the project ID and service-account email (`_shared/push.md`). Ask a Capillary engineer which applies to the client.
+Without the private key Google issues no access token, so every send is rejected with `401 Unauthorized`. Firebase configuration values can't replace the key.
+
+**Gateway.** To enable the mAPP SDK channel and push, the team setting up the Firebase account for the brand raises a ticket with Capillary's gateways team with the details they ask for.
+
+> ⚠️ Gap: an older internal document told clients to create a custom role with 11 permissions (`fcmdata.deliverydata.list`, `firebase.clients.get`, `firebase.clients.list`, `firebase.projects.get`, `firebasenotifications.messages.create`, `firebasenotifications.messages.delete`, `firebasenotifications.messages.get`, `firebasenotifications.messages.list`, `firebasenotifications.messages.update`, `iam.serviceAccounts.get`, `cloudmessaging.messages.create`). The current public page needs only `cloudmessaging.messages.create`. Ask a Capillary engineer whether delivery reports or any other feature still needs the extra permissions.
+
+> ⚠️ Gap: the current Android and iOS push pages both ask for the service-account private key (our earlier notes recorded a Cloud Messaging **server key** on those pages; don't hand one over). The Web push pages say nothing about what Capillary needs from Firebase. Ask a Capillary engineer whether Web push uses the same service account.
 
 > ⚠️ Gap: the 2024 Web checks for **Realtime Database** and **Cloud Messaging** in section 5 are no longer listed in Capillary's current Web docs (only "Remote Config: confirm the parameter is published"). Ask a Capillary engineer whether they're still needed.

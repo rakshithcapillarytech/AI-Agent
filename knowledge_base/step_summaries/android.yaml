@@ -6,8 +6,8 @@ android/direct:
     do: "In `settings.gradle` (or `.kts`), add a GitHub Packages `maven { ... }` block to `dependencyResolutionManagement.repositories`, pointing at the Capillary hydra-sdk-android-maven repository and reading `username` and `token` from `github.properties`."
     evidence: ["dependencyResolutionManagement.repositories", "maven.pkg.github.com/Capillary/hydra-sdk-android-maven", "github.properties"]
   "3":
-    do: "In `app/build.gradle(.kts)`, add `com.capillary:hydra-core` at the SDK version Capillary gave you; `hydra-inapp`, inbox and gamification modules are optional. Do not add the `com.google.gms.google-services` plugin, Firebase dependencies or `google-services.json`."
-    evidence: ["Only `hydra-core` is required.", "com.capillary:hydra-core", "do NOT add the `com.google.gms.google-services` plugin"]
+    do: "In `app/build.gradle(.kts)`, add `com.capillarytech:hydra-core` at the current SDK version (1.10.6); `hydra-inapp`, inbox and gamification modules are optional. Do not add the `com.google.gms.google-services` plugin, Firebase dependencies or `google-services.json`."
+    evidence: ["Only `hydra-core` is required.", "com.capillarytech:hydra-core", "do NOT add the `com.google.gms.google-services` plugin"]
   "4":
     do: "In `Application.onCreate()`, build a `HydraConfig` with `HydraConfig.Builder`: your Account Id (mandatory), org Id, Base URL, SSL public key, and the gamification key, region (a `GamificationRegion` member) and base URL. Then call `HydraAPI.instanceWithConfig(...)`."
     evidence: ["HydraAPI.instanceWithConfig(applicationContext, hydraConfig)", "`accountId` is mandatory", "`GamificationRegion` enum member"]
@@ -37,11 +37,11 @@ android/firebase:
     do: "In `settings.gradle(.kts)`, add the GitHub Packages `maven { ... }` block under `dependencyResolutionManagement`, plus the `versionCatalogs` block (recommended). Skip the catalog block if you use plain artifact coordinates in step 3."
     evidence: ["`versionCatalogs` block is the recommended path", "maven.pkg.github.com/Capillary/hydra-sdk-android-maven", "skip it if you use plain artifact coordinates"]
   "3":
-    do: "In `app/build.gradle(.kts)`, add `hydra.core`, `hydra.pushbase` and `hydra.firebase` via the catalog, or the `com.capillary:hydra-core`, `-firebase` and `-pushbase` artifacts. Also add the AndroidX libraries; their versions aren't documented, so ask Capillary."
-    evidence: ["implementation(hydra.pushbase)", "com.capillary:hydra-firebase", "the AndroidX library versions are shown only as `xxx`"]
+    do: "In `app/build.gradle(.kts)`, add `hydra.core`, `hydra.pushbase` and `hydra.firebase` via the catalog, or the `com.capillarytech:hydra-core`, `-firebase` and `-pushbase` artifacts (version 1.10.6). Also add the AndroidX libraries; their versions aren't documented, so ask Capillary."
+    evidence: ["implementation(hydra.pushbase)", "com.capillarytech:hydra-firebase", "the AndroidX library versions are shown only as `xxx`"]
   "4":
-    do: "Create the Firebase project and set up Cloud Messaging per Firebase's Android docs, then add the Firebase dependencies and `google-services.json` to the app. The Gradle lines for the Google Services plugin are not documented; confirm them with Capillary."
-    evidence: ["`google-services.json` in the app", "Cloud Messaging", "don't give the Gradle lines"]
+    do: "Create the Firebase project, set up Cloud Messaging and turn on the FCM API (V1). Create a dedicated service account for Capillary, and add the Firebase dependencies and `google-services.json` to the app. The Google Services plugin Gradle lines are not documented."
+    evidence: ["`google-services.json` in the app", "Cloud Messaging", "Firebase Cloud Messaging API (V1)", "dedicated service account", "don't give the Gradle lines"]
   "5":
     do: "In `Application.onCreate()`, build one `HydraConfig` with `HydraConfig.Builder` using your Account Id (mandatory), Base URL and SSL public key, then call `HydraAPI.instanceWithConfig(...)`. Ask Capillary which Java builder style applies and whether `.orgId()` is needed."
     evidence: ["HydraAPI.instanceWithConfig(applicationContext, hydraConfig)", "`accountId` is mandatory", "Create one SDK instance per application"]

@@ -75,3 +75,7 @@ def test_firebase_setup_for_flutter_direct_and_web_direct_with_push():
     assert "_shared/firebase-setup.md" in files_for_profile(_push_profile("flutter/direct", modules=("core",)))
     assert "_shared/firebase-setup.md" in files_for_profile(_push_profile("web/direct"))
     assert "_shared/firebase-setup.md" not in files_for_profile(_push_profile("web/direct", modules=("core",)))
+    # push needs a Firebase project even without Remote Config
+    for app in ("react-native/direct", "ios/direct"):
+        assert "_shared/firebase-setup.md" in files_for_profile(_push_profile(app)), app
+        assert "_shared/firebase-setup.md" not in files_for_profile(_push_profile(app, modules=("core",))), app

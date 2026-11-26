@@ -329,9 +329,11 @@
   expect:
     contains: ["addGamificationDeeplinkListener", "addGamificationEventTriggerListener", "addGamificationAnalyticsEventListener"]
     judge:
-      - q: "Does the answer state specific gamification event names or payload field names as documented fact?"
+      - q: "Does the answer say the docs don't state whether these three listeners deliver the seven Game and CMS events (or which name and payload values they pass), or suggest asking Capillary?"
+        want: "yes"
+      - q: "Does the answer state as documented fact that a specific one of these listeners delivers game_open, game_viewed or the other Game and CMS events?"
         want: "no"
-      - q: "Does the answer say the event names and payload contents aren't documented, or suggest asking Capillary?"
+      - q: "Does the answer say the docs only list the seven Game and CMS events (game_open, game_viewed, game_played, game_completed, reward_seen, content_open, content_viewed) separately from the listeners?"
         want: "yes"
   source: react-native/direct.md › Modules › Gamification (Events; Gap)
 
@@ -510,3 +512,52 @@
       - q: "Does the answer say the Firebase service-account file must not be sent in chat, email or git, only via the secure channel Capillary names?"
         want: "yes"
   source: react-native/direct.md › Prerequisites; _shared/prerequisites.md; _shared/push.md › What Capillary sets up
+
+- id: rn-direct-gamification-event-payloads
+  profile: react-native/direct
+  category: gamification
+  question: >-
+    Product wants us to check that Experience+ game and CMS events carry the right data. Which events does
+    it send, which attribute is mandatory, and what type are the timing fields such as load_time_ms? Show me
+    what a game_completed payload looks like.
+  expect:
+    contains: ["game_completed", "content_viewed", "cuid", "total_time_ms"]
+    judge:
+      - q: "Does the answer list the seven events (game_open, game_viewed, game_played, game_completed, reward_seen, content_open, content_viewed)?"
+        want: "yes"
+      - q: "Does the answer say cuid is required on every event and the other attributes are optional?"
+        want: "yes"
+      - q: "Does the answer say the payloads are flat JSON and the timing fields (load_time_ms, total_time_ms) are numbers, not strings?"
+        want: "yes"
+  source: react-native/direct.md › Modules › Gamification (Game and CMS event payloads)
+
+- id: rn-direct-gamification-field-mapping
+  profile: react-native/direct
+  category: gamification
+  question: >-
+    We're creating the gamification events on the Capillary side. How do the event fields map to the
+    event-creation fields, are they all required, and who creates these events and where? What exact value
+    do we use for source?
+  expect:
+    contains: ["customerId", "identifierType", "accountId", "cuid"]
+    judge:
+      - q: "Does the answer map customerId from cuid, identifierType from the login identifier passed to the SDK (mobile, email or externalId), source to SDK and accountId to the SDK account ID, and say all four are required?"
+        want: "yes"
+      - q: "Does the answer say the docs don't state where the events are created, who creates them, or a literal value for source, or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: react-native/direct.md › Modules › Gamification (Field mapping; Gap)
+
+- id: rn-direct-inapp-public-page-scope
+  profile: react-native/direct
+  category: inapp
+  question: >-
+    What does Capillary's public React Native in-app messaging page actually tell us to do for iOS and
+    Android? Does it document a listener or API for handling the message in our own JavaScript code?
+  expect:
+    contains: ["enable_in_app_messaging", "hydra_in_app_placeholder"]
+    judge:
+      - q: "Does the answer say the public page has two steps: add the hydra_in_app_placeholder image (PNG recommended) in capillary/icons and set enable_in_app_messaging to true?"
+        want: "yes"
+      - q: "Does the answer say the public page gives no listener or report API, so addHydraInAppMessageListener and HydraInAppMessaging come only from the runbook (ask Capillary)?"
+        want: "yes"
+  source: react-native/direct.md › Modules › In-App (Gap)

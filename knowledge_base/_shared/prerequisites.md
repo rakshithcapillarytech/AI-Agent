@@ -19,7 +19,7 @@ Exchanged before any code is written. The platform file's **Prerequisites** sect
 
 For Web, Capillary registers the app and sends the values below (`accountId`, `baseURL`, `orgId`, and for gamification `gamificationWriteKey`, `gamificationRegion`, `gamificationBaseUrl` plus the entry-point `hookId`s and loyalty `embedId`s); the Web guides list nothing else the client sends.
 
-> ⚠️ Gap: the native Android guides don't list the app signature as something the client sends, but the KT notes show Capillary registers an **App Signature** for the app and that a mismatch stops the SDK from starting (`Client Credentials Generation Failed … source not found`, 400). Send it for native Android too and confirm with Capillary.
+> ⚠️ Gap: Capillary's source-account page says the app signature is **required only for Android apps**, and the KT notes show that a mismatch stops the SDK from starting (`Client Credentials Generation Failed … source not found`, 400), but the native Android install guides don't list it among what the client sends. Send it for native Android too and confirm with Capillary.
 
 > The Firebase service-account file contains a private key. Send it only through the secure channel the Capillary contact names, never in chat, email or git.
 
@@ -68,13 +68,13 @@ Where the SDKs come from differs by platform, and Capillary's sources disagree i
 | Platform | Source |
 |---|---|
 | Android (native) | Capillary's private Maven repository `https://github.com/Capillary/hydra-sdk-android-maven`, with GitHub credentials (`github.properties`; `android/*.md`) |
-| iOS (native) | `https://github.com/Capillary/hydra-sdk-ios-packages` (Swift Package Manager or CocoaPods; `ios/*.md`) |
+| iOS (native) | `https://github.com/Capillary/hydra-ios-sdk-spm`, a **public** repository: no GitHub account or token (Swift Package Manager, CocoaPods or Xcode; `ios/*.md`) |
 | React Native | npm package `@capillarytech/react-native-hydra-lib` from the public npm registry; the Android SDK (`com.capillarytech:hydra-*`) from Maven Central; iOS through CocoaPods or `https://github.com/Capillary/hydra-ios-sdk-spm.git` (Swift Package Manager) (`react-native/*.md`) |
 | Flutter | pub.dev packages `capillary_hydra` and `capillary_hydra_platform_interface`; the Android SDK from Maven Central, no extra repository or credentials (`flutter/*.md`) |
 
-**Credentials.** Where credentials are needed, Capillary gives the client a GitHub username and a **Personal Access Token (PAT)** for its package-access account; ask your Capillary contact. The PAT **expires**: after that, installs and builds fail with access denied until Capillary issues a new one. Apps already published aren't affected.
+**Credentials.** Where credentials are needed, Capillary gives the client a GitHub username and a **Personal Access Token (PAT)** for its package-access account; ask your Capillary contact. The PAT **expires**: after that, installs and builds fail with access denied until Capillary issues a new one. Apps already published aren't affected. Native iOS needs none: its repository is public.
 
-> ⚠️ Gap: an internal Capillary runbook (June 2026) installs React Native from GitHub Packages (`@capillary/react-native-hydra-lib`, a GitHub token) and Flutter from `https://github.com/Capillary/flutter-hydra-lib`; the public developer docs (November 2026) use the public npm registry and pub.dev with no credentials for those, and the native Android docs still use GitHub credentials. Whether React Native on iOS still needs a GitHub token isn't stated. Use the public docs and ask a Capillary engineer if an install is denied.
+> ⚠️ Gap: an internal Capillary runbook (June 2026) installs React Native from GitHub Packages (`@capillary/react-native-hydra-lib`, a GitHub token) and Flutter from `https://github.com/Capillary/flutter-hydra-lib`; the public developer docs (November 2026) use the public npm registry and pub.dev with no credentials for those, and the native Android docs still use GitHub credentials. Whether React Native on iOS still needs a GitHub token isn't stated. Use the public docs and ask a Capillary engineer if an install is denied. The native Android install page still uses GitHub Packages and a token, while the React Native and Flutter pages say the Android SDK is resolved from Maven Central with no credentials: ask a Capillary engineer whether native Android still needs the token.
 
 ### Older guides: access per platform
 Request access from Capillary's access team.
@@ -82,7 +82,7 @@ Request access from Capillary's access team.
 | Platform | Private repository | Credentials |
 |---|---|---|
 | Android | `https://github.com/Capillary/hydra-sdk-android-maven` | GitHub username + Personal Access Token with `read:packages` scope |
-| iOS | `https://github.com/Capillary/hydra-sdk-ios-packages` | GitHub account added in Xcode, or GitHub username + PAT with access to the repo |
+| iOS (older guides only) | `https://github.com/Capillary/hydra-sdk-ios-packages` (private) | GitHub account added in Xcode, or GitHub username + PAT. The current docs use the public `hydra-ios-sdk-spm` repository with no credentials |
 
 **Tokens stay on the client's machine** (environment variables, a git-ignored `github.properties`, CI secrets). Never share them in chat, email or git.
 

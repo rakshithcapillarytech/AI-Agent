@@ -38,9 +38,9 @@ Which modules are documented for a platform and mode is listed in that file's **
 2. **Source account:** the client's Capillary contact (CSM or project manager) configures the MAPP_SDK source account in Capillary CRM (`_shared/prerequisites.md`).
 3. Then in the app: install the SDK, initialise it, sign users in, then push, in-app, inbox and gamification, as the platform file describes.
 
-Behavioural events must exist in Capillary before the app sends them (*Organisation settings → Master Data Management → Data Model → Behavioural events*), and they only count after a sign-in or sign-up.
+Behavioural events must exist in Capillary before the app sends them (*Organisation settings → Master Data Management → Data Model → Behavioural events*), and they only count after a sign-in or sign-up. For Experience+ game and CMS events (`game_open`, `game_viewed`, `game_played`, `game_completed`, `reward_seen`, `content_open`, `content_viewed`) the docs require four event-creation fields: `customerId` (from `cuid`), `identifierType` (mobile, email or externalId), `source` (SDK) and `accountId` (the SDK account ID). Where, and by whom, the events are created isn't stated.
 
 ## Versions
-UAT / POC uses the beta SDK builds where a platform file names one; most platforms install the latest release.
+The current public docs give SDK version `1.10.6` for Android, iOS and Web (each platform file shows the version it uses); React Native and Flutter install the latest release.
 
-> ⚠️ Gap: production SDK versions aren't documented. Ask a Capillary engineer.
+> ⚠️ Gap: the docs don't say whether `1.10.6` is the production release or whether UAT uses a different build (older internal documents named beta builds for UAT and POC). Ask a Capillary engineer.

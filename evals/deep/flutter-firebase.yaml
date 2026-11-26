@@ -249,7 +249,7 @@
         want: "no"
       - q: "Does the answer say the Gamification Base URL is optional?"
         want: "no"
-      - q: "Does the answer say gamification stays disabled if the key or region is missing?"
+      - q: "Does the answer say all three (key, region and base URL) are required, and gamification stays disabled if one is missing?"
         want: "yes"
   source: flutter/firebase.md › Modules › Gamification (1, Corrections); Known Issues
 
@@ -515,3 +515,69 @@
       - q: "Does the answer say Flutter uses the pub.dev packages capillary_hydra and capillary_hydra_platform_interface?"
         want: "yes"
   source: flutter/firebase.md › Steps › 2; _shared/prerequisites.md › SDK package access
+
+- id: flutter-firebase-gamification-events-mapping
+  profile: flutter/firebase
+  category: events
+  question: >-
+    Our Experience+ team says the Flutter SDK sends game and CMS events and that we need to map
+    fields when creating them in Capillary. Which events are there, what is required in every
+    payload, and which fields do we map?
+  expect:
+    contains: ["game_open", "content_viewed", "cuid", "identifierType", "accountId"]
+    judge:
+      - q: "Does the answer say cuid is required on every event and must be mapped to customerId?"
+        want: "yes"
+      - q: "Does the answer name the four mapped fields customerId, identifierType, source and accountId (all required)?"
+        want: "yes"
+      - q: "Does the answer say payloads are flat JSON with numbers sent as numbers?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Gamification (8)
+
+- id: flutter-firebase-gap-gamification-base-url-missing
+  profile: flutter/firebase
+  category: gap
+  question: >-
+    We published hydra_gamification_key and hydra_gamification_region in Remote Config but not the
+    base URL. What exactly happens to gamification, and do we need the base URL at all?
+  expect:
+    contains: ["hydra_gamification_base_url"]
+    judge:
+      - q: "Does the answer say the docs require all three values (key, region and base URL) for gamification?"
+        want: "yes"
+      - q: "Does the answer state, as fact, the exact runtime behaviour when only the base URL is missing?"
+        want: "no"
+      - q: "Does the answer say that behaviour isn't documented or suggest asking Capillary?"
+        want: "yes"
+  source: flutter/firebase.md › Modules › Gamification (1, Gap)
+
+- id: flutter-firebase-gap-inapp-appdelegate-uiscene
+  profile: flutter/firebase
+  category: gap
+  question: >-
+    Step 9 says no Hydra code is needed in AppDelegate.swift, but the in-app messaging setup tells us
+    to add a didReceiveRemoteNotification override there. We use the UIScene lifecycle. Which is right
+    and where does the override go?
+  expect:
+    contains: ["didReceiveRemoteNotification", "hydra_in_app_placeholder"]
+    judge:
+      - q: "Does the answer explain that the base setup needs no AppDelegate code but the In-App module adds one method?"
+        want: "yes"
+      - q: "Does the answer state definitively where the override goes under the UIScene lifecycle, as fact?"
+        want: "no"
+  source: flutter/firebase.md › Steps › 9; Modules › In-App (Gap)
+
+- id: flutter-firebase-gap-flutter-dart-minimum
+  profile: flutter/firebase
+  category: gap
+  question: >-
+    The docs say Flutter >= 3.3.0 with Dart >= 3.0. We're on Flutter 3.7 and pub get fails. Which
+    minimum Flutter version should we really use?
+  expect:
+    contains: ["3.3.0", "Dart"]
+    judge:
+      - q: "Does the answer point out that Flutter 3.3 bundles Dart 2.x and Dart 3.0 arrived with Flutter 3.10, so the two bounds are inconsistent?"
+        want: "yes"
+      - q: "Does the answer suggest upgrading Flutter and/or asking Capillary (or checking the package's pubspec) for the real minimum rather than stating one as fact?"
+        want: "yes"
+  source: flutter/firebase.md › Requirements (Gap)

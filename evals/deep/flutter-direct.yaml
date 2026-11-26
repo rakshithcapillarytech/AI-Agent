@@ -238,8 +238,10 @@
     judge:
       - q: "Does the answer say the Gamification Base URL is optional?"
         want: "no"
-      - q: "Does the answer say the values are passed in the native initializer (iOS HydraRemoteConfig / Android Builder) and that gamification stays disabled if key or region is missing?"
+      - q: "Does the answer say the values are passed in the native initializer (iOS HydraRemoteConfig / Android Builder) and that gamification needs all three (key, region and base URL), staying disabled if one is missing?"
         want: "yes"
+      - q: "Does the answer state, as fact, what the SDK does when only the base URL is missing?"
+        want: "no"
   source: flutter/direct.md › Modules › Gamification (1, Correction)
 
 - id: flutter-direct-gamification-screens-routeaware
@@ -502,10 +504,95 @@
     prefixed keys in Firebase Remote Config and call setFirebaseRemoteConfigKeys, as in some
     Flutter examples. We're in direct mode. Is that the way to switch accounts?
   expect:
-    contains: ["setHydraAccountConfig"]
+    contains: ["setHydraAccountConfig", "setFirebaseRemoteConfigKeys"]
     judge:
-      - q: "Does the answer recommend putting prefixed values in Remote Config and calling setFirebaseRemoteConfigKeys as the way to switch accounts in this direct-mode app?"
-        want: "no"
-      - q: "Does the answer say that in direct mode you pass values you fetched yourself with HydraCore.setHydraAccountConfig?"
+      - q: "Does the answer say that in direct mode the usual way is to pass values you fetched yourself with HydraCore.setHydraAccountConfig?"
+        want: "yes"
+      - q: "Does the answer say setFirebaseRemoteConfigKeys works in either mode but only if the prefixed keys are actually published (and fetched) in Firebase Remote Config?"
+        want: "yes"
+      - q: "Does the answer warn that if the prefixed keys are missing, iOS returns false but Android still returns true (only logging an error), so the account is not switched?"
         want: "yes"
   source: flutter/direct.md › Modules › Multi-account; API Reference
+
+- id: flutter-direct-gamification-events-mapping
+  profile: flutter/direct
+  category: events
+  question: >-
+    Our Experience+ team says the Flutter SDK sends game and CMS events and that we need to map
+    fields when creating them in Capillary. Which events are there, what is required in every
+    payload, and which fields do we map?
+  expect:
+    contains: ["game_open", "content_viewed", "cuid", "identifierType", "accountId"]
+    judge:
+      - q: "Does the answer say cuid is required on every event and must be mapped to customerId?"
+        want: "yes"
+      - q: "Does the answer name the four mapped fields customerId, identifierType, source and accountId (all required)?"
+        want: "yes"
+      - q: "Does the answer say payloads are flat JSON with numbers sent as numbers?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Gamification (8)
+
+- id: flutter-direct-gap-events-source-identifier
+  profile: flutter/direct
+  category: gap
+  question: >-
+    When we create the gamification events, what exact value do we enter for `source`, who creates
+    the events and on which Capillary screen, and what do we put for identifierType if our Account
+    Linking Identifier is InTouchUserId?
+  expect:
+    contains: ["source", "identifierType"]
+    judge:
+      - q: "Does the answer state a specific literal value for source as fact?"
+        want: "no"
+      - q: "Does the answer state, as fact, what identifierType to use for InTouchUserId or FCMToken?"
+        want: "no"
+      - q: "Does the answer say these points aren't documented or suggest asking Capillary?"
+        want: "yes"
+  source: flutter/direct.md › Modules › Gamification (8, Gaps)
+
+- id: flutter-direct-gap-inapp-uiscene-android
+  profile: flutter/direct
+  category: gap
+  question: >-
+    We enabled in-app messaging on iOS with the UIScene lifecycle. Where does the
+    didReceiveRemoteNotification override go, and is there anything to do on Android?
+  expect:
+    contains: ["hydra_in_app_placeholder", "didReceiveRemoteNotification"]
+    judge:
+      - q: "Does the answer state definitively where the didReceiveRemoteNotification override goes under the UIScene lifecycle, as fact?"
+        want: "no"
+      - q: "Does the answer say the public In-App page has no Android-specific steps or no UIScene guidance, or suggest asking Capillary?"
+        want: "yes"
+      - q: "Does the answer mention enable_in_app_messaging set to true and the hydra_in_app_placeholder image in capillary/icons?"
+        want: "yes"
+  source: flutter/direct.md › Modules › In-App (Gap)
+
+- id: flutter-direct-gap-android-log-level
+  profile: flutter/direct
+  category: gap
+  question: >-
+    The docs' Android sample passes 4 as the remote log level and comments it as LogType.DEBUG,
+    but the table says 0 to 5 with a default of 0. Which scale is right and what does the default 0 mean?
+  expect:
+    contains: ["HydraLogLevel", "LogType.DEBUG"]
+    judge:
+      - q: "Does the answer state definitively what the default 0 means on Android, as fact?"
+        want: "no"
+      - q: "Does the answer say the docs are ambiguous (or to confirm with Capillary) while recommending the 0 to 5 HydraLogLevel scale?"
+        want: "yes"
+  source: flutter/direct.md › Steps › 12 (Gap)
+
+- id: flutter-direct-gap-flutter-dart-minimum
+  profile: flutter/direct
+  category: gap
+  question: >-
+    The docs say Flutter >= 3.3.0 with Dart >= 3.0. We're on Flutter 3.7 and pub get fails. Which
+    minimum Flutter version should we really use?
+  expect:
+    contains: ["3.3.0", "Dart"]
+    judge:
+      - q: "Does the answer point out that Flutter 3.3 bundles Dart 2.x and Dart 3.0 arrived with Flutter 3.10, so the two bounds are inconsistent?"
+        want: "yes"
+      - q: "Does the answer suggest upgrading Flutter and/or asking Capillary (or checking the package's pubspec) for the real minimum rather than stating one as fact?"
+        want: "yes"
+  source: flutter/direct.md › Requirements (Gap)

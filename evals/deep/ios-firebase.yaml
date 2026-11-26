@@ -1,54 +1,56 @@
 # Deep evaluation cases for ios/firebase (iOS, settings in Firebase Remote Config). See evals/golden.yaml for the format.
 
-- id: ios-firebase-spm-version-from-110
+- id: ios-firebase-spm-snippet-syntax
   profile: ios/firebase
   category: correction
   question: >-
-    Package.swift from the install page has `.upToNextMajor(from: "1.1.0")` for the hydra-sdk-ios-packages
-    dependency. We resolved it and got an old SDK without gamification. What version should be there?
+    I copied the Package.swift snippet from the install page:
+    `.package(url:"https://github.com/Capillary/hydra-ios-sdk-spm",upToNextMajor(from: "1.10.6"))` with
+    `name: “<Project-name>”` and Xcode refuses to build the manifest. What should it look like?
   expect:
-    contains: ["1.7.5-preprod.12", "upToNextMajor"]
+    contains: ["hydra-ios-sdk-spm", ".upToNextMajor"]
     judge:
-      - q: "Does the answer recommend using from: \"1.1.0\" as the version?"
-        want: "no"
-      - q: "Does the answer say to use 1.7.5-preprod.12 (the required/minimum version)?"
+      - q: "Does the answer say upToNextMajor needs a leading dot (.upToNextMajor) and that the name should use plain straight quotes?"
         want: "yes"
-  source: "ios/firebase.md › Steps › 2. Install the SDK › Option A (Correction) and Known Issues"
-
-- id: ios-firebase-spm-repo-and-preprod10
+      - q: "Does the answer use https://github.com/Capillary/hydra-ios-sdk-spm as the package URL?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 2. Install the SDK › Option A (Correction)"
+- id: ios-firebase-public-repo-no-token
   profile: ios/firebase
   category: correction
   question: >-
-    The Experience+ iOS gamification guide says to use https://github.com/Capillary/hydra-ios-sdk-spm.git with
-    minimum 1.7.5-preprod.10. Is that the package we add to our native iOS project?
+    An older Capillary runbook says to add the package from the private repo hydra-sdk-ios-packages with a GitHub
+    token and use version 1.7.5-preprod.12. Our colleague says the repo is public now. Which repo URL and which
+    minimum SDK version should our native iOS app use, and do we need a token?
   expect:
-    contains: ["hydra-sdk-ios-packages", "1.7.5-preprod.12"]
+    contains: ["hydra-ios-sdk-spm", "1.10.6"]
     judge:
-      - q: "Does the answer recommend https://github.com/Capillary/hydra-ios-sdk-spm.git as the package URL for this app?"
+      - q: "Does the answer recommend https://github.com/Capillary/hydra-ios-sdk-spm as the package URL for this app?"
+        want: "yes"
+      - q: "Does the answer say no GitHub account or personal access token is needed for the SDK repository?"
+        want: "yes"
+      - q: "Does the answer recommend the private hydra-sdk-ios-packages repo or the 1.7.5-preprod versions as what to use?"
         want: "no"
-      - q: "Does the answer recommend 1.7.5-preprod.10 as the version to use?"
-        want: "no"
-  source: "ios/firebase.md › Steps › 2. Install the SDK › Option A (Correction 2)"
-
+  source: "ios/firebase.md › Steps › 1 (Correction) and 2"
 - id: ios-firebase-podfile-two-bugs
   profile: ios/firebase
   category: correction
   question: >-
-    Our Podfile (copied from the install guide) has `private_repo = ...` as the first line inside
-    `target 'MyApp' do`, and there's an extension target below it that references private_repo too. We also
-    have a stray line "Ensure you are using the correct source or git URL" that isn't commented. `pod install`
-    breaks. What's the fixed layout?
+    `pod install` for our app + Notification Service Extension fails. Our Podfile is a copy of the
+    install page: platform :ios, '15.6'; use_frameworks!; then `target 'MyApp' do` with the line
+    `hydra_repo = 'https://github.com/Capillary/hydra-ios-sdk-spm.git'` as its first line,
+    the pod lines, and a second target for the extension that also uses hydra_repo. There is also a bare line
+    `Ensure you are using the correct source or git URL` above the pods. What should the Podfile look like?
   expect:
-    contains: ["private_repo", "pod 'HydraPushNotificationServiceExtension', :git => private_repo"]
+    contains: ["hydra_repo", "pod 'HydraPushNotificationServiceExtension', :git => hydra_repo"]
     judge:
-      - q: "Does the answer say private_repo should be defined above (outside) both target blocks?"
+      - q: "Does the answer say hydra_repo should be defined above (outside) both target blocks?"
         want: "yes"
-      - q: "Does the answer recommend keeping private_repo defined inside the target 'YourAppTargetName' block?"
+      - q: "Does the answer recommend keeping hydra_repo defined inside the target 'YourAppTargetName' block?"
         want: "no"
-      - q: "Does the answer tell the developer to remove that line or make it a comment, rather than keep it as active text?"
+      - q: "Does the answer tell the developer to remove the line 'Ensure you are using the correct source or git URL' or turn it into a comment, rather than keep it as active text?"
         want: "yes"
   source: "ios/firebase.md › Steps › 2. Install the SDK › Option C: CocoaPods (two Corrections)"
-
 - id: ios-firebase-gamification-base-url-key-name
   profile: ios/firebase
   category: correction
@@ -64,21 +66,22 @@
         want: "yes"
   source: "ios/firebase.md › Steps › 3. Add the Remote Config keys (Correction)"
 
-- id: ios-firebase-fetch-private-repo-fails
+- id: ios-firebase-fetch-package-fails
   profile: ios/firebase
   category: known-issue
   question: >-
-    Adding the Hydra package in Xcode (File > Add Packages) ends with an authentication error against
-    the Capillary GitHub repo. How do we get past it?
+    Xcode (File > Add Packages) can't fetch github.com/Capillary/hydra-ios-sdk-spm and the same happens
+    from SPM on CI. What do we check?
   expect:
-    contains: ["hydra-sdk-ios-packages", "Accounts"]
+    contains: ["hydra-ios-sdk-spm", "16.1"]
     judge:
-      - q: "Does the answer say access to the private repo must be requested from Capillary's access team?"
+      - q: "Does the answer say the repository is public and needs no GitHub account or personal access token?"
         want: "yes"
-      - q: "Does the answer offer GitHub credentials in Xcode or a username plus Personal Access Token in the URL as the options?"
+      - q: "Does the answer suggest checking the package URL, Xcode 16.1 or later, and that the dependency rule allows the SDK version?"
         want: "yes"
-  source: "ios/firebase.md › Steps › 1 and Known Issues"
-
+      - q: "Does the answer ask the developer to paste or share a token in the chat?"
+        want: "no"
+  source: "ios/firebase.md › Steps › 1, 2 and Known Issues"
 - id: ios-firebase-objc-init
   profile: ios/firebase
   category: known-issue
@@ -353,21 +356,21 @@
         want: "yes"
   source: "ios/firebase.md › Modules › Gamification (HydraGamificationDelegate Gap)"
 
-- id: ios-firebase-gap-inapp-init
+- id: ios-firebase-inapp-init
   profile: ios/firebase
-  category: gap
+  category: inapp
   question: >-
-    Which call configures HydraInAppMessage for popup in-app messages in our iOS app, and what callbacks
-    does it fire?
+    How do I initialise and show in-app popup messages on iOS, and does the app have to handle button taps?
   expect:
-    contains: ["HydraInAppMessage"]
+    contains: ["InAppMessagingCore", "HydraInAppMessageConfiguration", "NotificationCore"]
     judge:
-      - q: "Does the answer give a specific initialisation call or callback list for HydraInAppMessage as fact?"
-        want: "no"
-      - q: "Does the answer say iOS in-app setup isn't documented or suggest asking Capillary?"
+      - q: "Does the answer say InAppMessagingCore is initialised after HydraCore and NotificationCore, using the same HydraConfiguration through HydraInAppMessageConfiguration?"
         want: "yes"
-  source: "ios/firebase.md › Modules › In-App (Gap)"
-
+      - q: "Does the answer say appStoreId is required for App Rating messages?"
+        want: "yes"
+      - q: "Does the answer say the SDK handles the standard interactions itself so no delegate is needed?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › In-App"
 - id: ios-firebase-trap-flutter-initializer
   profile: ios/firebase
   category: trap
@@ -548,3 +551,110 @@
       - q: "Does the answer say no SDK success log lines or dashboard checks are documented?"
         want: "yes"
   source: "ios/firebase.md › Verification"
+
+- id: ios-firebase-min-requirements
+  profile: ios/firebase
+  category: prerequisites
+  question: >-
+    Our iOS app targets iOS 14 and we build with Xcode 15. What minimum SDK version, deployment target and
+    Xcode does the Hydra iOS SDK need, and which devices are supported?
+  expect:
+    contains: ["1.10.6", "15.6", "16.1"]
+    judge:
+      - q: "Does the answer say the minimum deployment target is iOS 15.6 and Xcode 16.1 or later is required?"
+        want: "yes"
+      - q: "Does the answer say iPhone and iPad are supported?"
+        want: "yes"
+      - q: "Does the answer state iOS 13 or Xcode 14 as the minimum?"
+        want: "no"
+  source: "ios/firebase.md › Requirements"
+
+- id: ios-firebase-update-customerid-after-sign-in
+  profile: ios/firebase
+  category: identity
+  question: >-
+    After we call reportUserSignIn, is there anything else we must call so the SDK knows the customer? And what
+    do we do with the customer ID when the user logs out?
+  expect:
+    contains: ["update(customerID", "reportUserSignIn", "reportUserSignOut"]
+    judge:
+      - q: "Does the answer say to also call update(customerID:) immediately after sign-up or sign-in, with the same customer ID?"
+        want: "yes"
+      - q: "Does the answer say that after sign-out the customer ID can be set to a guest ID or cleared?"
+        want: "yes"
+  source: "ios/firebase.md › Steps › 4, 5, 7"
+
+- id: ios-firebase-game-cms-events-mapping
+  profile: ios/firebase
+  category: gamification
+  question: >-
+    Which Game and CMS events does Experience+ send, which attribute is required on all of them, and which
+    fields must we map when the events are created in Capillary?
+  expect:
+    contains: ["game_open", "content_viewed", "cuid", "identifierType"]
+    judge:
+      - q: "Does the answer say cuid is required on every event and must be mapped to customerId?"
+        want: "yes"
+      - q: "Does the answer list the four mapped fields: customerId, identifierType, source (SDK) and accountId (the SDK account ID)?"
+        want: "yes"
+      - q: "Does the answer state exactly where in Capillary the events are created as documented fact?"
+        want: "no"
+  source: "ios/firebase.md › Modules › Gamification (Gamification events)"
+
+- id: ios-firebase-inapp-logout
+  profile: ios/firebase
+  category: inapp
+  question: >-
+    A user logs out of our iOS app but still sees in-app messages meant for the previous user. What should
+    the sign-out code do?
+  expect:
+    contains: ["userLoggedOut", "reportUserSignOut"]
+    judge:
+      - q: "Does the answer say to call inAppCore?.userLoggedOut() after reportUserSignOut to clear the pending in-app messages?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › In-App (Logout) and Steps › 7"
+
+- id: ios-firebase-service-account-not-in-app
+  profile: ios/firebase
+  category: push
+  question: >-
+    The push page mentions a Firebase service-account key for Capillary. Do we put that key (or the old
+    Server Key) into the iOS app?
+  expect:
+    contains: ["service-account", "GoogleService-Info.plist"]
+    judge:
+      - q: "Does the answer say the iOS app doesn't need the service-account key and must never contain it, and that only Capillary's backend uses it?"
+        want: "yes"
+      - q: "Does the answer say the app uses GoogleService-Info.plist for its Firebase settings?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › Push › 1 and _shared/firebase-setup.md"
+
+- id: ios-firebase-gap-inapp-environment
+  profile: ios/firebase
+  category: gap
+  question: >-
+    InAppMessagingCore(with:environment:) uses .dev in the sample. What do we pass for production, and how
+    do we create the in-app campaign?
+  expect:
+    contains: [".dev"]
+    judge:
+      - q: "Does the answer state a specific production value for environment (such as .prod) as fact?"
+        want: "no"
+      - q: "Does the answer say the other environment values and the campaign setup aren't documented, or suggest asking Capillary?"
+        want: "yes"
+  source: "ios/firebase.md › Modules › In-App (Gap)"
+
+- id: ios-firebase-no-pat-needed
+  profile: ios/firebase
+  category: correction
+  question: >-
+    We're generating a classic GitHub Personal Access Token for the Hydra iOS repo. Which scopes do we
+    tick?
+  expect:
+    contains: ["hydra-ios-sdk-spm"]
+    judge:
+      - q: "Does the answer say no personal access token is needed because the iOS SDK repository is public?"
+        want: "yes"
+      - q: "Does the answer state a specific list of PAT scopes (for example repo or read:packages) as fact for the iOS SDK?"
+        want: "no"
+  source: "ios/firebase.md › Prerequisites and Steps › 1"

@@ -5,7 +5,7 @@ sdk_package: "@capillarytech/react-native-hydra-lib"
 sdk_version: 1.7.0-beta.7    # minimum for gamification per the older guide (p.3); the public docs state no version
 modules_covered: [core, push, inapp, inbox_api, inbox_ui, visitor, gamification, multi_account]
 modules_missing: []
-sources: ["SDK Agentic Integration For React Native (Confluence, space CAM, Hydra SDK team runbook, updated 2026-06-05)", "Capillary developer docs (docs.capillarytech.com): setting-up-react-native-project-for-hydra-sdk, react-native-sdk-getting-started, react-native-sdk-install, react-native-sdk-advanced-setup, react-native-sdk-setup-overview, react-native-sdk-push-notifications, react-native-sdk-notification-center, gamification-react-native, react-native-sdk-anonymous-visitor-flow, react-native-sdk-api-reference, in-app-messaging (updated 2026-11-12; gamification-react-native 2026-11-12; in-app-messaging 2026-10-20)", "Integration document _ Experience+ pp.1–6 (Gamification React Native Integration Guide, v1.0.1)"]
+sources: ["SDK Agentic Integration For React Native (Confluence, space CAM, Hydra SDK team runbook, updated 2026-06-05)", "Capillary developer docs (docs.capillarytech.com): setting-up-react-native-project-for-hydra-sdk, react-native-sdk-getting-started, react-native-sdk-install, react-native-sdk-advanced-setup, react-native-sdk-setup-overview, react-native-sdk-push-notifications, react-native-sdk-notification-center, gamification-react-native, react-native-sdk-anonymous-visitor-flow, react-native-sdk-api-reference, react-native-sdk-in-app-messaging, in-app-messaging (updated 2026-11-12; gamification-react-native 2026-11-23, with its Game and CMS event payloads; in-app-messaging 2026-10-20, native Android)", "Integration document _ Experience+ pp.1–6 (Gamification React Native Integration Guide, v1.0.1)"]
 owner: TBD
 last_verified: null
 review_status: draft   # drafted from the source docs; not yet SME-verified
@@ -18,7 +18,7 @@ The SDK reads its settings (Account Id, Base URL, SSL key, remote log level, and
 |---|---|
 | Core: install, `hydra-config.json`, Remote Config keys, iOS init (Swift, Objective-C), Android init (Kotlin), `HydraContainer`, identify / reset / track, update user | Documented |
 | Push (incl. push preferences, custom actions) | Documented |
-| In-App | Documented from the runbook only (Gap in Modules › In-App) |
+| In-App | Flag and placeholder image documented; showing messages in React Native UI is runbook only (Gap in Modules › In-App) |
 | Inbox API and Inbox UI | Documented |
 | Visitor (anonymous) flow | APIs and states documented (Gap in Modules › Visitor) |
 | Gamification, Multi-account | Documented |
@@ -37,7 +37,7 @@ The SDK reads its settings (Account Id, Base URL, SSL key, remote log level, and
 - A Firebase project with `google-services.json` and `GoogleService-Info.plist`, and edit access to its Remote Config.
 - Sample apps: branches `example_rn72_new_arch`, `example_rn72_old_arch`, `example_rn74_old_arch`, `example_rn75_old_arch`, `example_rn76_new_arch`, `example_rn77_new_arch` of `https://github.com/Capillary/react-native-hydra-lib`.
 
-> ⚠️ Gap: the docs require React Native 0.77.0 or later yet ship sample apps for 0.72–0.76 (and the runbook describes the 0.76+ template). No SDK version or Gradle minimum is stated, and the only Xcode statement is that versions before 16 break Objective-C imports (Known Issues). Ask a Capillary engineer.
+> ⚠️ Gap: the docs require React Native 0.77.0 or later yet ship sample apps for 0.72–0.76 (and the runbook describes the 0.76+ template). No SDK version or Gradle minimum is stated, and the only Xcode statement is that versions before 16 break Objective-C imports (Known Issues). The docs also give `targetSdk` / `compileSdk` only as "31 or later", which looks low next to the React Native 0.77 requirement; whether 31 is really the floor isn't stated. Ask a Capillary engineer.
 ## Prerequisites
 See `_shared/prerequisites.md` for the common exchange and `_shared/firebase-setup.md` for Firebase project and Remote Config basics.
 
@@ -111,9 +111,12 @@ Create `<PROJECT_ROOT>/capillary/hydra-config.json` (create the `capillary` fold
   "use_default_inbox_ui_config": true,
   "max_notification_count": 200,
   "enable_hydra_sdk_firebase_registration": true,
+  "enable_push_notification": true,
   "hydra_notification_color": "<COLOR_HEX>"
 }
 ```
+
+No push: the docs turn `enable_push_notification`, `enable_hydra_sdk_firebase_registration`, `enable_in_app_messaging`, `enable_inbox_api` and `enable_inbox_ui` all off and pass the account values in code instead of Remote Config (the direct-mode guide covers that setup). The docs' defaults are `enable_inbox_api` `false`, and `enable_push_notification` and `enable_ssl_pinning` `true`: this starter turns the Inbox API on, so on iOS it needs the Notification Service Extension and App Group (step 5).
 
 | Key | Type, default | Meaning |
 |---|---|---|
@@ -192,6 +195,8 @@ Check first; do only what's missing. Look in the main app target's folder `ios/<
 | *(push)* **App Groups** on the main app and the extension, group `group.{{bundle_id}}.hydra`, also added on developer.apple.com for both identifiers | main entitlements has `com.apple.security.application-groups` |
 
 The extension and App Group (rich notifications) are mandatory for push on iOS; the Inbox API needs them too.
+
+> ⚠️ Gap: the iOS part of react-native-sdk-install spells the Firebase file `GoogleServices-Info.plist`; Getting Started, Advanced Setup and Firebase itself use `GoogleService-Info.plist`. Use `GoogleService-Info.plist`.
 
 **With SPM (step 4d):** select your app project (not Pods) → **File** > **Add Package Dependencies** → `https://github.com/Capillary/hydra-ios-sdk-spm.git`, pinned to the exact version in `HYDRA_SPM_REQUIREMENT` in `node_modules/@capillarytech/react-native-hydra-lib/scripts/HydraPods.rb`. Then extension target → **General** > **Frameworks, Libraries, and Embedded Content** → add the `HydraPushNotificationServiceExtension` product.
 
@@ -613,13 +618,15 @@ if (Platform.OS === 'android') {
 }
 ```
 
+> ⚠️ Gap: the docs hand only tokens over (`passFCMToken`); no React Native API for forwarding push payloads to Hydra is documented, so how Hydra gets the payload when your own `FirebaseMessagingService` receives it isn't stated. Nor is any manual manifest entry for Hydra's messaging service: the docs say only that Android uses a manifest variant with or without it, depending on `enable_push_notification`. Ask a Capillary engineer.
+
 
 ### In-App
-Delivered through the push mechanism, so push must be integrated and on. Set `"enable_in_app_messaging": true` and add `capillary/icons/hydra_in_app_placeholder`.
+Delivered through the push mechanism, so push must be integrated and on. The public React Native in-app page (react-native-sdk-in-app-messaging, "for both iOS and Android") has two steps: add `capillary/icons/hydra_in_app_placeholder` (PNG recommended; JPG or JPEG accepted; create the folders if missing) and set `"enable_in_app_messaging": true`.
 - **SDK shows the message** (default): nothing else to do; CTA taps arrive in `addHydraNotificationClickedListener`.
 - **Your React Native UI shows it (runbook):** also set `"enable_in_app_messaging_in_react_native": true` and un-comment the `addHydraInAppMessageListener` block in `HydraContainer`. Show the message yourself and report the outcome with `HydraInAppMessaging.reportMessageClicked(message)` or `HydraInAppMessaging.reportMessageDismissed(message)`. Return `true` from the listener if you handle it, `false` to let the SDK display it.
 
-> ⚠️ Gap: `enable_in_app_messaging_in_react_native`, `addHydraInAppMessageListener` and `HydraInAppMessaging` come only from the runbook; the public `hydra-config.json` keys and API reference don't list them (the `HydraNativeEvent` enum does include `onHydraInAppMessage`). The public in-app page's configuration (`InAppConfig`, `HydraInAppUIHelper`) is for native Android. Ask a Capillary engineer.
+> ⚠️ Gap: the public React Native in-app page covers only the flag and the placeholder image. `enable_in_app_messaging_in_react_native`, `addHydraInAppMessageListener` and `HydraInAppMessaging` come only from the runbook; the public `hydra-config.json` keys and API reference don't list them (the `HydraNativeEvent` enum does include `onHydraInAppMessage`), and the in-app page gives no listener or report API. The other public in-app page's configuration (`InAppConfig`, `HydraInAppUIHelper`) is for native Android. Ask a Capillary engineer.
 
 ### Inbox
 The SDK keeps a local database of **Hydra** notifications only (never other senders' pushes).
@@ -743,7 +750,44 @@ const loyaltyStyle = { width: '100%', height: loyaltyHeight };
 - `addGamificationEventTriggerListener((name, payload) => …)`: a game or campaign triggered a named event (e.g. a reward unlocked).
 - `addGamificationAnalyticsEventListener((name, payload) => …)`: analytics events from the gamification UI, e.g. to forward to your own analytics tool.
 
-> ⚠️ Gap: event and analytics-event names and payload contents aren't documented. Ask a Capillary engineer.
+> ⚠️ Gap: the docs describe these three listeners and the seven events below in separate places and never link them. Whether the listeners deliver these events, and which `name` / `payload` values they pass, isn't stated. Ask a Capillary engineer.
+
+**Game and CMS event payloads** (gamification-react-native, updated 2026-11-23). Experience+ sends seven events for game and CMS interactions. Payloads are flat JSON (no nested objects), numbers are sent as numbers, and `cuid` is required on every event; `event_name` is always sent and every other attribute is optional. `cuid` is the login identifier value (mobile number, email or externalId).
+
+| Event | Flow | Fires when | Other attributes (all optional) |
+|---|---|---|---|
+| `game_open` | Game | A game entry surface opens or launches the game (popup, floating icon, modal or embedded banner) | `campaign_id`, `game_type`, `entry_surface`, `embed_id` (banner_embedded only), `entry_point_id`, `entry_point_location`, `deep_link_url`, `hyper_link_url` |
+| `game_viewed` | Game | The game UI is rendered and visible | `campaign_id`, `game_type`, `load_time_ms` (number) |
+| `game_played` | Game | The first real interaction (spin, scratch, tap or select) | `campaign_id`, `game_type` |
+| `game_completed` | Game | The game ends: won, lost, completed or abandoned | `campaign_id`, `game_type`, `total_time_ms` (number) |
+| `reward_seen` | Game | The user views the reward (reveal screen or wallet) | `reward_id`, `campaign_id`, `reward_type` |
+| `content_open` | CMS | A CMS surface opens or displays (widget, banner or full page) | `content_surface` |
+| `content_viewed` | CMS | The CMS content is rendered and visible | `page_id`, `content_surface`, `load_time_ms` (number) |
+
+All attributes are strings except `load_time_ms` and `total_time_ms`. `campaign_id` is the join key across game and reward events (`reward_id` for the reward, `page_id` for a CMS page). Values: `entry_surface` is `popup`, `floating_icon`, `modal` or `banner_embedded`; `content_surface` is `widget`, `banner` or `full_page`; `game_type` includes `spinthewheel`, `scratchcard`, `slotmachine`, `quiz`, `memorygame`, `giftbox`, `streak`, `multistep`, `referral` and `reward_type` includes `points`, `coupons`, `cashback`, `discount`, `freebie`, `buyXgetY`, `noReward` (both lists are not exhaustive). Sample payloads, one per event:
+
+```jsonl
+{"cuid": "stringxxx", "event_name": "game_open", "campaign_id": "camp_44", "game_type": "spinthewheel", "entry_surface": "popup", "embed_id": "home_hero", "entry_point_id": "ep_12", "entry_point_location": "home_screen", "deep_link_url": "/home", "hyper_link_url": "https://your-url.com"}
+{"cuid": "stringxxx", "event_name": "game_viewed", "campaign_id": "camp_44", "game_type": "spinthewheel", "load_time_ms": 850}
+{"cuid": "stringxxx", "event_name": "game_played", "campaign_id": "camp_44", "game_type": "spinthewheel"}
+{"cuid": "stringxxx", "event_name": "game_completed", "campaign_id": "camp_44", "game_type": "spinthewheel", "total_time_ms": 8200}
+{"cuid": "stringxxx", "event_name": "reward_seen", "reward_id": "rew_88", "campaign_id": "camp_44", "reward_type": "points"}
+{"cuid": "stringxxx", "event_name": "content_open", "content_surface": "full_page"}
+{"cuid": "stringxxx", "event_name": "content_viewed", "page_id": "page_9", "content_surface": "full_page", "load_time_ms": 700}
+```
+
+**Field mapping.** When creating the events, map the event fields to these four event-creation fields; all four are required:
+
+| Event-creation field | Set from |
+|---|---|
+| `customerId` | `cuid` from the event payload (on every event) |
+| `identifierType` | The login identifier you pass to the SDK: mobile, email or externalId |
+| `source` | SDK |
+| `accountId` | The SDK account ID |
+
+> ⚠️ Gap: the docs don't say where in Capillary the events are created, who creates them (you or Capillary), or the literal value to use for `source` ("Map `source` to SDK"). Ask a Capillary engineer before the first campaign goes live.
+
+> ⚠️ Gap: `cuid` and `identifierType` allow only mobile, email or externalId, but `Hydra.identify` accepts an InTouchUserId or FCMToken as `customerId` (step 12); whether those customers get gamification events isn't stated. The `entry_surface` values (`popup`, `floating_icon`, `modal`, `banner_embedded`) also don't match the campaign types named in step G3 (Floating Button, Popup, Bottom Sheet): there is no `bottom_sheet` value and `modal` isn't explained.
 
 **Custom event and settings:**
 

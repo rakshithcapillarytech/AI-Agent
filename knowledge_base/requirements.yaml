@@ -20,8 +20,8 @@ platforms:
     versions:
       - label: Hydra SDK version
         value: "{sdk_version} or later"
-        note: Beta, for UAT and POC.
-        check: "1.9.22-beta02"
+        note: Same version for every module.
+        check: "1.10.6"
       - label: Minimum Android version (minSdk)
         value: "21 or above"
         check: "minSdk 21"
@@ -51,17 +51,16 @@ platforms:
     versions:
       - label: Hydra SDK version
         value: "{sdk_version} or later"
-        note: Beta; the minimum for gamification.
-        check: "Beta for UAT/POC"
+        check: "1.10.6"
       - label: Minimum iOS deployment target
-        value: "iOS 13.0"
-        check: "iOS 13.0"
+        value: "iOS 15.6"
+        check: "iOS 15.6"
       - label: Devices
         value: "iPhone and iPad"
         check: "iPhone (iOS) and iPad (iPadOS)"
       - label: Xcode
-        value: "14 or later"
-        check: "Xcode 14 or later"
+        value: "16.1 or later"
+        check: "Xcode 16.1 or later"
       - label: Language
         value: "Swift (Objective-C apps need a small Swift file)"
         check: "an Objective-C app needs a small Swift file"
@@ -137,7 +136,7 @@ platforms:
         check: "CocoaPods with `use_frameworks!`"
       - label: Apple developer account access (push)
         value: "Access to developer.apple.com (capabilities, extension, App Group)"
-        modules: [push]
+        modules: [push, inbox_api, inbox_ui]
         check: "access to `developer.apple.com`"
     computer:
       - label: Flutter SDK
@@ -148,30 +147,34 @@ platforms:
         general: true
     gaps:
       - "Android compileSdk, AGP, Gradle and Kotlin versions, and Xcode and CocoaPods versions."
+      - "The docs list Flutter >= 3.3.0 with Dart >= 3.0, which look inconsistent; confirm the minimum."
 
   web:
     versions:
+      - label: Hydra SDK version
+        value: "{sdk_version} (stated in the docs; the install is unpinned)"
+        check: "1.10.6"
       - label: Hydra SDK package
         value: "cap-hydra-web-sdk from npm (latest, or beta for testing)"
         check: "cap-hydra-web-sdk@beta"
       - label: Browsers
-        value: "Modern evergreen browsers. Internet Explorer is not supported"
+        value: "Internet Explorer is not supported"
         check: "Internet Explorer is not supported"
-      - label: Chrome (push)
+      - label: Chrome
         value: "109 or later"
-        modules: [push]
+        note: Listed on the push page; may apply to the whole SDK.
         check: "| Chrome | 109+ |"
-      - label: Firefox (push)
+      - label: Firefox
         value: "140 or later (ESR)"
-        modules: [push]
+        note: Listed on the push page; may apply to the whole SDK.
         check: "| Firefox | 140+ (ESR) |"
-      - label: Safari (push)
+      - label: Safari
         value: "26.3 or later"
-        modules: [push]
+        note: Listed on the push page; may apply to the whole SDK.
         check: "| Safari | 26.3+ |"
-      - label: Edge, Chromium (push)
+      - label: Edge, Chromium
         value: "149 or later"
-        modules: [push]
+        note: Listed on the push page; may apply to the whole SDK.
         check: "| Edge (Chromium) | 149+ |"
       - label: Firebase JS SDK (push)
         value: "Install firebase yourself; the SDK doesn't bundle it"
@@ -183,6 +186,8 @@ platforms:
         check: "pnpm add cap-hydra-web-sdk"
     gaps:
       - "Node.js, bundler and framework versions, and the matching firebase npm version."
+      - "Edge 149+ looks inconsistent with Chrome 109+; confirm the minimums."
+      - "iOS and iPadOS Safari web-push requirements aren't documented."
 
 # Not in any platform guide. Shown at the bottom of the tab's computer section for every platform.
 computer_gap: "No minimum computer specs (RAM, disk, CPU) are published. Ask your Capillary contact if you need numbers."

@@ -18,11 +18,11 @@ web/direct:
     do: "Wherever the app has a custom event worth tracking, call `sdkService.trackEvent(name, properties)` with the event name and an optional properties object."
     evidence: ["sdkService.trackEvent(\"test_event\"", "Track custom events"]
   "7":
-    do: "Call `sdkService.trackPageView()` on every route change. With no arguments it captures the current URL and title; pass `{ url, title, category, properties }` to override any of them."
-    evidence: ["Call on every route change.", "sdkService.trackPageView();"]
+    do: "Call `sdkService.trackPageView()` on every route change. With no arguments it captures the current URL and title; pass `{ page_url, page_title, referrer, page_category, properties }` to override any of them."
+    evidence: ["Call on every route change.", "sdkService.trackPageView();", "page_url, page_title, referrer, page_category, properties"]
   "8":
-    do: "Optional, for cookie consent: call `sdkService.disableTracking()` when consent is not given and `sdkService.enableTracking()` when it is. Save the consent decision in your own storage and restore it on app load."
-    evidence: ["sdkService.disableTracking();", "Persist the consent decision in your own storage"]
+    do: "Optional, for cookie consent: call `sdkService.disableTracking()` when consent is not given and `sdkService.enableTracking()` when it is. Disabling drops new events but does not affect identify, reset or gamification; save the decision in your own storage and restore it on app load."
+    evidence: ["sdkService.disableTracking();", "Persist the consent decision in your own storage", "`disableSDK()` does not affect `identify()`, `reset()` or gamification events"]
   "9":
     do: "Skip this if the site has no Content Security Policy. Otherwise add the SDK's domains to your existing directives without replacing them: `connect-src`, `script-src`, `frame-src`, `img-src` and `worker-src`, using the entries in the step."
     evidence: ["Add these to the existing directives; don't replace them.", "worker-src 'self' blob: data:;"]
@@ -47,7 +47,7 @@ web/firebase:
     evidence: ["src/services/sdkService.ts", "remoteConfigKey: \"MY_REMOTE_CONFIG_KEY\""]
   "7":
     do: "Call the service: `sdkService.trackPageView()` on every route change, `sdkService.trackEvent(...)` for custom events, `identifyUser(...)` with `\"USER_REGISTER\"` at login and sign-up, and `sdkService.reset()` at logout."
-    evidence: ["Every route change", "Login **and** sign-up", "Profile update only"]
+    evidence: ["Every route change", "Login **and** sign-up", "Profile update only", "page_url, page_title, referrer, page_category, properties"]
   "8":
     do: "Skip this if the site has no Content Security Policy. Otherwise add the SDK's domains to your existing directives without replacing them: `connect-src`, `script-src`, `frame-src`, `img-src` and `worker-src`, using the entries in the step."
     evidence: ["Add these to the existing directives; don't replace them.", "worker-src 'self' blob: data:;"]

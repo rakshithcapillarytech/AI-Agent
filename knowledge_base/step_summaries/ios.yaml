@@ -1,9 +1,9 @@
 ios/direct:
   "1":
-    do: "Add your GitHub account in Xcode under Settings (Preferences) > Accounts, and make sure it can open `Capillary/hydra-sdk-ios-packages`. Or use the package URL with your GitHub username and a Personal Access Token, kept only on your machine."
-    evidence: ["Xcode → Settings (Preferences) → Accounts", "Capillary/hydra-sdk-ios-packages"]
+    do: "Nothing to set up: the SDK repository `hydra-ios-sdk-spm` is public, so you need no GitHub account, no personal access token and no Xcode Accounts setup. Go straight to installing the SDK."
+    evidence: ["The SDK repository `https://github.com/Capillary/hydra-ios-sdk-spm` is public.", "no personal access token"]
   "2":
-    do: "Add the SDK frameworks for the modules you use (always `HydraCore`) with one method: Swift Package Manager, Xcode **File → Add Packages…**, or CocoaPods with `pod install`. Use the SDK version stated for this integration, not `1.1.0`."
+    do: "Add the SDK frameworks for the modules you use (always `HydraCore`) with one method: Swift Package Manager, Xcode **File → Add Packages…**, or CocoaPods with `pod install`. Use the public package `hydra-ios-sdk-spm` and the SDK version stated for this integration."
     evidence: ["Use any one of the three methods.", "File → Add Packages…", "Run `pod install`"]
   "3":
     do: "In `AppDelegate`'s `application(_:didFinishLaunchingWithOptions:)`, build `HydraConfiguration` from your Capillary values (Account Id, Base URL, SSL key, Org Id, gamification), then call `Hydra.generate(with:)` once. Objective-C apps need a Swift file."
@@ -12,14 +12,14 @@ ios/direct:
     do: "Call `update(customerID:)` whenever the customer ID changes, `update(deviceToken:)` with the push token, and `update(interfaceID:)` with the FCM token whenever it changes. Use `setPromotionalPushOpted` and `setTransactionalPushOpted` for opt-in."
     evidence: ["hydraCore.update(interfaceID:", "setPromotionalPushOpted"]
   "5":
-    do: "When a user signs up or signs in, call `reportUserSignUp` or `reportUserSignIn` with a `UserDetails` object. `customerId`, `firstName`, `lastName` and `phone` are mandatory; `customerId` must match the Account Linking Identifier in Capillary CRM."
-    evidence: ["public func reportUserSignUp(data: UserSignUpGenerator", "Account Linking Identifier in Capillary CRM"]
+    do: "When a user signs up or signs in, call `reportUserSignUp` or `reportUserSignIn` with a `UserDetails` object, then `update(customerID:)` with the same ID. `customerId` must match the Account Linking Identifier in Capillary CRM."
+    evidence: ["public func reportUserSignUp(data: UserSignUpGenerator", "Account Linking Identifier in Capillary CRM", "Also update the SDK's customerId immediately after sign-up/sign-in"]
   "6":
     do: "When a user changes their profile, call `reportUserProfileUpdate` with a `UserDetails` object; only `customerId` is mandatory. Optionally pass the user's subscription list as `HydraSubscription` items."
     evidence: ["reportUserProfileUpdate(data: UserProfileUpdateGenerator", "HydraSubscription(channel:"]
   "7":
-    do: "When the user signs out, call `hydra.reportUserSignOut(customData:)`, passing `[:]` if you have no extra data. This removes the user's details from the session."
-    evidence: ["hydra.reportUserSignOut(customData: customAttributes)", "Removes the user's details"]
+    do: "When the user signs out, call `hydra.reportUserSignOut(customData:)`, passing `[:]` if you have no extra data. This removes the user's details from the session; then set the customer ID to a guest ID or clear it."
+    evidence: ["hydra.reportUserSignOut(customData: customAttributes)", "Removes the user's details", "update the SDK's customer ID to a guest ID"]
   "8":
     do: "To track custom events, call `hydra.reportBehavioralEvent(name:customAttributes:)` with a non-empty event name. Events count only after a sign-in or sign-up is reported, and the events must also be configured in the Hydra config and organisation settings."
     evidence: ["Events count only after a sign-in or sign-up has been reported", "reportBehavioralEvent(name: String"]
@@ -34,10 +34,10 @@ ios/direct:
     evidence: ["hydra.setCapToken(token)", "renders empty"]
 ios/firebase:
   "1":
-    do: "Add your GitHub account in Xcode under Settings (Preferences) > Accounts, and make sure it can open `Capillary/hydra-sdk-ios-packages`. Or use the package URL with your GitHub username and a Personal Access Token, kept only on your machine."
-    evidence: ["Xcode → Settings (Preferences) → Accounts", "Capillary/hydra-sdk-ios-packages"]
+    do: "Nothing to set up: the SDK repository `hydra-ios-sdk-spm` is public, so you need no GitHub account, no personal access token and no Xcode Accounts setup. Go straight to installing the SDK."
+    evidence: ["The SDK repository `https://github.com/Capillary/hydra-ios-sdk-spm` is public.", "no personal access token"]
   "2":
-    do: "Add the SDK frameworks for the modules you use (always `HydraCore`) with one method: Swift Package Manager, Xcode **File → Add Packages…**, or CocoaPods with `pod install`. Use the SDK version stated for this integration, not `1.1.0`."
+    do: "Add the SDK frameworks for the modules you use (always `HydraCore`) with one method: Swift Package Manager, Xcode **File → Add Packages…**, or CocoaPods with `pod install`. Use the public package `hydra-ios-sdk-spm` and the SDK version stated for this integration."
     evidence: ["Use any one of the three methods.", "File → Add Packages…", "Run `pod install`"]
   "3":
     do: "Add `hydra_gamification_key` and `hydra_gamification_region` or `hydra_gamification_base_url` to Remote Config. In `AppDelegate`, fetch the values, pass them to `HydraConfiguration`, call `Hydra.generate(with:)` once. Ask Capillary for the other key names."
@@ -46,14 +46,14 @@ ios/firebase:
     do: "Call `update(customerID:)` whenever the customer ID changes, `update(deviceToken:)` with the push token, and `update(interfaceID:)` with the FCM token whenever it changes. Use `setPromotionalPushOpted` and `setTransactionalPushOpted` for opt-in."
     evidence: ["hydraCore.update(interfaceID:", "setPromotionalPushOpted"]
   "5":
-    do: "When a user signs up or signs in, call `reportUserSignUp` or `reportUserSignIn` with a `UserDetails` object. `customerId`, `firstName`, `lastName` and `phone` are mandatory; `customerId` must match the Account Linking Identifier in Capillary CRM."
-    evidence: ["public func reportUserSignUp(data: UserSignUpGenerator", "Account Linking Identifier in Capillary CRM"]
+    do: "When a user signs up or signs in, call `reportUserSignUp` or `reportUserSignIn` with a `UserDetails` object, then `update(customerID:)` with the same ID. `customerId` must match the Account Linking Identifier in Capillary CRM."
+    evidence: ["public func reportUserSignUp(data: UserSignUpGenerator", "Account Linking Identifier in Capillary CRM", "Also update the SDK's customerId immediately after sign-up/sign-in"]
   "6":
     do: "When a user changes their profile, call `reportUserProfileUpdate` with a `UserDetails` object; only `customerId` is mandatory. Optionally pass the user's subscription list as `HydraSubscription` items."
     evidence: ["reportUserProfileUpdate(data: UserProfileUpdateGenerator", "HydraSubscription(channel:"]
   "7":
-    do: "When the user signs out, call `hydra.reportUserSignOut(customData:)`, passing `[:]` if you have no extra data. This removes the user's details from the session."
-    evidence: ["hydra.reportUserSignOut(customData: customAttributes)", "Removes the user's details"]
+    do: "When the user signs out, call `hydra.reportUserSignOut(customData:)`, passing `[:]` if you have no extra data. This removes the user's details from the session; then set the customer ID to a guest ID or clear it."
+    evidence: ["hydra.reportUserSignOut(customData: customAttributes)", "Removes the user's details", "update the SDK's customer ID to a guest ID"]
   "8":
     do: "To track custom events, call `hydra.reportBehavioralEvent(name:customAttributes:)` with a non-empty event name. Events count only after a sign-in or sign-up is reported, and the events must also be configured in the Hydra config and organisation settings."
     evidence: ["Events count only after a sign-in or sign-up has been reported", "reportBehavioralEvent(name: String"]

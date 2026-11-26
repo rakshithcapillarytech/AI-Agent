@@ -70,8 +70,9 @@ def test_what_the_client_sends_capillary():
     pushed = build_prerequisites(KB, "react-native", "direct", ["push"])
     assert "push_firebase_project" in ids(pushed["give_capillary"])
     # accounts and access the client sets up themselves are a separate group
-    assert "ios_repo_access" in ids(build_prerequisites(KB, "ios", "direct", [])["setup"])
-    assert "ios_repo_access" not in ids(build_prerequisites(KB, "ios", "firebase", [])["setup"])
+    assert "android_repo_access" in ids(build_prerequisites(KB, "android", "direct", [])["setup"])
+    assert "android_repo_access" in ids(build_prerequisites(KB, "android", "firebase", [])["setup"])
+    assert "ios_repo_access" not in ids(build_prerequisites(KB, "ios", "direct", [])["setup"])  # public repository
 
 
 def test_titles_have_no_unfilled_placeholders():
@@ -84,7 +85,7 @@ def test_titles_have_no_unfilled_placeholders():
 def test_versions_come_from_the_guides():
     android = build_prerequisites(KB, "android", "direct", [])
     values = {r["label"]: r["value"] for r in android["versions"]}
-    assert values["Hydra SDK version"].startswith("1.9.22-beta02")
+    assert values["Hydra SDK version"].startswith("1.10.6")
     assert values["Minimum Android version (minSdk)"] == "21 or above"
     # mode-specific items
     assert "Gradle settings" in values
@@ -99,7 +100,9 @@ def test_versions_come_from_the_guides():
 def test_push_only_items_appear_only_with_push():
     without = {r["label"] for r in build_prerequisites(KB, "web", "firebase", [])["versions"]}
     with_push = {r["label"] for r in build_prerequisites(KB, "web", "firebase", ["push"])["versions"]}
-    assert "Chrome (push)" not in without and "Chrome (push)" in with_push
+    assert "Firebase JS SDK (push)" not in without and "Firebase JS SDK (push)" in with_push
+    # the browser minimums are listed on the push page but may apply to the whole SDK, so they always show
+    assert {"Chrome", "Firefox", "Safari", "Edge, Chromium"} <= without
 
 
 def test_computer_specs_are_not_invented():

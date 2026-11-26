@@ -6,8 +6,8 @@ react-native/direct:
     do: "In the project root, run `npm install @capillarytech/react-native-hydra-lib` (or `yarn add @capillarytech/react-native-hydra-lib`). Use this package name, not the old `@capillary/react-native-hydra-lib`."
     evidence: ["npm install @capillarytech/react-native-hydra-lib", "yarn add @capillarytech/react-native-hydra-lib"]
   "3":
-    do: "Create `capillary/hydra-config.json` in the project root with the flags for the features you use. For push add a `hydra_notification_small_icon` image in `capillary/icons/`; add placeholder images there if you turn on in-app or Inbox UI."
-    evidence: ["capillary/hydra-config.json", "hydra_notification_small_icon", "hydra_inbox_ui_placeholder"]
+    do: "Create `capillary/hydra-config.json` in the project root with the flags for the features you use; with no push, turn push and Inbox off as the docs describe. For push add a `hydra_notification_small_icon` image in `capillary/icons/`; add placeholder images there for in-app or Inbox UI."
+    evidence: ["capillary/hydra-config.json", "hydra_notification_small_icon", "hydra_inbox_ui_placeholder", "No push"]
   "4":
     do: "In `ios/Podfile`, add the `HydraPods.rb` require block below the React Native `require`, add `hydra_pods` below `config = use_native_modules!`, and for push add a `HydraRichNotification` target with `extension_pods`. Skip this if there is no iOS target."
     evidence: ["hydra_pods", "extension_pods", "Skip the iOS steps if there is no iOS target."]
@@ -55,8 +55,8 @@ react-native/firebase:
     do: "In the project root, run `npm install @capillarytech/react-native-hydra-lib` (or `yarn add @capillarytech/react-native-hydra-lib`). Use this package name, not the old `@capillary/react-native-hydra-lib`."
     evidence: ["npm install @capillarytech/react-native-hydra-lib", "yarn add @capillarytech/react-native-hydra-lib"]
   "3":
-    do: "Create `capillary/hydra-config.json` in the project root with the flags for the features you use. For push add a `hydra_notification_small_icon` image in `capillary/icons/`; add placeholder images there if you turn on in-app or Inbox UI."
-    evidence: ["capillary/hydra-config.json", "hydra_notification_small_icon", "hydra_inbox_ui_placeholder"]
+    do: "Create `capillary/hydra-config.json` in the project root with the flags for the features you use; with no push, turn push and Inbox off as the docs describe. For push add a `hydra_notification_small_icon` image in `capillary/icons/`; add placeholder images there for in-app or Inbox UI."
+    evidence: ["capillary/hydra-config.json", "hydra_notification_small_icon", "hydra_inbox_ui_placeholder", "No push"]
   "4":
     do: "In `ios/Podfile`, add the `HydraPods.rb` require block below the React Native `require`, add `hydra_pods` below `config = use_native_modules!`, and for push add a `HydraRichNotification` target with `extension_pods`. Skip this if there is no iOS target."
     evidence: ["hydra_pods", "extension_pods", "Skip the iOS steps if there is no iOS target."]

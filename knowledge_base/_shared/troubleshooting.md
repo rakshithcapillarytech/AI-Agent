@@ -37,7 +37,7 @@ SDK log lines are prefixed `HYDRA CAPILLARY SDK:`.
 ## 3. The project can't download the SDK
 | Symptom | Check |
 |---|---|
-| Access denied / 401 when fetching Capillary's private packages | The GitHub token has expired or has no access. Ask your Capillary contact for a new token and replace it where it's stored. An expired token doesn't affect apps already in the App Store or Play Store |
+| Access denied / 401 when fetching Capillary's private packages (native Android, and older React Native setups; native iOS needs no token) | The GitHub token has expired or has no access. Ask your Capillary contact for a new token and replace it where it's stored. An expired token doesn't affect apps already in the App Store or Play Store |
 | Android build can't resolve the SDK | `github.properties` exists in the project root (next to `settings.gradle`) and is git-ignored; its `token=` line holds a classic token starting `ghp_`; CI generates the file from secrets |
 | React Native or Flutter install fails | Check the package name (`@capillarytech/react-native-hydra-lib` from the public npm registry; `capillary_hydra` and `capillary_hydra_platform_interface` from pub.dev). If you still use the older GitHub Packages setup, `.npmrc` / `.yarnrc.yml` must point the `@capillary` scope at GitHub Packages and `HYDRA_GITHUB_PAT` must be set (`react-native/*.md`, `_shared/prerequisites.md`) |
 

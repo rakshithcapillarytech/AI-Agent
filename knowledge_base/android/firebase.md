@@ -1,11 +1,11 @@
 ---
 platform: android
 config_mode: firebase
-sdk_package: com.capillary:hydra-core
-sdk_version: 1.9.22-beta02             # gamification minimum (gamification-android); see the version Gap in Requirements
+sdk_package: com.capillarytech:hydra-core
+sdk_version: 1.10.6             # the version every module and gamification (minimum) use in the current docs; see the Correction in Requirements
 modules_covered: [core, push, inapp, inbox_api, inbox_ui, gamification]
 modules_missing: [visitor, multi_account]
-sources: ["Capillary developer docs (docs.capillarytech.com): android-sdk (updated 2026-08-14), android-sdk-getting-started (updated 2026-11-12), configure-firebase (updated 2026-03-04), installing-sdk, sdk-initialisation, configure-notification-center, android-sdk-api-reference, xiaomi-push-notification (updated 2026-03-25), push-notification (updated 2026-08-03), gamification-android (updated 2026-08-18, Option A), in-app-messaging (updated 2026-10-20)", "Integration document _ Experience+ pp.38–51 (Experience+ Android: Gamification Android Integration Guide, Kotlin + Java)", "Integration document _ Experience+ p.112 (one sentence on push, at the end of the Android without-Firebase guide)"]
+sources: ["Capillary developer docs (docs.capillarytech.com): android-sdk (updated 2026-08-14), android-sdk-getting-started (updated 2026-11-12), configure-firebase (updated 2026-11-16), set-up-source-account (updated 2026-11-12), configure-gateway (updated 2026-03-25), installing-sdk (updated 2026-11-12), sdk-initialisation (updated 2026-03-25), configure-notification-center (updated 2026-11-12), android-sdk-api-reference (updated 2026-03-25), xiaomi-push-notification (updated 2026-11-12), push-notification (updated 2026-11-16), gamification-android (updated 2026-11-23, Option A and Game and CMS event payloads), in-app-messaging (updated 2026-11-12)", "Integration document _ Experience+ pp.38–51 (Experience+ Android: Gamification Android Integration Guide, Kotlin + Java)", "Integration document _ Experience+ p.112 (one sentence on push, at the end of the Android without-Firebase guide)"]
 owner: TBD
 last_verified: null
 review_status: draft   # drafted from the source docs; not yet SME-verified
@@ -32,11 +32,13 @@ From Getting Started (android-sdk-getting-started):
 - compileSdkVersion 34
 - Google Firebase account
 - Gradle: the version catalog (recommended install path) is a preview feature on Gradle 7.4 and below and must be enabled (step 2); it's on by default from 7.4.
-- Hydra SDK: `{{sdk_version}}` (Beta, for UAT/POC) or later for gamification.
+- Hydra SDK: `{{sdk_version}}` or later. Getting Started lists every module (`hydra-core`, `hydra-pushbase`, `hydra-firebase`, `hydra-richnotification`, `hydra-inbox-core`, `hydra-inbox-ui`, `hydra-inapp`, `hydra-catalog`) at `1.10.6`, and gamification (gamification-android) names `1.10.6` as its minimum SDK version.
 
-> ⚠️ Correction: ✅ Use `1.9.22-beta02` as the minimum SDK version for gamification (gamification-android). ❌ Don't use `1.9.22-beta01` (Integration document pp.39, 50). *Pending SME confirmation.*
+> ⚠️ Correction: ✅ Use `1.10.6` as the SDK version for every module, including gamification (gamification-android: "Minimum SDK version: `1.10.6`"; android-sdk-getting-started and installing-sdk agree). ❌ Don't use `1.9.22-beta02` (labelled Beta for UAT/POC), `1.9.22-beta01` or `1.9.20`, which came from an older internal Integration document (pp.39, 50) and an older version of the Getting Started page. *Pending SME confirmation: an SME should confirm that no UAT or POC build still needs a beta version.*
 
-> ⚠️ Gap: Getting Started lists every module (`hydra-core`, `hydra-pushbase`, `hydra-firebase`, `hydra-richnotification`, `hydra-inbox-core`, `hydra-inbox-ui`, `hydra-inapp`, `hydra-catalog`) at `1.9.20`, while gamification needs `1.9.22-beta02`. Whether the push, rich-notification and catalog modules are published at `1.9.22-beta02` isn't documented. Ask a Capillary engineer which version to use for each module.
+> ⚠️ Gap: Getting Started's module table omits `hydra-mi-push-kit` (Xiaomi page: `1.10.6`), `hydra-gamification` and `hydra-gamification-ui` (gamification Option B: `1.10.6`), which other pages use. Ask a Capillary engineer whether the table or those pages are the current list.
+
+> ⚠️ Gap: the install page (installing-sdk) says the version catalog is a preview feature "for Gradle 7.4 and below" and enabled by default "for 7.4 and above", so 7.4 itself is covered by both statements. Ask a Capillary engineer which applies if you are on exactly 7.4.
 
 > ⚠️ Gap: AGP, Kotlin and exact Gradle versions aren't documented. Ask a Capillary engineer.
 
@@ -45,12 +47,17 @@ Common exchange: `_shared/prerequisites.md`. Firebase project and Remote Config:
 
 Getting Started order: (1) Firebase and gateway are configured (Capillary mobile apps team), (2) the source account is configured (CSM / project manager), then (3) install, (4) initialise, (5) push, (6) APIs, (7) gamification.
 
-- **Client gives Capillary:** the Android application ID and the app signature (SHA256); for push, the Firebase project ID and service account (`_shared/push.md`).
+- **Source account** (set-up-source-account): the CSM / project manager configures it in *Organisation settings > Omni Channel Settings > Channel Configurations > MAPP_SDK*. Android needs the bundle name and the **App signature** ("required only for Android apps"; both from the app developer). The **FCM Project ID** is in the Firebase console under *Project settings > General*; the **FCM Email** is the service-account email shown on the service-account page. "Enable Mirror" is not required. One source account can serve both iOS and Android: enter both bundle names in the Bundle name field, separated by a semicolon (for example `android:com.capillarytech.product.android.one;ios:com.capillarytech.product.ios.x`).
+- **Client gives Capillary:** the Android application ID and the app signature (SHA256); for push, the Firebase project ID and the service-account private key of a dedicated service account (step 4, `_shared/push.md`).
 - **Capillary gives the client:** Account Id (the Source Account Id of your MAPP_SDK account), Base URL (specific to your Capillary cluster), SSL Public Key, Org Id (also passed to `updateRemoteConfig` for gamification, step 18), and the gamification values below.
 - **Repository access:** read access to `https://github.com/Capillary/hydra-sdk-android-maven`, plus a GitHub username and a Personal Access Token (PAT) with the **`read:packages`** scope.
 - **Behavioural events** you send with `pushEvent` must first be created in Capillary: *Organisation settings > Master Data Management > Data Model > Behavioural events*.
 
-> ⚠️ Gap: the Android push page (push-notification) lists an **FCM server API key** (Firebase console › Project settings › Cloud Messaging › Server key) as the push prerequisite, while Configure Firebase (configure-firebase) asks for a **service account** with a custom role and a JSON private key. Ask a Capillary engineer which one Capillary needs.
+Capillary needs a **service-account private key** from your Firebase project (push-notification, "Prerequisite", and configure-firebase), not an FCM server API key: Capillary calls the FCM HTTP v1 API with the service account. See step 4.
+
+> ⚠️ Gap: Getting Started step 1 says "Configure Firebase and gateway" is done by the "Capillary mobile apps team", but configure-firebase describes the Firebase steps (project, service account, key) as done in the brand's own Firebase console, and the "team setting up the Firebase account for the brand" raises a ticket with the gateways team; configure-gateway says an SDK-integrating developer does not perform the gateway steps. The likeliest reading is: your mobile team does the Firebase part and Capillary sets up the gateways. Ask your Capillary CSM to confirm who does what.
+
+> ⚠️ Gap: set-up-source-account says "Source Account Id - Displays the service account id. This is auto-generated." The Source Account Id is the value you pass as `accountId` (see above); it is not the Firebase service account. Ask a Capillary engineer if this is unclear.
 
 | Firebase Remote Config key | Value from Capillary | Required? |
 |---|---|---|
@@ -101,7 +108,7 @@ dependencyResolutionManagement {
     }
     versionCatalogs {
         create("hydra") {
-            from("com.capillary:hydra-catalog:{{sdk_version}}")
+            from("com.capillarytech:hydra-catalog:{{sdk_version}}")
         }
     }
 }
@@ -130,6 +137,10 @@ dependencyResolutionManagement {
 
 The repository block (with `github.properties` loading) is from gamification-android; the `enableFeaturePreview` and `versionCatalogs` lines are from installing-sdk, which doesn't show a Kotlin DSL catalog block. Without a catalog, installing-sdk puts the `maven { … }` block in the `repositories` section of `project/build.gradle` instead.
 
+> ⚠️ Gap: the `maven { ... }` snippets on the install page (installing-sdk) aren't copy-pasteable: they use an undefined `props`, curly quotes around the key names, an angle-bracket URL, Groovy `url "..."` inside a block labelled Kotlin, and a misaligned `password` line. This guide uses the gamification page's version, which loads `github.properties` with `Properties()` first. Ask a Capillary engineer if it doesn't authenticate.
+
+> ⚠️ Gap: the "without version catalog" path puts `maven { ... }` in the project-level `repositories`, but the other snippets set `repositoriesMode` to `FAIL_ON_PROJECT_REPOS` in settings, which makes project-level repositories fail the build (the Xiaomi page also sets `FAIL_ON_PROJECT_REPOS` and `PREFER_SETTINGS` back to back). Prefer the settings-file block above, and ask a Capillary engineer if the build rejects the repository.
+
 ### 3. Add the SDK dependencies
 Core, push base and Firebase modules, plus the AndroidX libraries. **With the version catalog** (`hydra` = the catalog name from step 2):
 
@@ -151,13 +162,17 @@ dependencies {
 ```kotlin file=app/build.gradle
 dependencies {
     // ...
-    implementation("com.capillary:hydra-core:{{sdk_version}}")
-    implementation("com.capillary:hydra-firebase:{{sdk_version}}")
-    implementation("com.capillary:hydra-pushbase:{{sdk_version}}")
+    implementation("com.capillarytech:hydra-core:{{sdk_version}}")
+    implementation("com.capillarytech:hydra-firebase:{{sdk_version}}")
+    implementation("com.capillarytech:hydra-pushbase:{{sdk_version}}")
 }
 ```
 
 Optional modules: rich push (step 13), In-App and Inbox (Modules). Gamification needs **no extra dependency** in this mode: HydraGamification is bundled within HydraCore and enabled through configuration alone (gamification-android, Option A).
+
+Push also needs Firebase in the app: add the Firebase dependencies and `google-services.json` (step 4); the SDK modules above don't include them.
+
+> ⚠️ Gap: gamification-android says gamification is bundled in HydraCore (Option A), yet its Option B adds separate `hydra-gamification` and `hydra-gamification-ui` artifacts at `1.10.6`, and neither is in Getting Started's module table or the catalog. Ask a Capillary engineer whether they are needed in this mode.
 
 > ⚠️ Gap: the AndroidX library versions are shown only as `xxx`. Ask a Capillary engineer.
 
@@ -165,6 +180,12 @@ Optional modules: rich push (step 13), In-App and Inbox (Modules). Gamification 
 
 ### 4. Add Firebase to the app
 Create the Firebase project and set up Cloud Messaging per Firebase's Android documentation (configure-firebase, steps 1–2). Push needs the Firebase dependencies and `google-services.json` in the app (gamification-android). The Firebase console and service-account steps are in `_shared/firebase-setup.md` and `_shared/push.md`.
+
+What Capillary needs from the Firebase project (configure-firebase, steps 3–6):
+- Turn on the **Firebase Cloud Messaging API (V1)** for the project.
+- Create a **dedicated service account** for Capillary; don't reuse an existing one. Give it one of two roles: **Firebase Cloud Messaging API Admin** (`roles/firebasecloudmessaging.admin`, which includes `cloudmessaging.messages.create`), or a custom role with only `cloudmessaging.messages.create`. Don't use the Owner, Editor or Firebase Admin roles; Capillary doesn't need them.
+- Generate a JSON private key for that service account and share it with Capillary through a one-time link from your enterprise password manager or secrets vault (expiring in 24 to 48 hours, single view, restricted to the recipient's email), or a restricted link from your enterprise file-sharing platform (shared only with the recipient's email, with an expiry date, access removed after Capillary confirms the setup). Never in chat, email, tickets or git.
+- Only the Capillary backend needs that private key. Your Android app must never contain it; the app uses `google-services.json`. Without the key, Google issues no token and every send is rejected with 401 Unauthorized.
 
 > ⚠️ Gap: the Capillary docs don't give the Gradle lines for the `com.google.gms.google-services` plugin or the Firebase (Messaging, Remote Config) dependencies. Ask a Capillary engineer.
 
@@ -218,9 +239,11 @@ HydraAPI.instanceWithConfig(applicationContext, hydraConfig);
 | `.notificationConfig` | NotificationConfig | Notification configuration (step 11) | Optional |
 | `.notificationCenterConfig` | NotificationCenterConfig | Inbox fallback image (Modules › Inbox) | Optional |
 
-`HydraConfig` also has `isDisableAppLaunchedEvent: Boolean`; no builder method for it is shown. Java snippets are omitted from steps 7, 8, 10, 11, 16, 17 and Modules › Push/In-App/Inbox to save space: the docs' Java equivalents call the same API methods; only the builder style differs (step 5 Gap). Gamification builder methods: step 14.
+`HydraConfig` also has `isDisableAppLaunchedEvent: Boolean`; no builder method for it is shown. Java snippets are omitted from steps 7, 8, 10, 11, 16, 17 and Modules › Push/Inbox to save space: the docs' Java equivalents call the same API methods; only the builder style differs (step 5 Gap). Gamification builder methods: step 14.
 
 > ⚠️ Gap: the Java samples disagree. sdk-initialisation and push-notification use `new HydraConfig.Builder(applicationContext).setAccountId(...)` with `set…` methods; configure-notification-center and gamification-android use `new HydraConfig.Builder(context, accountId)` with unprefixed methods (`.baseURL(...)`, `.notificationCenterConfig(...)`). Ask a Capillary engineer which matches your SDK version.
+
+> ⚠️ Gap: sdk-initialisation marks `.fcmConfig` and `.notificationConfig` as "Optional (If not using Firebase SDK)", which contradicts push-notification (`FcmConfig(true)` is used when the SDK handles FCM with Firebase, step 10 A). It also marks `.baseURL` and `.sslPublicKey` "Optional", although the other pages treat them as values you pass. Follow step 10 for `.fcmConfig`, and pass `.baseURL` and `.sslPublicKey`; ask a Capillary engineer if unsure.
 
 > ⚠️ Gap: sdk-initialisation doesn't list `.orgId()`; whether this mode needs `{{org_id}}` in the builder isn't stated (it's passed in `updateRemoteConfig`, step 18). Ask a Capillary engineer.
 
@@ -249,6 +272,22 @@ hydraAPI?.pushUserSignin(
 
 Without the optional details, pass empty values: `hydraAPI?.pushUserSignin("9000090000", "", "", "", "", emptyMap())` (Java: `Collections.emptyMap()`). `pushUserSignup(...)` (registration; also an optional `subscriptions` list) and `pushUserUpdate(...)` (profile update) take the same first six arguments; see API Reference.
 
+The API reference lists only the keys of a `subscriptions` entry (channel, accountId, priority, type and sourcename). The source-account page (set-up-source-account) shows this sample entry for an Android app; `accountId` is the Source Account Id of your MAPP_SDK account:
+
+```json
+{
+    "channel": "ANDROID",
+    "accountId": "~2024ba96",
+    "priority": "BULK",
+    "type": "OPTIN",
+    "sourceName": "MAPP_SDK"
+}
+```
+
+> ⚠️ Gap: the docs show this only as a JSON payload, not as Kotlin code for building the `subscriptions` list. The key is `sourcename` in the API reference and `sourceName` in the sample, and the channel value is `ANDROID` here but `iOS` (mixed case) in the iOS sample. Ask a Capillary engineer for the exact form your SDK version expects.
+
+> ⚠️ Gap: the API reference's Java samples write the custom attributes with `Map.of("Age", "25", "Gender", "Male")`. `Map.of` needs Android API 30 or higher, while the docs set minSdk 21, so it can crash older devices with `NoSuchMethodError`. Build the map with `new HashMap<>()` and `put(...)` instead (as in `android/direct.md` step 6), and ask a Capillary engineer if you need the docs' form.
+
 Sign-out needs only the `cuid`; it can be used to erase previously logged user information:
 
 ```kotlin
@@ -265,6 +304,8 @@ hydraAPI?.passUserPreferences(
 )
 ```
 
+> ⚠️ Gap: the API reference table says `cuid` is optional for `passUserPreferences` ("If null, uses the stored CUID"), but its Kotlin signature takes a non-null `String`. It also documents the event parameter as `event_name` while the signature uses `eventName`. Pass the `cuid` explicitly, and ask a Capillary engineer if unsure.
+
 ### 8. Track behavioural events (optional)
 Create the event in Capillary first (Prerequisites). Events are valid **only after a sign-in or sign-up** and invalid after a sign-out. The event name must be non-null and non-empty; attributes are optional.
 
@@ -275,6 +316,8 @@ mapOf("Username" to "Henry", "Age" to "25", "Gender" to "Male")
 ```
 
 Without attributes: `hydraAPI?.pushEvent("Page/Activity successfully opened")`.
+
+> ⚠️ Gap: the API reference's behavioural-event samples also put `"event_name"` and `"customerId"` inside the attributes map, and its text says behavioural events need configuration "in the Hydraconfig" as well as in org settings, but it shows no such `HydraConfig` setting. Whether those two keys must be repeated in the attributes, and what to configure in `HydraConfig`, isn't documented. Ask a Capillary engineer.
 
 ### 9. Request the notification permission (Android 13+)
 From Android 13, push notifications are disabled by default; the app must ask the user. This helper shows the permission dialog, tracks the response and sets up the required notification channel:
@@ -300,7 +343,7 @@ HydraAPI.instanceWithConfig(applicationContext, hydraConfig)
 
 ```xml file=app/src/main/AndroidManifest.xml
 <service
-   android:name="com.capillary.hydra.firebase.HydraFirebaseMessagingService"
+   android:name="com.capillarytech.hydra.firebase.HydraFirebaseMessagingService"
    android:exported="false">
    <intent-filter>
        <action android:name="com.google.firebase.MESSAGING_EVENT" />
@@ -418,7 +461,7 @@ class ApplicationTokenListener : TokenAvailableListener {
 HydraFirebaseAPI.getInstance().addTokenListener(ApplicationTokenListener())
 ```
 
-Java imports: `com.capillary.hydra.sdk.entity.Token`, `com.capillary.hydra.sdk.listeners.TokenAvailableListener`.
+Java imports: `com.capillarytech.hydra.sdk.entity.Token`, `com.capillarytech.hydra.sdk.listeners.TokenAvailableListener`.
 
 **Non-Hydra payload callback (optional):** for push payloads from servers other than Capillary.
 
@@ -439,9 +482,9 @@ HydraFirebaseAPI.getInstance().addNonHydraPushListener(ApplicationPayloadListene
 HydraFirebaseAPI.getInstance().addNonHydraPushListener(new ApplicationPayloadListener());
 ```
 
-Java import: `com.capillary.hydra.firebase.NonHydraPushListener`.
+Java import: `com.capillarytech.hydra.firebase.NonHydraPushListener`.
 
-> ⚠️ Gap: the push page names the `NonHydraPushListener` method two ways: `onPushReceived(RemoteMessage)` in the example class and `onNonHydraPushReceived(RemoteMessage)` in its inline Java sample. Ask a Capillary engineer.
+> ⚠️ Gap: the push page names the `NonHydraPushListener` method two ways: `onPushReceived(RemoteMessage)` in the example class and `onNonHydraPushReceived(RemoteMessage)` in its inline Java sample. The page's Kotlin prose block also shows `addNonHydraPushListener()` with no argument. Ask a Capillary engineer.
 
 ### 13. Handle CTAs, deep links and rich push
 - **Primary CTA:** one per push; runs when the user taps the notification body. Opens a URI in the browser or a deep link; if none is configured, the app's **launcher activity** opens.
@@ -465,7 +508,7 @@ Java import: `com.capillary.hydra.firebase.NonHydraPushListener`.
 </activity>
 ```
 
-- **Rich push templates (optional):** add `implementation("hydra.richnotification")` (catalog) or `implementation("com.capillary:hydra-richnotification:{{sdk_version}}")` (artifact) to `app/build.gradle`. For carousel timing, check and request the exact-alarm permission (Android 12+):
+- **Rich push templates (optional):** add `implementation("hydra.richnotification")` (catalog) or `implementation("com.capillarytech:hydra-richnotification:{{sdk_version}}")` (artifact) to `app/build.gradle`. For carousel timing, check and request the exact-alarm permission (Android 12+):
 
 ```kotlin
 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -477,6 +520,8 @@ if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 ```
 
 `AlarmPermissionUtils.logExactAlarmStatus(context)` logs the current status for debugging.
+
+> ⚠️ Gap: the push page says rich push is "available from Hydra SDK version 1.2.0 and RichNotification version 1.0.0", while Getting Started and the artifact sample give `hydra-richnotification` as `1.10.6`. Use `{{sdk_version}}`; ask a Capillary engineer if the older numbers matter to you.
 
 ### 14. Add the gamification Remote Config keys and pass them to `HydraConfig.Builder`
 Add the three Remote Config keys (Prerequisites). Fetch them at runtime and apply them **conditionally**, because Remote Config values may not have loaded yet:
@@ -684,13 +729,15 @@ Setup: steps 4 and 9–13. Capillary sends Android push through Firebase Cloud M
 
 **Delivery and campaign TTL.** If a push isn't delivered in real time (device offline, stale FCM token, connectivity), the SDK pulls it the next time the user opens the app. An undelivered notification stays eligible for the campaign Time-to-Live: **15 days by default**, configurable per organisation; within the TTL it can still arrive on app open even if the campaign has ended; after it, it's discarded. The TTL applies to promotional and transactional messages.
 
+**Gateways.** Capillary sets up four FCM gateways during onboarding (android and iOS, each bulk and transactional): the `campaign` scope runs on the bulk gateways, and the `optout`, `otp`, `highvoltrans` and `transaction` scopes on the high-priority transactional gateways (configure-gateway). As an SDK-integrating developer you don't perform these steps; ask your Capillary CSM to start them. The brand's Firebase team raises a ticket with the gateways team with the details they request (configure-firebase, "Gateway Configuration").
+
 #### Xiaomi push amplification (deprecated)
 > **Deprecated** (xiaomi-push-notification). For a new integration, ask your Capillary CSM for the recommended push amplification approach.
 
 Sends each push through both Xiaomi Cloud Push and FCM; when one delivers, the other is suppressed, so the user gets it once. Steps as documented:
 1. Register as a Xiaomi developer, create the app, note its Package name / App ID / AppKey / App Secret, and enable Push in the Mi Push Operational Console.
 2. Download the Mi SDK into the app module's `libs` folder; in the app module's `build.gradle` add a `flatDir { dirs 'libs' }` repository under `android { repositories { … } }` and `implementation fileTree(include: ['*.aar'], dir: 'libs')`. With AGP 7.0.0+, also set `repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)` in `settings.gradle`'s `dependencyResolutionManagement`.
-3. Add `implementation("hydra.mipushkit")` (catalog) or `implementation("com.capillary:hydra-mi-push-kit:x.x.x")` (artifact).
+3. Add `implementation("hydra.mipushkit")` (catalog) or `implementation("com.capillarytech:hydra-mi-push-kit:1.10.6")` (artifact).
 4. Download the helper class and broadcast receiver from `https://github.com/Capillary/push-amp-plus` into a package named `com.hydra.sdk.miPushKit`, and register the receiver:
    ```xml file=app/src/main/AndroidManifest.xml
    <receiver
@@ -714,12 +761,12 @@ Sends each push through both Xiaomi Cloud Push and FCM; when one delivers, the o
 5. Where the app comes to the foreground: `MiPushHelper.initialiseMiPush(context, MI_APP_ID, MI_APP_KEY, Region);` (App-Id and App-Key from the Mi dashboard; Region = Mi data residency).
 6. Only if your own receiver handles Mi tokens and messages: `HydraMiPushApi.getInstance().setDataRegion(context, MiRegion.valueOf(region.toString()));` (region from `MiPushClient.getAppRegion(context)`), `HydraMiPushApi.getInstance().passPushToken(context, pushToken);`, and pass Hydra payloads after `HydraPushApi.getInstance().isFromHydraPlatform(remoteMessage)` with `HydraMiPushApi.getInstance().passPushPayload(context, remoteMessage);`.
 
-> ⚠️ Gap: the `hydra-mi-push-kit` version isn't listed in Getting Started. Ask a Capillary engineer.
+> ⚠️ Gap: the `hydra-mi-push-kit` module is missing from Getting Started's module table; its version (`1.10.6`) is given only on the Xiaomi page. Ask a Capillary engineer if the table should list it.
 
 ### In-App
-Delivered through Hydra's push mechanism: **the push module (steps 9–12) must already be integrated.** Supported layouts: Header, Footer, Popup, Interstitial.
+Delivered through Hydra's push mechanism: **the push module (steps 9–12) must already be integrated.** Supported layouts: Header, Footer, Popup, Interstitial. The feature is available from Capillary SDK 1.4.0 (in-app-messaging).
 
-1. Add `implementation("hydra.inapp")` (catalog) or `implementation("com.capillary:hydra-inapp:{{sdk_version}}")` (artifact) to `app/build.gradle`.
+1. Add `implementation("hydra.inapp")` (catalog) or `implementation("com.capillarytech:hydra-inapp:{{sdk_version}}")` (artifact) to `app/build.gradle`.
 2. Fallback image if the payload image fails to download: `InAppConfig(@DrawableRes val defaultImage: Int)` (`defaultImage`: resource ID of the fallback drawable, mandatory).
 3. Register the click listener in `Application.onCreate()` after initialising Hydra. **Mandatory** for custom actions on message click. Return `false` → the SDK performs the action; `true` → your app handles it.
 
@@ -736,6 +783,20 @@ HydraInAppUIHelper.getInstance()
    .registerOnMessageClickListener(ApplicationInAppMessageClickListener())
 ```
 
+```java
+public class ApplicationInAppMessageClickListener implements OnMessageClickListener {
+    @Override
+    public boolean onMessageClick(Context context, CTA cta) {
+        return super.onMessageClick(context, cta);
+    }
+}
+
+HydraInAppUIHelper.getInstance()
+   .registerOnMessageClickListener(new ApplicationInAppMessageClickListener());
+```
+
+> ⚠️ Gap: the In-App page's text says the application must register an `InAppMessageListener`, but its code implements `OnMessageClickListener` and registers it with `registerOnMessageClickListener`. This guide follows the code. Ask a Capillary engineer if `InAppMessageListener` is a separate interface.
+
 `triggerInAppOnLaunch(currentActivity: Activity)` manually triggers in-app messages after the SDK initialises; it's meant for Flutter apps whose activity callbacks (e.g. `onResume`) are lost through late initialisation.
 
 > ⚠️ Gap: how `InAppConfig` is passed to the SDK (no `HydraConfig.Builder` method is shown) and which object `triggerInAppOnLaunch` is called on aren't documented. Ask a Capillary engineer.
@@ -743,7 +804,7 @@ HydraInAppUIHelper.getInstance()
 ### Inbox
 The Notification Center lists the push notifications the user has received.
 
-1. Add `implementation("hydra.inbox.core")` and `implementation("hydra.inbox.ui")` (catalog), or `implementation("com.capillary:hydra-inbox-core:{{sdk_version}}")` and `implementation("com.capillary:hydra-inbox-ui:{{sdk_version}}")` (artifact).
+1. Add `implementation("hydra.inbox.core")` and `implementation("hydra.inbox.ui")` (catalog), or `implementation("com.capillarytech:hydra-inbox-core:{{sdk_version}}")` and `implementation("com.capillarytech:hydra-inbox-ui:{{sdk_version}}")` (artifact).
 2. Set a fallback image (shown when a notification's image fails to download) during SDK initialisation:
 
 ```kotlin
@@ -804,6 +865,8 @@ Also `fetchInboxMessages(context, OnMessagesAvailableListener)`, `deleteInboxMes
 
 > ⚠️ Gap: the callback method of `OnMessagesAvailableListener` and the fields of `InboxMessage` aren't documented. Ask a Capillary engineer.
 
+> ⚠️ Gap: on the Notification Center page (configure-notification-center) two headings don't match their methods (`getUnreadNotificationCount` heading, method `getUnReadMessagesCount`; `deleteInboxMessages` heading, method `deleteInboxMessage`), its text says to register an `InboxMessageListener` "to receive in-app message callbacks" (the code registers `OnMessageClickListener` through `HydraInboxUIHelper`; this looks copied from the In-App page), and the read-state timestamp style is `bold`, the same as the unread one. This guide follows the method names and code. Ask a Capillary engineer if anything doesn't resolve.
+
 6. **Customise the default UI.** `InboxActivity` inherits the app's default theme. Override these in your resources: `HydraInboxToolbarStyle` (parent `Theme.AppCompat`; toolbar title and `android:navigationIcon`; also `android:textColorPrimary`/`textColorSecondary`, `android:background`), `HydraInboxToolbarTextStyle` (unread count), `HydraInboxToolbarButtonStyle` ("CLEAR ALL"), colours `hydra_unread_message_background_color` / `hydra_read_message_background_color`, `HydraUnReadInboxTitleTextStyle` / `HydraReadInboxTitleTextStyle`, `HydraUnReadInboxMessageTextStyle` / `HydraReadInboxMessageTextStyle` (summary), `HydraUnReadInboxMessageTimeStyle` / `HydraReadInboxMessageTimeStyle` (timestamp), `HydraInboxEmptyBoxTextStyle` (empty state). Style items used: `android:textSize`, `android:textColor`, `android:fontFamily`, `android:textStyle`, plus `android:maxLines` (title 2, summary 3).
 
 ### Visitor
@@ -847,17 +910,17 @@ public class MyGamificationCallback implements GamificationCallback {
 **Custom views (optional, in XML layouts).** Each `android:id` must correspond to the ID configured in the campaign dashboard (for the Loyalty View, the `embedId` from the API response). In this mode **all three** are bound and rendered automatically by `GamificationUIManager` once `onScreenChanged` is called; no extra code. Call `setCapToken(...)` (step 19) before the screen is reported, for the Loyalty View.
 
 ```xml
-<com.capillary.hydra.gamification.ui.entrypoints.BannerView
+<com.capillarytech.hydra.gamification.ui.entrypoints.BannerView
     android:id="@+id/{{banner_id}}"
     android:layout_width="match_parent"
     android:layout_height="wrap_content" />
 
-<com.capillary.hydra.gamification.ui.entrypoints.EmbedWebView
+<com.capillarytech.hydra.gamification.ui.entrypoints.EmbedWebView
     android:id="@+id/{{embed_id}}"
     android:layout_width="match_parent"
     android:layout_height="wrap_content" />
 
-<com.capillary.hydra.gamification.ui.entrypoints.LoyaltyEmbedView
+<com.capillarytech.hydra.gamification.ui.entrypoints.LoyaltyEmbedView
     android:id="@+id/{{loyalty_id}}"
     android:layout_width="match_parent"
     android:layout_height="match_parent" />
@@ -866,6 +929,41 @@ public class MyGamificationCallback implements GamificationCallback {
 The Firebase and no-Firebase paths differ on purpose in dependencies, initialisation and the Embedded View's binding (no-Firebase needs `bindEmbedView()`; this mode doesn't).
 
 > ⚠️ Gap: which API response returns the Loyalty `embedId` isn't documented. Ask a Capillary engineer.
+
+**Gamification events (Game and CMS event payloads).** Experience+ sends seven events (gamification-android, "Game and CMS event payloads"). The docs show no app code for them; they matter when you create the events in Capillary (field mapping below). Rules for every payload: `cuid` is **required**; `event_name` is always sent; payloads are flat JSON (no nested objects); numbers are sent as numbers, not strings. All other attributes are optional.
+
+| Event | Flow | Fires when | Attributes besides `cuid` and `event_name` |
+|---|---|---|---|
+| `game_open` | Game | A game entry surface opens or launches the game | `campaign_id`, `game_type`, `entry_surface`, `embed_id`, `entry_point_id`, `entry_point_location`, `deep_link_url`, `hyper_link_url` |
+| `game_viewed` | Game | The game UI is rendered and visible | `campaign_id`, `game_type`, `load_time_ms` (number) |
+| `game_played` | Game | The user's first real interaction (spin, scratch, tap, select) | `campaign_id`, `game_type` |
+| `game_completed` | Game | The game ends: won, lost, completed or abandoned | `campaign_id`, `game_type`, `total_time_ms` (number) |
+| `reward_seen` | Game | The user views the reward (reveal screen or wallet) | `reward_id`, `campaign_id`, `reward_type` |
+| `content_open` | CMS | A CMS surface (widget, banner or full page) is opened | `content_surface` |
+| `content_viewed` | CMS | The CMS content is rendered and visible | `page_id`, `content_surface`, `load_time_ms` (number) |
+
+Documented values: `entry_surface` is `popup`, `floating_icon`, `modal` or `banner_embedded` (`embed_id` applies to `banner_embedded` only); `game_type` includes `spinthewheel`, `scratchcard`, `slotmachine`, `quiz`, `memorygame`, `giftbox`, `streak`, `multistep`, `referral` (not exhaustive); `reward_type` includes `points`, `coupons`, `cashback`, `discount`, `freebie`, `buyXgetY`, `noReward` (not exhaustive); `content_surface` is `widget`, `banner` or `full_page`. `campaign_id` is the join key across game and reward events. Sample payload:
+
+```json
+{
+  "cuid": "stringxxx",
+  "event_name": "game_viewed",
+  "campaign_id": "camp_44",
+  "game_type": "spinthewheel",
+  "load_time_ms": 850
+}
+```
+
+**Field mapping.** When you create the events in Capillary, map these four event-creation fields. **All four are required.**
+
+| Event-creation field | Maps from |
+|---|---|
+| `customerId` | `cuid` from the event payload (on every event) |
+| `identifierType` | The login identifier you pass to the SDK: `mobile`, `email` or `externalId` |
+| `source` | `SDK` |
+| `accountId` | The SDK account ID (`{{account_id}}`) |
+
+> ⚠️ Gap: the docs don't say where in Capillary you create these events or how the payload reaches them. Ask a Capillary engineer.
 
 ## Verification
 - **Init:** no exception at `instanceWithConfig` (an exception means `accountId` is missing). Set `.debugLevel(LogType.VERBOSE)` for SDK logs.
@@ -880,7 +978,7 @@ The Firebase and no-Firebase paths differ on purpose in dependencies, initialisa
 | Symptom | Cause | Fix |
 |---|---|---|
 | SDK throws an exception at initialisation | `accountId` not provided to `HydraConfig.Builder` | Pass `{{account_id}}` (step 5) |
-| Gradle can't resolve `com.capillary:hydra-core` (401/403 from `maven.pkg.github.com`); derived from the prerequisites, not a reported case | PAT lacks `read:packages`, no access to `Capillary/hydra-sdk-android-maven`, or `github.properties` missing / wrong keys | Use a PAT with `read:packages`; confirm repo access with Capillary; keep `github.properties` next to `settings.gradle` (steps 1–2) |
+| Gradle can't resolve `com.capillarytech:hydra-core` (401/403 from `maven.pkg.github.com`); derived from the prerequisites, not a reported case | PAT lacks `read:packages`, no access to `Capillary/hydra-sdk-android-maven`, or `github.properties` missing / wrong keys | Use a PAT with `read:packages`; confirm repo access with Capillary; keep `github.properties` next to `settings.gradle` (steps 1–2) |
 | No notifications on Android 13+ | Notifications are disabled by default from Android 13 | Call `HydraPushApi.getInstance().requestPushPermission(context)` (step 9) |
 | App has its own Firebase Messaging Service and push is mishandled | SDK token registration not opted out | Use `FcmConfig(false)` and pass tokens and Hydra payloads yourself (step 10 B) |
 | Push stops after a reinstall, a restore on a new device or cleared app data (app handles push) | The FCM token changed and the new one wasn't passed | Pass every `onNewToken` token with `passPushToken` (step 10 B) |
@@ -900,6 +998,7 @@ The Firebase and no-Firebase paths differ on purpose in dependencies, initialisa
 | Gamification keys arrive via Remote Config after Hydra is initialised | Hydra initialised before `hydra_gamification_*` values were available | Call `HydraAPI.updateRemoteConfig(...)`, then wire `GamificationUIManager` if null (step 18) |
 | SDK log shows `Client Credentials Generation Failed` / `{"error":"source not found","status":400}` | The App Signature registered at Capillary (MAPP_SDK) doesn't match the signature of the build being run | Compare the build's SHA256 with the registered one and ask Capillary to update it (`_shared/push.md`) |
 | Push never arrives although sign-in works | The app's Firebase project isn't the one registered at Capillary, or the push gateway isn't set up yet | Follow `_shared/push.md` › Test the push flow and › Common problems |
+| Every push send is rejected with 401 Unauthorized | Capillary has no service-account private key for your project (not shared, deleted or rotated), or the service account lacks the required role | Share the key of a dedicated service account that has `roles/firebasecloudmessaging.admin` or a custom role with only `cloudmessaging.messages.create`, and make sure the Firebase Cloud Messaging API (V1) is on (step 4) |
 
 ## API Reference
 Signatures are in the steps above; this is the index. Kotlin names as documented; `HydraAPI.getDefaultInstance(context)` returns the nullable instance.
@@ -907,8 +1006,8 @@ Signatures are in the steps above; this is the index. Kotlin names as documented
 | Area | APIs |
 |---|---|
 | Init | `HydraConfig.Builder(context, accountId)` (methods: step 5; gamification: `.gamificationWriteKey()`, `.gamificationBaseUrl()`, `.gamificationRegion(GamificationRegion)`), `HydraAPI.instanceWithConfig(context: Context, config: HydraConfig): HydraAPI`, `HydraAPI.initialize(context, config)` (step 14 Gap), `HydraAPI.initializeConsoleLogger(LogType.Debug)` (other samples write `LogType.DEBUG`), `HydraAPI.updateRemoteConfig(orgId, accountId, baseURL, sslPublicKey, gamificationWriteKey, gamificationRegion, gamificationBaseUrl): Boolean` |
-| Users and events | `pushUserSignin(cuid: String, firstName: String? = null, lastName: String? = null, email: String? = null, phone: String? = null, customData: Map<String, Any>? = null)`; `pushUserSignup(cuid, firstName, lastName, email, phone: String, customData: Map<String, Any>?, subscriptions: List<Any>?)` (all mandatory but the last two; `subscriptions`: channel, accountId, priority, type, sourcename; the Java signature has no `subscriptions`); `pushUserUpdate(...)` (same as sign-in); `pushUserSignOut(cuid: String)`; `passUserPreferences(cuid: String, userPreference: UserPreferences)` with `UserPreferences(promPushOpted: Boolean, transPushOpted: Boolean)` (null `cuid` uses the stored CUID); `pushEvent(eventName: String, attributes: Map<String, Any>? = null)`; `setCapToken(token)` |
-| Push | `FcmConfig(Boolean)`, `NotificationConfig(smallIcon, notificationColor, isMultipleNotificationInDrawerEnabled)`, `HydraPushApi.getInstance()`: `requestPushPermission(context)`, `isFromHydraPlatform(data)`, `registerPushNotificationListener(HydraPushNotificationListener)` (`onNotificationReceived(context, payload: Bundle)`, `onNotificationShown(context, payload: Bundle)`, `onNotificationClick(context, payload: NotificationPayload, cta: CTA?): Boolean`, `onNotificationDismissed(context, payload: Bundle)`, `handleCustomAction(context, payload: Bundle)`); `HydraFirebaseAPI.getInstance()`: `passPushToken(context, token)`, `passPushPayload(context, data)`, `addTokenListener(TokenAvailableListener)` (`onTokenAvailable(token: Token)`), `addNonHydraPushListener(NonHydraPushListener)`; manifest service `com.capillary.hydra.firebase.HydraFirebaseMessagingService`; `AlarmPermissionUtils.canScheduleExactAlarms(context)` / `.requestExactAlarmPermission(context)` / `.logExactAlarmStatus(context)`; Xiaomi (deprecated): `MiPushHelper.initialiseMiPush(...)`, `HydraMiPushApi.getInstance().setDataRegion(...)` / `.passPushToken(...)` / `.passPushPayload(...)` |
+| Users and events | `pushUserSignin(cuid: String, firstName: String? = null, lastName: String? = null, email: String? = null, phone: String? = null, customData: Map<String, Any>? = null)`; `pushUserSignup(cuid, firstName, lastName, email, phone: String, customData: Map<String, Any>?, subscriptions: List<Any>?)` (all mandatory but the last two; `subscriptions`: channel, accountId, priority, type, sourcename, sample in step 7; the Java signature has no `subscriptions`); `pushUserUpdate(...)` (same as sign-in); `pushUserSignOut(cuid: String)`; `passUserPreferences(cuid: String, userPreference: UserPreferences)` with `UserPreferences(promPushOpted: Boolean, transPushOpted: Boolean)` (null `cuid` uses the stored CUID); `pushEvent(eventName: String, attributes: Map<String, Any>? = null)`; `setCapToken(token)` |
+| Push | `FcmConfig(Boolean)`, `NotificationConfig(smallIcon, notificationColor, isMultipleNotificationInDrawerEnabled)`, `HydraPushApi.getInstance()`: `requestPushPermission(context)`, `isFromHydraPlatform(data)`, `registerPushNotificationListener(HydraPushNotificationListener)` (`onNotificationReceived(context, payload: Bundle)`, `onNotificationShown(context, payload: Bundle)`, `onNotificationClick(context, payload: NotificationPayload, cta: CTA?): Boolean`, `onNotificationDismissed(context, payload: Bundle)`, `handleCustomAction(context, payload: Bundle)`); `HydraFirebaseAPI.getInstance()`: `passPushToken(context, token)`, `passPushPayload(context, data)`, `addTokenListener(TokenAvailableListener)` (`onTokenAvailable(token: Token)`), `addNonHydraPushListener(NonHydraPushListener)`; manifest service `com.capillarytech.hydra.firebase.HydraFirebaseMessagingService`; `AlarmPermissionUtils.canScheduleExactAlarms(context)` / `.requestExactAlarmPermission(context)` / `.logExactAlarmStatus(context)`; Xiaomi (deprecated): `MiPushHelper.initialiseMiPush(...)`, `HydraMiPushApi.getInstance().setDataRegion(...)` / `.passPushToken(...)` / `.passPushPayload(...)` |
 | In-App | `InAppConfig(@DrawableRes defaultImage: Int)`, `HydraInAppUIHelper.getInstance().registerOnMessageClickListener(listener)` (`OnMessageClickListener.onMessageClick(context: Context, cta: CTA): Boolean`), `triggerInAppOnLaunch(currentActivity: Activity)` |
 | Inbox | `NotificationCenterConfig(@DrawableRes defaultImage: Int)`, `InboxActivity`, `InboxFragment`, `HydraInboxUIHelper.getInstance().registerOnMessageClickListener(listener)` (`onMessageClick(context: Context, inboxMessage: InboxMessage): Boolean`), `HydraInboxCoreApi.getInstance()`: `getUnReadMessagesCount(context, UnReadCountListener)`, `fetchInboxMessages(context, OnMessagesAvailableListener)`, `deleteInboxMessage(context, inboxMessage)`, `trackInboxMessageClick(context, inboxMessage)`, `deleteAllInboxMessages(context)` |
-| Gamification | `getGamificationManager()` (`GamificationFlowManager`, nullable; `.callback` / `setCallback(...)`), `GamificationUIManager(flowManager, context)`: `.onScreenChanged(activity, screenName)`, `.onActivityDestroyed(activity)`, `.onAppForegrounded()`, `.onAppBackgrounded()`; `GamificationCallback`: `onInitSuccess()`, `onInitFailure(GamificationError)`, `onEntryPointsLoaded(List<EntryPointData>)`, `onCampaignOpened(campaignId)`, `onCampaignClosed(campaignId)`, `onAnalyticsEvent(eventName, data)`; views in `com.capillary.hydra.gamification.ui.entrypoints`: `BannerView`, `EmbedWebView`, `LoyaltyEmbedView` |
+| Gamification | `getGamificationManager()` (`GamificationFlowManager`, nullable; `.callback` / `setCallback(...)`), `GamificationUIManager(flowManager, context)`: `.onScreenChanged(activity, screenName)`, `.onActivityDestroyed(activity)`, `.onAppForegrounded()`, `.onAppBackgrounded()`; `GamificationCallback`: `onInitSuccess()`, `onInitFailure(GamificationError)`, `onEntryPointsLoaded(List<EntryPointData>)`, `onCampaignOpened(campaignId)`, `onCampaignClosed(campaignId)`, `onAnalyticsEvent(eventName, data)`; views in `com.capillarytech.hydra.gamification.ui.entrypoints`: `BannerView`, `EmbedWebView`, `LoyaltyEmbedView`; events `game_open`, `game_viewed`, `game_played`, `game_completed`, `reward_seen`, `content_open`, `content_viewed`, with `cuid`→`customerId`, `identifierType`, `source` (SDK) and `accountId` mapped (Modules › Gamification) |

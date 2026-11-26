@@ -25,10 +25,12 @@
     gamification. Our integration PDF mentions 1.9.22-beta01 as the gamification minimum, so
     that's the version we'll use, right?
   expect:
-    contains: ["hydra-pushbase", "hydra-firebase", "1.9.22-beta02"]
+    contains: ["hydra-pushbase", "hydra-firebase", "1.10.6", "com.capillarytech:hydra-core"]
     judge:
-      - q: "Does the answer recommend 1.9.22-beta01 as the SDK version to use?"
+      - q: "Does the answer recommend 1.9.22-beta01 or 1.9.22-beta02 as the SDK version to use?"
         want: "no"
+      - q: "Does the answer give 1.10.6 as the version?"
+        want: "yes"
       - q: "Does the answer say gamification needs no extra dependency because it is bundled within HydraCore?"
         want: "yes"
   source: android/firebase.md › Requirements (Correction) and Steps › 3
@@ -452,3 +454,63 @@
       - q: "Does the answer say the Firebase project in the app must match the FCM Project ID registered at Capillary?"
         want: "yes"
   source: android/firebase.md › Known Issues; _shared/push.md › Why Capillary skipped a message, Test the push flow
+
+- id: android-firebase-service-account-roles
+  profile: android/firebase
+  category: correction
+  question: >-
+    Our Firebase admin wants to reuse the existing Firebase Admin service account for Capillary push
+    and give it the Owner role to be safe. Which service account and role does Capillary need?
+  expect:
+    contains: ["dedicated service account", "roles/firebasecloudmessaging.admin", "cloudmessaging.messages.create"]
+    judge:
+      - q: "Does the answer say to create a dedicated service account for Capillary instead of reusing an existing one?"
+        want: "yes"
+      - q: "Does the answer recommend the Owner, Editor or Firebase Admin role?"
+        want: "no"
+      - q: "Does the answer mention turning on the Firebase Cloud Messaging API (V1)?"
+        want: "yes"
+  source: android/firebase.md › Steps › 4
+
+- id: android-firebase-key-not-in-app
+  profile: android/firebase
+  category: trap
+  question: >-
+    Can we put the service-account JSON key in our Android app, next to google-services.json, so the
+    SDK can use it? And should we send Capillary the FCM server key instead?
+  expect:
+    contains: ["google-services.json", "private key"]
+    judge:
+      - q: "Does the answer say the service-account private key is only for the Capillary backend and must never be in the app?"
+        want: "yes"
+      - q: "Does the answer say Capillary needs the service-account private key (FCM HTTP v1) and not an FCM server API key?"
+        want: "yes"
+  source: android/firebase.md › Prerequisites and Steps › 4
+
+- id: android-firebase-gamification-events-mapping
+  profile: android/firebase
+  category: gamification
+  question: >-
+    For the Experience+ game and CMS events, which attribute is required on every payload and how
+    do cuid, identifierType, source and accountId map when we create the events?
+  expect:
+    contains: ["cuid", "customerId", "identifierType", "accountId", "game_open"]
+    judge:
+      - q: "Does the answer say cuid is required on every event and maps to customerId?"
+        want: "yes"
+      - q: "Does the answer say source is mapped to SDK, accountId to the SDK account ID, and that all four mappings are required?"
+        want: "yes"
+  source: android/firebase.md › Modules › Gamification (Gamification events)
+
+- id: android-firebase-manifest-service-class
+  profile: android/firebase
+  category: correction
+  question: >-
+    What is the exact class name to put in the manifest for the SDK's Firebase messaging service
+    when the SDK handles push?
+  expect:
+    contains: ["com.capillarytech.hydra.firebase.HydraFirebaseMessagingService"]
+    judge:
+      - q: "Does the answer give com.capillarytech.hydra.firebase.HydraFirebaseMessagingService (not a com.capillary.hydra package)?"
+        want: "yes"
+  source: android/firebase.md › Steps › 10

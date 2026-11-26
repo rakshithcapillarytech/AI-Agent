@@ -420,7 +420,11 @@
   expect:
     contains: ["setGamificationSuppressed", "isGamificationSuppressed"]
     judge:
-      - q: "Does the answer say suppression affects overlay containers (POP_UP, BOTTOM_SHEET, CHAT_BOX, ICON_BUTTON) but not EMBEDDED, NATIVE_BANNER or loyalty embeds?"
+      - q: "Does the answer say suppression blocks overlay containers (POP_UP, BOTTOM_SHEET, CHAT_BOX, ICON_BUTTON) while EMBEDDED, NATIVE_BANNER and loyalty embeds keep rendering?"
+        want: "yes"
+      - q: "Does the answer say that while suppressed, clicks inside banners, embeds or loyalty embeds (and track() ACTION_EVENT triggers) cannot open an overlay, and that enabling suppression closes any overlay already open?"
+        want: "yes"
+      - q: "Does the answer say isGamificationSuppressed() returns false right after a reload until SDK initialisation finishes, so a UI toggle should be seeded from the saved copy?"
         want: "yes"
   source: web/firebase.md › Modules › Gamification (Suppression) and API Reference
 
@@ -649,3 +653,83 @@
       - q: "Does the answer ask for the platform, the exact error and logs or screenshots, and what has already been checked?"
         want: "yes"
   source: _shared/troubleshooting.md › 6. What to send when you escalate
+
+- id: web-firebase-pageview-options
+  profile: web/firebase
+  category: events
+  question: >-
+    Our trackPageView wrapper takes { url, title, category } and passes it to HydraSDK.pageView,
+    but the overrides are ignored. What should the option names be, and is there an option for
+    the referrer?
+  expect:
+    contains: ["page_url", "page_title", "referrer", "page_category"]
+    judge:
+      - q: "Does the answer give page_url, page_title, referrer, page_category and properties as the PageViewOptions fields?"
+        want: "yes"
+      - q: "Does the answer say that url, title and category are the right option names?"
+        want: "no"
+  source: web/firebase.md › Steps › 6 (template) and 7, API Reference (pageView)
+
+- id: web-firebase-set-theme-auto
+  profile: web/firebase
+  category: gamification
+  question: >-
+    We want gamification popups to match the user's OS dark/light preference. What do we call
+    and what does it do to the campaign URLs?
+  expect:
+    contains: ["setTheme", "AUTO", "prefers-color-scheme", "darkMode"]
+    judge:
+      - q: "Does the answer say to call setTheme with AUTO, which follows the browser's prefers-color-scheme checked each time something renders?"
+        want: "yes"
+      - q: "Does the answer say the SDK appends darkMode=true or darkMode=false to campaign and loyalty embed URLs loaded after the call?"
+        want: "yes"
+  source: web/firebase.md › Modules › Gamification (Theme)
+
+- id: web-firebase-gamification-callbacks
+  profile: web/firebase
+  category: gamification
+  question: >-
+    We want to log when a campaign opens and closes and know if gamification failed to start.
+    Which hooks exist and are there any gotchas with registering them?
+  expect:
+    contains: ["setGamificationCallback", "onCampaignOpened", "onCampaignClosed", "onInitFailure"]
+    judge:
+      - q: "Does the answer say all hooks are optional, a later setGamificationCallback call replaces the earlier hooks (so keep one object), and null clears them?"
+        want: "yes"
+      - q: "Does the answer say hooks fire only after gamification is enabled and identify() has run?"
+        want: "yes"
+      - q: "Does the answer say onCampaignClosed is always paired with an earlier onCampaignOpened?"
+        want: "yes"
+  source: web/firebase.md › Modules › Gamification (Callbacks)
+
+- id: web-firebase-game-cms-events-mapping
+  profile: web/firebase
+  category: gamification
+  question: >-
+    Which events does Experience+ send for games and CMS content, which attributes are
+    mandatory, and how do the fields map when we create them?
+  expect:
+    contains: ["game_completed", "content_viewed", "customerId", "cuid"]
+    judge:
+      - q: "Does the answer say there are seven events (five game, two CMS), that cuid and event_name are on every event with cuid required, and the payloads are flat JSON?"
+        want: "yes"
+      - q: "Does the answer give the mapping cuid to customerId, identifierType, source (SDK) and accountId, all required?"
+        want: "yes"
+      - q: "Does the answer say it isn't documented where in Capillary the events are created, or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: web/firebase.md › Modules › Gamification (Game and CMS events, Field mapping, ⚠️ Gap)
+
+- id: web-firebase-sw-copies-identical
+  profile: web/firebase
+  category: push
+  question: >-
+    Two docs pages publish a firebase-messaging-sw.js and a colleague says they differ (one has
+    an onblocked handler and a no-data warning). Which should we copy?
+  expect:
+    contains: ["onblocked", "firebase-messaging-sw.js"]
+    judge:
+      - q: "Does the answer say the two published copies are identical as of the current docs (both include the onblocked handler and the no-data-payload warning), so either can be used, unchanged apart from the YOUR_* values?"
+        want: "yes"
+      - q: "Does the answer say the two copies still differ and a Capillary engineer must say which is current?"
+        want: "no"
+  source: web/firebase.md › Modules › Push (P4, full service worker file)

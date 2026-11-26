@@ -60,42 +60,27 @@ items:
     how: >-
       Copy the SHA256 fingerprint from your Android app signing report, for the build you'll run.
       Capillary registers it as the App Signature; if it doesn't match the app, the SDK can't start
-      (`Client Credentials Generation Failed … source not found`).
+      (`Client Credentials Generation Failed … source not found`). Capillary's source-account page says it is required only for Android apps.
     when:
-      - platforms: [react-native, flutter]
-    source: _shared/prerequisites.md › The client gives Capillary
-
-  - id: android_signature_native
-    title: Send Capillary your Android app signature (SHA256), to be confirmed
-    short: "The same SHA256 from the signing report. The native guides don't list it, so confirm with your Capillary contact."
-    owner: client
-    group: give
-    blocking: false
-    value: true
-    format: sha256_fingerprint
-    how: >-
-      Copy the SHA256 fingerprint from your Android app signing report, for the build you'll run. The native Android
-      guides don't list it, but Capillary registers an App Signature for the app and a mismatch stops the SDK
-      (`Client Credentials Generation Failed … source not found`). Confirm with your Capillary contact whether it is needed.
-    when:
-      - platforms: [android]
+      - platforms: [android, react-native, flutter]
     source: _shared/prerequisites.md › The client gives Capillary
 
   - id: push_firebase_project
-    title: Send Capillary your Firebase project ID and service account (push)
-    short: "Project ID, service-account email and credentials file. Send the file only through the secure channel Capillary names."
+    title: Create a Firebase service account for Capillary and share its key (push)
+    short: "A dedicated service account with a documented role; share its JSON key only by a one-time vault link or a restricted file link."
     owner: client
     group: give
     blocking: false
     how: >-
-      Capillary needs your Firebase project ID, the service-account email and the service-account credentials
-      file to send push through your Firebase project; the project must be the same one your app uses. The file
-      contains a private key: send it only through the secure channel your Capillary contact names, never in
-      chat, email or git.
+      Capillary needs a dedicated service account in your Firebase project (the project must be the same one your app
+      uses). Turn on the Firebase Cloud Messaging API (V1), create the account, give it the role
+      `roles/firebasecloudmessaging.admin` (or a custom role with only `cloudmessaging.messages.create`) and generate a JSON key.
+      Only Capillary's backend needs the key; never put it in an app. The key contains a private key: share it only by a one-time link from a password manager or secrets vault, or a
+      restricted link from an enterprise file-sharing platform; never in chat, email or git.
     when:
       - platforms: [android/firebase, ios, react-native, flutter]
         modules: [push]
-    source: _shared/push.md › What Capillary sets up after the client sends their details
+    source: _shared/firebase-setup.md › 7. Service account for Capillary (push on Android and iOS)
 
   # ── SDK package access ────────────────────────────────────────────
   - id: android_repo_access
@@ -108,20 +93,7 @@ items:
       then create a GitHub Personal Access Token with the `read:packages` scope. Keep the token on your
       machine (e.g. a git-ignored `github.properties`); never share it in chat.
     when:
-      - platforms: [android/direct]
-    source: _shared/prerequisites.md › SDK package access
-
-  - id: ios_repo_access
-    title: Get access to the iOS SDK repository
-    short: "Ask Capillary for access to the iOS packages repo, then add your GitHub account in Xcode (or use a token)."
-    owner: client
-    blocking: true
-    how: >-
-      Ask Capillary's access team for access to https://github.com/Capillary/hydra-sdk-ios-packages,
-      then add your GitHub account in Xcode (or use a username + Personal Access Token). The token
-      stays on your machine.
-    when:
-      - platforms: [ios/direct]
+      - platforms: [android]
     source: _shared/prerequisites.md › SDK package access
 
   - id: rn_package_access
@@ -163,6 +135,8 @@ items:
       - platforms: [android/firebase, ios/firebase, react-native/firebase, flutter, web/firebase]  # Flutter: Firebase is base setup in every mode
       - platforms: [web/direct]  # direct mode still uses Firebase for push
         modules: [push]
+      - platforms: [react-native/direct, ios/direct]  # push needs a Firebase project in any config mode
+        modules: [push]
     source: _shared/firebase-setup.md › 1. Create a Firebase project
 
   - id: google_services_json
@@ -174,6 +148,8 @@ items:
     how: Download it while registering the Android app in Firebase. Don't make the code changes Firebase suggests. Then upload it with the button in the checklist panel and we'll check it belongs to your app.
     when:
       - platforms: [android/firebase, react-native/firebase, flutter]
+      - platforms: [react-native/direct]  # Android push
+        modules: [push]
     source: _shared/firebase-setup.md › 2. Register each app
 
   - id: google_service_info_plist
@@ -185,6 +161,8 @@ items:
     how: Download it while registering the iOS app in Firebase. Don't make the code changes Firebase suggests. Then upload it with the button in the checklist panel and we'll check it belongs to your app.
     when:
       - platforms: [ios/firebase, react-native/firebase, flutter]
+      - platforms: [react-native/direct, ios/direct]  # iOS push
+        modules: [push]
     source: _shared/firebase-setup.md › 2. Register each app
 
   - id: web_firebase_config
@@ -283,8 +261,8 @@ items:
     blocking: true
     how: Capillary sends it once your app is registered.
     when:
-      - platforms: [web, android, react-native/direct, ios]  # iOS gamification passes orgID in both modes (to be confirmed)
-      - platforms: [flutter, react-native/firebase]
+      - platforms: [web, android, ios]  # iOS gamification passes orgID in both modes (to be confirmed)
+      - platforms: [flutter, react-native]  # the docs: only for the Anonymous/Visitor flow
         modules: [visitor]
     source: _shared/prerequisites.md › Capillary gives the client
 

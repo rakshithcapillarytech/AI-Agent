@@ -7,7 +7,7 @@
   category: setup
   question: >-
     We're a yarn project (there's a yarn.lock in the repo root) and we want to try the
-    pre-release SDK on our staging site first. What exactly do we run?
+    pre-release SDK on a test site first. What exactly do we run?
   expect:
     contains: ["yarn add cap-hydra-web-sdk@beta"]
     judge:
@@ -171,13 +171,13 @@
   expect:
     contains: ["timezone"]
     judge:
-      - q: "Does the answer say timezone is a supported trait and that the service template's traits type omits it so it must be added?"
+      - q: "Does the answer say timezone is a supported trait (listed with the other traits fields, and included in the step 2 service-template traits type)?"
         want: "yes"
       - q: "Does the answer state a specific format for the timezone value (for example IANA names or UTC offsets) as documented fact?"
         want: "no"
       - q: "Does the answer say the timezone format is not documented or suggest asking Capillary?"
         want: "yes"
-  source: web/direct.md › API Reference (traits; Gap on formats)
+  source: web/direct.md › API Reference (traits; Gaps on formats and on the docs' own template)
 
 - id: web-direct-reset-logout
   profile: web/direct
@@ -465,7 +465,11 @@
   expect:
     contains: ["setGamificationSuppressed"]
     judge:
-      - q: "Does the answer say suppression pauses overlay containers (POP_UP, BOTTOM_SHEET, CHAT_BOX, ICON_BUTTON) and leaves EMBEDDED, NATIVE_BANNER and loyalty embeds unaffected?"
+      - q: "Does the answer say suppression blocks overlay containers (POP_UP, BOTTOM_SHEET, CHAT_BOX, ICON_BUTTON) while EMBEDDED, NATIVE_BANNER and loyalty embeds keep rendering?"
+        want: "yes"
+      - q: "Does the answer say that while suppressed, clicks inside banners, embeds or loyalty embeds (and track() ACTION_EVENT triggers) cannot open an overlay?"
+        want: "yes"
+      - q: "Does the answer say enabling suppression closes any overlay that is already open, so a game in progress loses unsaved progress?"
         want: "yes"
       - q: "Does the answer say to call setGamificationSuppressed(false) to resume?"
         want: "yes"
@@ -625,13 +629,19 @@
   category: events
   question: >-
     We started seeing events called game_viewed and reward_seen in our analytics even though
-    we never track them. Where do they come from?
+    we never track them. Where do they come from, and do we have to do anything about them?
   expect:
-    contains: ["game_viewed"]
+    contains: ["game_viewed", "Experience+"]
     judge:
-      - q: "Does the answer say the SDK itself sends gamification engagement events (such as game_open, game_played, reward_seen) through the normal event pipeline?"
+      - q: "Does the answer say the docs describe these as events that Experience+ sends for game and CMS interactions (seven events: game_open, game_viewed, game_played, game_completed, reward_seen, content_open, content_viewed)?"
         want: "yes"
-  source: web/direct.md › Modules › Gamification (Engagement events)
+      - q: "Does the answer say that when creating the events the fields must be mapped (cuid to customerId, identifierType, source, accountId)?"
+        want: "yes"
+      - q: "Does the answer state as definite fact that the SDK itself emits them through the normal event pipeline into the analytics backend?"
+        want: "no"
+      - q: "Does the answer say where the events are created in Capillary, or whether the SDK or the platform emits them, isn't documented, or suggest asking a Capillary engineer?"
+        want: "yes"
+  source: web/direct.md › Modules › Gamification (Game and CMS events; ⚠️ Gap)
 
 - id: web-direct-prereq-values-and-cluster
   profile: web/direct
@@ -677,3 +687,145 @@
       - q: "Does the answer ask for the platform, the exact error with logs or screenshots, and what has already been checked?"
         want: "yes"
   source: _shared/troubleshooting.md › 6. What to send when you escalate
+
+- id: web-direct-pageview-options
+  profile: web/direct
+  category: events
+  question: >-
+    We want page views to report a custom page title, the referrer and a category such as
+    "checkout". Our TypeScript trackPageView passes { url, title, category } but the values
+    don't show up. What are the right option names?
+  expect:
+    contains: ["page_url", "page_title", "referrer", "page_category"]
+    judge:
+      - q: "Does the answer give page_url, page_title, referrer, page_category and properties as the option names for the page view?"
+        want: "yes"
+      - q: "Does the answer say that url, title and category are the right option names?"
+        want: "no"
+      - q: "Does the answer say that with no arguments the SDK captures the current URL and title?"
+        want: "yes"
+  source: web/direct.md › Steps › 7 and API Reference (pageView)
+
+- id: web-direct-set-theme
+  profile: web/direct
+  category: gamification
+  question: >-
+    Our site has a dark mode toggle. How do we make gamification campaigns and loyalty
+    embeds follow it, what values exist, and does a campaign that's already open change?
+  expect:
+    contains: ["setTheme", "AUTO", "darkMode"]
+    judge:
+      - q: "Does the answer list the Theme values NONE (default), LIGHT, DARK and AUTO, with AUTO following the browser's prefers-color-scheme?"
+        want: "yes"
+      - q: "Does the answer say the theme applies to campaigns and loyalty embeds loaded after the call and a campaign already on screen keeps its look?"
+        want: "yes"
+      - q: "Does the answer mention that the SDK has no theme getter, so the service file keeps a localStorage copy (getSavedTheme) to seed a theme picker?"
+        want: "yes"
+  source: web/direct.md › Modules › Gamification (Theme) and API Reference
+
+- id: web-direct-gamification-callback-deeplink
+  profile: web/direct
+  category: gamification
+  question: >-
+    A campaign has a deep link and we want our SPA router to handle it. Which hook do we use,
+    where do we register it, and when do the hooks start firing?
+  expect:
+    contains: ["setGamificationCallback", "onDeepLinkEvent"]
+    judge:
+      - q: "Does the answer say to register a GamificationCallback object with setGamificationCallback once in the service file (a later call replaces the earlier hooks) and use onDeepLinkEvent?"
+        want: "yes"
+      - q: "Does the answer say hooks fire only once gamification is enabled and a user has signed in with identify()?"
+        want: "yes"
+      - q: "Does the answer say onDeepLinkEvent fires before any navigation the SDK performs, and that the docs forward it as a window event to the router?"
+        want: "yes"
+  source: web/direct.md › Modules › Gamification (Callbacks)
+
+- id: web-direct-event-opens-campaign
+  profile: web/direct
+  category: gamification
+  question: >-
+    One of our custom tracked events (via trackEvent) seems to open a gamification popup, and
+    for another event nothing happens. How can an event open a campaign, and how do we see
+    that no campaign matched?
+  expect:
+    contains: ["ACTION_EVENT", "onGameEventTrigger", "NO_GAME_CONFIGURED"]
+    judge:
+      - q: "Does the answer say an ACTION_EVENT entry point opens from a track() call?"
+        want: "yes"
+      - q: "Does the answer say onGameEventTrigger is called with reason NO_GAME_CONFIGURED when track() fires an event that has no ACTION_EVENT entry point?"
+        want: "yes"
+  source: web/direct.md › Modules › Gamification (Events can open campaigns; Callbacks)
+
+- id: web-direct-game-event-field-mapping
+  profile: web/direct
+  category: gamification
+  question: >-
+    We're creating the game events (game_open and friends) in Capillary. Which fields must we
+    map, and what do they map from?
+  expect:
+    contains: ["customerId", "identifierType", "accountId", "cuid"]
+    judge:
+      - q: "Does the answer map cuid to customerId, identifierType to the login identifier type passed to the SDK (mobile, email or externalId), source to SDK, and accountId to the SDK account ID, and say all four are required?"
+        want: "yes"
+      - q: "Does the answer state where in Capillary the events are created as documented fact?"
+        want: "no"
+  source: web/direct.md › Modules › Gamification (Field mapping; ⚠️ Gap)
+
+- id: web-direct-disable-sdk-scope
+  profile: web/direct
+  category: events
+  question: >-
+    Legal says a user who rejects cookies must not be tracked at all. If we call
+    disableTracking(), is everything switched off?
+  expect:
+    contains: ["disableSDK", "identify"]
+    judge:
+      - q: "Does the answer say disableSDK drops new track() and pageView() events but does not affect identify(), reset() or gamification events?"
+        want: "yes"
+      - q: "Does the answer claim that disabling the SDK fully opts the user out of everything as established fact?"
+        want: "no"
+  source: web/direct.md › Steps › 8 (⚠️ Gap) and API Reference
+
+- id: web-direct-sw-new-version-skip-waiting
+  profile: web/direct
+  category: push
+  question: >-
+    We shipped a changed service worker file but browsers keep running the old one until the
+    next full page load. Is that expected, and can the app make the new one take over?
+  expect:
+    contains: ["SKIP_WAITING", "skipWaiting"]
+    judge:
+      - q: "Does the answer say the worker installs without skipWaiting and activates without clients.claim, so a new version takes over on the next load?"
+        want: "yes"
+      - q: "Does the answer say the app can post { type: \"SKIP_WAITING\" } to the worker to apply the new version?"
+        want: "yes"
+  source: web/direct.md › Modules › Push (P4 lifecycle)
+
+- id: web-direct-sdk-version-docs
+  profile: web/direct
+  category: gap
+  question: >-
+    Which exact Hydra Web SDK version should we pin in package.json?
+  expect:
+    contains: ["1.10.6"]
+    judge:
+      - q: "Does the answer say the docs state SDK version 1.10.6 (getting started) while installs default to the latest release (@latest, or @beta for pre-release testing)?"
+        want: "yes"
+      - q: "Does the answer state as fact that 1.10.6 is the minimum supported version?"
+        want: "no"
+  source: web/direct.md › Requirements and front-matter sdk_version
+
+- id: web-direct-gap-edge-version
+  profile: web/direct
+  category: gap
+  question: >-
+    The browser table says Edge 149+ next to Chrome 109+. Is Edge really 149, and do these
+    minimums apply only to push?
+  expect:
+    contains: ["149", "109"]
+    judge:
+      - q: "Does the answer say the Edge number looks inconsistent with Chrome 109+ (and may be a typo), and should be confirmed with Capillary?"
+        want: "yes"
+      - q: "Does the answer say it is unconfirmed whether the minimums apply only to push or to the whole SDK?"
+        want: "yes"
+  source: web/direct.md › Requirements (⚠️ Gap)

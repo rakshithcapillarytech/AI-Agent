@@ -39,7 +39,8 @@ def test_android_direct_with_gamification():
     got = ids(profile("android/direct", modules=["core", "gamification"]))
     assert {"android_application_id", "android_repo_access", "org_id", "ssl_public_key"} <= got
     assert {"gamification_key", "gamification_region", "cap_token"} <= got
-    assert not {"ios_bundle_id", "android_sha256", "firebase_project", "google_services_json"} & got
+    assert "android_sha256" in got  # the source account needs the signature for every Android app
+    assert not {"ios_bundle_id", "firebase_project", "google_services_json"} & got
 
 
 def test_flutter_firebase_needs_both_config_files_and_signature():
@@ -120,16 +121,34 @@ def test_push_adds_the_firebase_project_and_service_account_item():
     assert "push_firebase_project" not in ids(profile("android/direct", modules=["core", "push"]))  # no push here
     assert "push_firebase_project" not in ids(profile("web/firebase", modules=["core", "push"]))
     item = next(i for i in build_checklist(profile("flutter/firebase", modules=["push"]), RULES) if i.id == "push_firebase_project")
-    assert item.owner == "client" and not item.blocking and "secure channel" in item.how
+    assert item.owner == "client" and not item.blocking and "one-time link" in item.how
 
 
-def test_native_android_signature_is_optional_but_react_native_and_flutter_need_it():
-    android = {i.id: i for i in build_checklist(profile("android/firebase"), RULES)}
-    assert "android_signature_native" in android and not android["android_signature_native"].blocking
-    assert "android_sha256" not in android
-    for app in ("react-native/direct", "flutter/firebase"):
+def test_every_android_based_app_must_send_the_signature():
+    for app in ("android/direct", "android/firebase", "react-native/direct", "flutter/firebase"):
         got = {i.id: i for i in build_checklist(profile(app), RULES)}
-        assert got["android_sha256"].blocking and "android_signature_native" not in got
+        assert got["android_sha256"].blocking and "android_signature_native" not in got, app
+
+
+def test_repository_access_android_both_modes_ios_none():
+    for app in ("android/direct", "android/firebase"):
+        assert "android_repo_access" in ids(profile(app)), app  # the install page needs the GitHub credentials in both modes
+    for app in ("ios/direct", "ios/firebase"):
+        assert "ios_repo_access" not in ids(profile(app)), app  # the iOS repository is public
+
+
+def test_push_without_remote_config_still_needs_the_firebase_files():
+    got = ids(profile("react-native/direct", modules=["core", "push"]))
+    assert {"firebase_project", "google_services_json", "google_service_info_plist"} <= got
+    ios = ids(profile("ios/direct", modules=["core", "push"]))
+    assert {"firebase_project", "google_service_info_plist"} <= ios and "google_services_json" not in ios
+    assert not {"firebase_project", "google_services_json"} & ids(profile("react-native/direct", modules=["core"]))
+
+
+def test_org_id_for_react_native_is_only_for_the_visitor_flow():
+    assert "org_id" not in ids(profile("react-native/direct", modules=["core"]))
+    assert "org_id" in ids(profile("react-native/direct", modules=["core", "visitor"]))
+    assert "org_id" in ids(profile("android/direct", modules=["core"]))
 
 
 def test_react_native_package_access_is_to_check_and_every_mobile_app_gets_the_ssl_reminder():

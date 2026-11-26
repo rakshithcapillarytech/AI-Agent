@@ -42,7 +42,7 @@
 - id: android-direct-maven-401
   profile: android/direct
   question: >-
-    Gradle fails with "Could not resolve com.capillary:hydra-core" and a 401 from
+    Gradle fails with "Could not resolve com.capillarytech:hydra-core" and a 401 from
     maven.pkg.github.com. How do we fix it?
   expect:
     contains: ["read:packages"]
@@ -52,7 +52,7 @@
   profile: android/direct
   question: Which Hydra SDK version should we add to our Gradle dependencies?
   expect:
-    contains: ["1.9.22-beta02"]
+    contains: ["1.10.6"]
   source: android/direct.md front-matter sdk_version
 
 - id: android-direct-sign-in
@@ -101,11 +101,11 @@
   profile: android/firebase
   question: How do we set up push notifications on Android with Firebase? Give us the Gradle lines.
   expect:
-    contains: ["hydra-pushbase", "hydra-firebase"]
+    contains: ["pushbase"]
     judge:
-      - q: "Does the answer give dependency lines for the Hydra push modules (hydra-pushbase and hydra-firebase)?"
+      - q: "Does the answer give dependency lines for the Hydra push base and Firebase modules, either as version-catalog aliases (hydra.pushbase, hydra.firebase) or as artifacts (hydra-pushbase, hydra-firebase)?"
         want: "yes"
-      - q: "Does the answer mention that Firebase (google-services.json) must also be set up?"
+      - q: "Does the answer say the Firebase project or Firebase setup (for example google-services.json) is also needed?"
         want: "yes"
   source: android/firebase.md › Steps (push) and Modules › Push
 
@@ -153,7 +153,7 @@
   profile: ios/direct
   question: Which repository do we install the iOS SDK from?
   expect:
-    contains: ["hydra-sdk-ios-packages"]
+    contains: ["hydra-ios-sdk-spm"]
   source: ios/direct.md › Prerequisites
 
 - id: off-topic-no-invention
@@ -321,3 +321,48 @@
       - q: "Does the answer say the account must be set after the SDK is initialised and before calling identify?"
         want: "yes"
   source: flutter/direct.md › Modules › Multi-account
+
+# ── Added after the 2026-11-26 audit against the current public docs ───────────────────────────────
+
+- id: ios-public-repo-no-token
+  profile: ios/direct
+  question: Do we need a GitHub account or token to install the iOS SDK?
+  expect:
+    judge:
+      - q: "Does the answer say no GitHub account or token is needed because the iOS SDK repository is public?"
+        want: "yes"
+  source: ios/direct.md › Prerequisites and Steps › 1 (install-sdk, 2026-11-12)
+
+- id: android-maven-group
+  profile: android/firebase
+  question: What Maven group ID do the Hydra SDK dependencies use in our build.gradle?
+  expect:
+    contains: ["com.capillarytech"]
+    judge:
+      - q: "Does the answer tell the client to use `com.capillary:hydra-core` (without `tech`) as the dependency?"
+        want: "no"
+  source: android/firebase.md › Steps › 3 (installing-sdk, 2026-11-12)
+
+- id: firebase-service-account-role
+  profile: android/firebase
+  question: Capillary asked for a Firebase service account for push. Which role should we give it?
+  expect:
+    contains: ["firebasecloudmessaging.admin"]
+    judge:
+      - q: "Does the answer say to create a dedicated service account for Capillary rather than reusing an existing one?"
+        want: "yes"
+  source: _shared/firebase-setup.md › 7 (configure-firebase, 2026-11-16)
+
+- id: web-pageview-option-names
+  profile: web/direct
+  question: Which option names can we pass to trackPageView to override the page URL and title?
+  expect:
+    contains: ["page_url", "page_title"]
+  source: web/direct.md › Steps › 7 (web-sdk-api-reference, 2026-11-17)
+
+- id: gamification-event-field-mapping
+  profile: flutter/firebase
+  question: When gamification game events are created in Capillary, which four fields must be mapped?
+  expect:
+    contains: ["customerId", "identifierType", "source", "accountId"]
+  source: flutter/firebase.md › Modules › Gamification (gamification-flutter, 2026-11-23)

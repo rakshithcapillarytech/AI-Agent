@@ -22,7 +22,7 @@
   category: known-issue
   question: >-
     Gradle sync fails with `Received status code 403 from server: Forbidden` for
-    https://maven.pkg.github.com/Capillary/hydra-sdk-android-maven/com/capillary/hydra-core/...
+    https://maven.pkg.github.com/Capillary/hydra-sdk-android-maven/com/capillarytech/hydra-core/...
     A teammate generated a fresh personal access token yesterday. What should we check?
   expect:
     contains: ["read:packages"]
@@ -36,7 +36,7 @@
   category: edge-case
   question: >-
     The build works on every developer laptop but our Jenkins pipeline can't resolve
-    com.capillary:hydra-core. Same commit, same Gradle files. What's different on CI?
+    com.capillarytech:hydra-core. Same commit, same Gradle files. What's different on CI?
   expect:
     contains: ["github.properties"]
     judge:
@@ -212,7 +212,7 @@
     Marketing wants a Banner on the home screen. How do we add it to our layout, and do we need
     any Kotlin code to bind it?
   expect:
-    contains: ["BannerView", "com.capillary.hydra.gamification.ui.entrypoints"]
+    contains: ["BannerView", "com.capillarytech.hydra.gamification.ui.entrypoints"]
     judge:
       - q: "Does the answer say the view's android:id must correspond to the ID configured in the campaign dashboard?"
         want: "yes"
@@ -456,3 +456,76 @@
       - q: "Does the answer say AGP, Kotlin and Gradle versions aren't documented / suggest asking a Capillary engineer?"
         want: "yes"
   source: android/direct.md › Requirements
+
+- id: android-direct-sdk-version-group
+  profile: android/direct
+  category: correction
+  question: >-
+    Our older integration PDF says to use `com.capillary:hydra-core` at `1.9.22-beta02` (Beta, for UAT/POC).
+    What group and version should we put in app/build.gradle today?
+  expect:
+    contains: ["com.capillarytech:hydra-core", "1.10.6"]
+    judge:
+      - q: "Does the answer recommend com.capillarytech:hydra-core at version 1.10.6?"
+        want: "yes"
+      - q: "Does the answer recommend 1.9.22-beta02 or the group com.capillary (without the 'tech') as the value to use?"
+        want: "no"
+  source: android/direct.md › Requirements (Correction) and Steps › 3
+
+- id: android-direct-gamification-events-mapping
+  profile: android/direct
+  category: gamification
+  question: >-
+    We are creating the Experience+ game and CMS events in Capillary. Which attribute is required on
+    every event payload, and which four fields do we have to map when creating the events?
+  expect:
+    contains: ["cuid", "customerId", "identifierType", "accountId"]
+    judge:
+      - q: "Does the answer say cuid is required on every event and that it maps to customerId?"
+        want: "yes"
+      - q: "Does the answer name all four mapped fields (customerId, identifierType, source, accountId) and say all four are required?"
+        want: "yes"
+  source: android/direct.md › Modules › Gamification (Gamification events)
+
+- id: android-direct-gamification-event-names
+  profile: android/direct
+  category: gamification
+  question: >-
+    Which game and CMS events does Experience+ send, and what type should the load_time_ms and
+    total_time_ms attributes have in the payload?
+  expect:
+    contains: ["game_open", "game_completed", "reward_seen", "content_viewed", "load_time_ms"]
+    judge:
+      - q: "Does the answer list the seven events game_open, game_viewed, game_played, game_completed, reward_seen, content_open and content_viewed?"
+        want: "yes"
+      - q: "Does the answer say numbers such as load_time_ms are sent as numbers, not strings?"
+        want: "yes"
+  source: android/direct.md › Modules › Gamification (Gamification events)
+
+- id: android-direct-java-map-of
+  profile: android/direct
+  category: gap
+  question: >-
+    The API reference's Java sample uses Map.of("Age", "25", "Gender", "Male") for pushUserSignup.
+    Our minSdk is 21. Is that safe?
+  expect:
+    contains: ["HashMap", "Map.of"]
+    judge:
+      - q: "Does the answer warn that Map.of needs Android API 30 or higher and can fail on older devices with minSdk 21?"
+        want: "yes"
+      - q: "Does the answer suggest building the map with new HashMap<>() and put(...)?"
+        want: "yes"
+  source: android/direct.md › Steps › 7 (Gap)
+
+- id: android-direct-app-signature-required
+  profile: android/direct
+  category: gap
+  question: >-
+    Getting Started only asks us for the application ID. Do we also have to send Capillary the app
+    signature for our Android app?
+  expect:
+    contains: ["App signature", "application ID"]
+    judge:
+      - q: "Does the answer say the source-account page lists the App signature as required for Android apps and recommends sending it with the application ID?"
+        want: "yes"
+  source: android/direct.md › Prerequisites (Gap)

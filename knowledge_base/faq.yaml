@@ -19,7 +19,7 @@ items:
   - id: with-or-without-firebase
     category: basics
     question: What is the difference between "with Firebase" and "without Firebase"?
-    answer: "With Firebase, the SDK's settings come from Firebase Remote Config. Without it, you pass the settings straight into the SDK's init call. Push goes through Firebase Cloud Messaging (on native Android, only in the Firebase setup)."
+    answer: "With Firebase, the SDK's settings come from Firebase Remote Config. Without it, you pass the settings straight into the SDK's init call. Push goes through Firebase Cloud Messaging (on native Android, only in the Firebase setup). Flutter needs a Firebase project in both modes."
     evidence:
       - { file: _shared/overview.md, text: "The SDK's settings come from **Firebase Remote Config**" }
       - { file: _shared/overview.md, text: "The settings are passed straight into the SDK's init call instead of Remote Config" }
@@ -81,21 +81,22 @@ items:
     question: How long does registration take?
     answer: It isn't documented. Ask your Capillary contact. Until Capillary finishes the gateway setup, push won't send even if your app is correct.
     evidence:
-      - { file: _shared/push.md, text: "how long the gateway setup takes, aren't documented" }
+      - { file: _shared/push.md, text: "how long the gateway setup takes isn't documented" }
       - { file: _shared/push.md, text: "Until that is done, push won't send even when the app is correct." }
 
   - id: share-secrets
     category: keys
     question: Can I send my Firebase service-account file, or a GitHub token, in chat or email?
-    answer: No. The service-account file contains a private key, so share it only through the secure channel your Capillary contact names. Keep GitHub tokens on your machine too (environment variables, a git-ignored file or CI secrets) and never share them in chat, email or git.
+    answer: No. The service-account file contains a private key. Share it only by a one-time link from a password manager or secrets vault, or a restricted link from an enterprise file-sharing platform (limited to Capillary's email, with an expiry). Keep GitHub tokens on your machine too (environment variables, a git-ignored file or CI secrets) and never share them in chat, email or git.
     evidence:
       - { file: _shared/push.md, text: "**Never put the Firebase service-account file in chat, email, a ticket or git.**" }
+      - { file: _shared/push.md, text: "a **one-time link** from an enterprise password manager or secrets vault" }
       - { file: _shared/prerequisites.md, text: "**Tokens stay on the client's machine**" }
 
   - id: github-token-why
     category: keys
     question: Why do I need a GitHub token?
-    answer: Native Android and iOS install from Capillary's private repositories, so you need access from Capillary's access team (a GitHub token with `read:packages` on Android). React Native and Flutter install from public registries (npm and pub.dev); whether React Native on iOS still needs a token isn't stated.
+    answer: Native Android installs from a Capillary repository on GitHub, so you need access from Capillary's access team and a GitHub token with `read:packages`. iOS, React Native and Flutter install from public sources (the public iOS repository, npm and pub.dev); whether React Native on iOS still needs a token isn't stated.
     evidence:
       - { file: _shared/prerequisites.md, text: "GitHub username + Personal Access Token with `read:packages` scope" }
       - { file: _shared/prerequisites.md, text: "pub.dev packages `capillary_hydra` and `capillary_hydra_platform_interface`" }
@@ -127,10 +128,20 @@ items:
       - { file: _shared/push.md, text: "campaign TTL" }
       - { file: _shared/push.md, text: "15 days by default" }
 
+  - id: firebase-service-account
+    category: push
+    question: What do I create in Firebase for Capillary, and which role does it need?
+    answer: "Turn on the Firebase Cloud Messaging API (V1), then create a dedicated service account for Capillary (don't reuse one) with the role `roles/firebasecloudmessaging.admin`, or a custom role with only `cloudmessaging.messages.create`. Never use Owner, Editor or Firebase Admin. Only Capillary's backend holds its JSON key; your apps ship only the Firebase config files."
+    platforms: [android, ios, react-native, flutter]
+    evidence:
+      - { file: _shared/firebase-setup.md, text: "Create a **dedicated** service account for Capillary" }
+      - { file: _shared/firebase-setup.md, text: "`roles/firebasecloudmessaging.admin`" }
+      - { file: _shared/firebase-setup.md, text: "Don't use the Owner, Editor or Firebase Admin roles" }
+
   - id: push-skipped-reasons
     category: push
     question: What do the "skipped" reasons in a push campaign report mean?
-    answer: "Profile Not Found: the user's profile isn't tied to this account's Firebase project.\nUnsubscribe: the user is unsubscribed from push.\nRequest Entity Not Found: the FCM token expired; log out and in again.\nNotRegistered: sign in again on the current build.\nHTTP 401: the Firebase credentials Capillary holds have expired; send renewed ones securely.\nGateway Not Found: Capillary's push gateway setup is incomplete."
+    answer: "Profile Not Found: the user's profile isn't tied to this account's Firebase project.\nUnsubscribe: the user is unsubscribed from push.\nRequest Entity Not Found: the FCM token expired; log out and in again.\nNotRegistered: sign in again on the current build.\nHTTP 401: Capillary has no valid service-account key for the project; check it was shared, belongs to the registered project and has a documented role.\nGateway Not Found: Capillary's push gateway setup is incomplete."
     platforms: [android, ios, react-native, flutter]
     evidence:
       - { file: _shared/push.md, text: "## Why Capillary skipped a message" }
@@ -155,6 +166,7 @@ items:
 
   - id: registration-must-match
     category: problems
+    platforms: [android, ios, react-native, flutter]
     question: What must match between my app and Capillary's registration?
     answer: "Your Account Id (Source Account Id), your Android application ID or iOS bundle ID (Bundle Name), the SHA256 of your Android build (App Signature), the Firebase project (FCM Project ID), and the Base URL and SSL key for your cluster."
     evidence:
@@ -172,6 +184,7 @@ items:
 
   - id: events-missing
     category: problems
+    platforms: [android, ios, react-native, flutter]
     question: Why don't my events show up in Capillary?
     answer: Events only count after a sign-in or sign-up, so an event reported before any sign-in or after sign-out doesn't count. The event must also exist in Capillary first (Organisation settings → Master Data Management → Data Model → Behavioural events).
     evidence:
@@ -181,11 +194,11 @@ items:
   - id: gamification-not-showing
     category: problems
     question: My gamification campaigns (popup, floating button, bottom sheet) don't appear. Why?
-    answer: Usually the current screen isn't being reported, it was reported before sign-in, or the gamification key and region are missing. In React Native, report the screen after identify, with the 500 ms delay.
+    answer: Usually the current screen isn't being reported, it was reported before sign-in, or the gamification key, region or base URL is missing (Flutter, React Native and Web need all three). In React Native, report the screen after identify, with the 500 ms delay.
     platforms: [android, ios, react-native, flutter]
     evidence:
       - { file: react-native/direct.md, text: "screen not reported, reported before sign-in, or reported without the 500 ms delay" }
-      - { file: flutter/direct.md, text: "Key / region missing in the initializer, or screens not reported" }
+      - { file: flutter/direct.md, text: "Key / region / base URL missing in the initializer, or screens not reported" }
 
   - id: loyalty-view-empty
     category: problems
@@ -195,6 +208,15 @@ items:
       - { file: android/direct.md, text: "call `setCapToken(token)` first" }
       - { file: react-native/direct.md, text: "`Hydra.setCapToken(...)` before showing it" }
       - { file: flutter/direct.md, text: "`setCapToken` **before** mounting the view" }
+
+  - id: web-firebase-app-exists
+    category: problems
+    question: I get a "Firebase App already exists" error on Web. What's wrong?
+    answer: The push Firebase app wasn't given its own name, so it collides with another Firebase app on your site. Name it `"hydra-fcm"`.
+    platforms: [web]
+    evidence:
+      - { file: web/direct.md, text: "hydra-fcm" }
+      - { file: web/firebase.md, text: "hydra-fcm" }
 
   - id: before-escalating
     category: problems

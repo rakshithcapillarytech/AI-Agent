@@ -57,7 +57,7 @@ async def test_discovery_to_prerequisites():
 
 
 async def test_prerequisites_checklist_to_integration():
-    """Wizard-started Android session: the agent reads the checklist, records both blocking
+    """Wizard-started Android session: the agent reads the checklist, records all three blocking
     client items, and the system moves the session to integration."""
     from app.api.setup import initial_state
     from app.graph.state import IntegrationProfile
@@ -81,8 +81,13 @@ async def test_prerequisites_checklist_to_integration():
                 ),
                 _tool_call(
                     "record_prerequisite",
-                    {"item_id": "android_repo_access", "status": "provided"},
+                    {"item_id": "android_sha256", "status": "provided", "value": ":".join(["AB"] * 32)},
                     "call_3",
+                ),
+                _tool_call(
+                    "record_prerequisite",
+                    {"item_id": "android_repo_access", "status": "provided"},
+                    "call_4",
                 ),
                 AIMessage(content="All set, let's add the SDK."),
             ]

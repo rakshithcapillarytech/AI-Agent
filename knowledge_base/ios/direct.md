@@ -1,11 +1,11 @@
 ---
 platform: ios
 config_mode: direct
-sdk_package: HydraCore   # plus HydraPushNotification, HydraPushNotificationServiceExtension, HydraInAppMessage, HydraInboxCore, HydraInboxUI; private repo https://github.com/Capillary/hydra-sdk-ios-packages (SPM / Xcode / CocoaPods)
-sdk_version: 1.7.5-preprod.12   # minimum for gamification, Beta for UAT/POC (gamification-ios; Integration document p.91). ios-sdk-getting-started: SDK 1.7.0 or above, framework table at 1.7.4
-modules_covered: [core, push, inbox_api, inbox_ui, gamification]
-modules_missing: [inapp, visitor, multi_account]
-sources: ["Integration document _ Experience+ pp.88–99 (Hydra iOS SDK Integration Doc, without firebase)", "Capillary developer docs (docs.capillarytech.com): ios-sdk, ios-sdk-getting-started (updated 2026-08-14); install-sdk, initialise-ios-sdk, ios-sdk-api-reference, configure-push-notifications, rich-push-notifications, configure-notification-center_ios, set-up-source-account-ios, configure-gateway-ios (updated 2026-03-04); gamification-ios (updated 2026-08-18)"]
+sdk_package: HydraCore   # plus HydraPushNotification, HydraPushNotificationServiceExtension, HydraInAppMessage, HydraInboxCore, HydraInboxUI; public repo https://github.com/Capillary/hydra-ios-sdk-spm (SPM / Xcode / CocoaPods, no credentials)
+sdk_version: 1.10.6   # minimum SDK version (ios-sdk-getting-started, install-sdk, gamification-ios; every framework is listed at 1.10.6)
+modules_covered: [core, push, inapp, inbox_api, inbox_ui, gamification]
+modules_missing: [visitor, multi_account]
+sources: ["Integration document _ Experience+ pp.88–99 (Hydra iOS SDK Integration Doc, without firebase)", "Capillary developer docs (docs.capillarytech.com): ios-sdk (updated 2026-08-14); ios-sdk-getting-started, install-sdk, rich-push-notifications (updated 2026-11-12); configure-push-notifications, configure-firebase (updated 2026-11-16); gamification-ios (updated 2026-11-23); in-app-messaging_ios (updated 2026-10-20); initialise-ios-sdk, ios-sdk-api-reference, core-features, configure-notification-center_ios, set-up-source-account-ios, configure-gateway-ios (updated 2026-03-04)"]
 owner: TBD
 last_verified: null
 review_status: draft   # drafted from the source docs; not yet SME-verified
@@ -20,46 +20,40 @@ review_status: draft   # drafted from the source docs; not yet SME-verified
 | Core: install, init, customer/token updates, sign-up, sign-in, profile update, sign-out, behavioural events, log levels | Documented (Swift) |
 | Push: APNs → Firebase, FCM token, AppDelegate forwarding, Notification Service Extension, rich push, CTA handling, opt-in flags | Documented (Swift); some sample code is inconsistent (Gaps inline) |
 | Inbox: `HydraInboxCore` API and `HydraInboxUI` Notification Center, App Groups | Documented (Swift); some API examples disagree (Gap inline) |
-| Gamification: auto campaigns, screen reporting, Capillary token, Banner / Embedded / Loyalty views | Documented (Swift UIKit, SwiftUI, Objective-C) |
+| Gamification: auto campaigns, screen reporting, Capillary token, Banner / Embedded / Loyalty views, Game/CMS event payloads | Documented (Swift UIKit, SwiftUI, Objective-C) |
 | Gamification delegate, UI suppression | Not documented for this mode |
-| In-App (`HydraInAppMessage`) | Framework and one forwarding call only; no setup |
+| In-App (`HydraInAppMessage`) | Documented (Swift): setup, layouts, interactions, logout; `environment:` values and campaign setup not documented (Gaps inline) |
 | Visitor, multi-account | Not documented |
 
 ## Requirements
-- Hydra iOS SDK `{{sdk_version}}` or later (minimum for gamification; Beta for UAT/POC).
-- Minimum deployment target: **iOS 13.0** (the Podfile uses `platform :ios, '13.0'`).
+- Hydra iOS SDK `{{sdk_version}}` or later (the minimum version named in ios-sdk-getting-started and gamification-ios; every framework is listed at `{{sdk_version}}`).
+- Minimum deployment target: **iOS 15.6** (the Podfile uses `platform :ios, '15.6'`).
 - Supported: iPhone (iOS) and iPad (iPadOS).
-- Xcode 14 or later (stated for installing through Xcode), a valid iOS project, internet access.
+- Xcode 16.1 or later (install-sdk lists it for installing through Xcode), a valid iOS project, internet access.
 - Swift. `HydraConfiguration` and `Hydra.generate(...)` are Swift-only; an Objective-C app needs a small Swift file for initialisation (step 3).
 
 > ⚠️ Gap: Swift and CocoaPods versions, and a minimum Firebase SDK version for push, aren't documented. Ask a Capillary engineer.
+
+> ⚠️ Gap: install-sdk states Xcode 16.1 only under the Xcode method; whether it also applies to Swift Package Manager and CocoaPods installs isn't stated. Older sources (Integration document, internal runbook) named the private repo `hydra-sdk-ios-packages`, versions `1.7.5-preprod.10` / `1.7.5-preprod.12` (labelled a build for UAT/POC), iOS 13.0 and Xcode 14; the current public docs name `hydra-ios-sdk-spm`, `1.10.6`, iOS 15.6 and Xcode 16.1. Ask a Capillary engineer to confirm that `1.10.6` is a stable release.
 
 ## Prerequisites
 See `_shared/prerequisites.md`.
 - **Client gives Capillary:** iOS bundle ID (`{{bundle_id}}`). Capillary registers it in the MAPP_SDK source account's **Bundle Name** (as `ios:{{bundle_id}}`; one source account can hold both apps, e.g. `android:<applicationId>;ios:{{bundle_id}}`). For push, Capillary also needs the app's Firebase project (FCM Project ID, FCM service-account email) and sets up the iOS push gateways (`_shared/push.md`).
 - **Capillary gives client:** Account Id, Base URL, SSL public key, Org Id, Gamification Key, Gamification Region, Gamification URL (optional). In this mode they are passed straight into `HydraConfiguration` as values.
-- **Repo access:** the SDK installs from the private repo `https://github.com/Capillary/hydra-sdk-ios-packages`; request access from Capillary's access team. You then need GitHub credentials with access to it, or a GitHub username + Personal Access Token (PAT) with access to it. The PAT stays on the client's machine; never share it in chat.
-- **Push only:** an Apple developer account (APNs key) and a Firebase project with an iOS app registered for `{{bundle_id}}`.
+- **Repo access:** none needed. The SDK installs from the public repo `https://github.com/Capillary/hydra-ios-sdk-spm`: no GitHub account and no personal access token (install-sdk).
+- **Push only:** an Apple developer account (APNs key) and a Firebase project with an iOS app registered for `{{bundle_id}}`. Capillary's backend also needs a service-account key from that project; it is never added to the iOS app (Modules → Push).
 - Sample app for testing the integration and APIs: `https://github.com/Capillary/HydraSampleApp`.
 
-> ⚠️ Gap: the required PAT scopes aren't documented. Ask a Capillary engineer.
+> ⚠️ Gap: set-up-source-account-ios shows only the combined Bundle Name form (`android:com.…;ios:com.…`); how an iOS-only account writes it (plain `{{bundle_id}}` or `ios:{{bundle_id}}`) isn't documented. Ask a Capillary engineer.
 
 ## Steps
 
-### 1. Authenticate to the private repo
-The SDK is in a private GitHub repo. Use one option.
+### 1. Check repository access (no credentials needed)
+The SDK repository `https://github.com/Capillary/hydra-ios-sdk-spm` is public. You need no GitHub account, no personal access token and no Xcode **Accounts** setup to fetch it (install-sdk). Go straight to step 2.
 
-**Option A: GitHub credentials in Xcode**
-1. Open Xcode.
-2. Go to **Xcode → Settings (Preferences) → Accounts**.
-3. Add your GitHub account.
-4. Ensure the account has access to `Capillary/hydra-sdk-ios-packages`.
+> ⚠️ Correction: ✅ Use the public repo `hydra-ios-sdk-spm` (no token) ❌ Don't use the private `hydra-sdk-ios-packages` repo with a token (Integration document, older internal runbook). *Pending SME confirmation.*
 
-**Option B: username + PAT.** Use this as the package URL. Fill it in locally; any file containing it holds the token in plain text:
-
-```text
-https://<GITHUB_USERNAME>:<PERSONAL_ACCESS_TOKEN>@github.com/Capillary/hydra-sdk-ios-packages.git
-```
+> ⚠️ Gap: older sources (the Integration document and an internal runbook) used the private repo `hydra-sdk-ios-packages` with a GitHub account or a Personal Access Token. The current install-sdk page says the public repo needs neither. Ask a Capillary engineer whether the old repo is retired.
 
 ### 2. Install the SDK
 Frameworks (add the ones for the modules you use):
@@ -73,6 +67,8 @@ Frameworks (add the ones for the modules you use):
 | `HydraInboxCore` | Stores received notifications locally for the Notification Center |
 | `HydraInboxUI` | The pre-built Notification Center UI |
 
+Sizes at `{{sdk_version}}` (ios-sdk-getting-started): HydraCore 9.6 MB, HydraInAppMessage 3.5 MB, HydraPushNotification 2.1 MB, HydraPushNotificationServiceExtension 2.7 MB, HydraInboxUI 2.4 MB, HydraInboxCore 1.5 MB.
+
 Use any one of the three methods.
 
 **Option A: Swift Package Manager**
@@ -84,21 +80,19 @@ let package = Package(
     name: "<ProjectName>",
     dependencies: [
         .package(
-            url: "https://github.com/Capillary/hydra-sdk-ios-packages",
+            url: "https://github.com/Capillary/hydra-ios-sdk-spm",
             .upToNextMajor(from: "{{sdk_version}}")
         )
     ]
 )
 ```
 
-> ⚠️ Correction: ✅ Use `.upToNextMajor(from: "{{sdk_version}}")` (the required/minimum version: Integration document p.91, gamification-ios). ❌ Don't use `upToNextMajor(from: "1.1.0")` (Package.swift snippet in install-sdk and Integration document p.90). *Pending SME confirmation.*
-
-> ⚠️ Correction: ✅ Use the repo `https://github.com/Capillary/hydra-sdk-ios-packages` and minimum version 1.7.5-preprod.12 (install-sdk, gamification-ios). ❌ Don't use `https://github.com/Capillary/hydra-ios-sdk-spm.git` or 1.7.5-preprod.10 (Integration document, Gamification iOS guide p.26). *Pending SME confirmation.*
+> ⚠️ Correction: ✅ Use `.upToNextMajor(from: "{{sdk_version}}")` with the leading dot and plain quotes in `name:`, as shown. ❌ Don't use `upToNextMajor(from: …)` without the dot or the curly quotes in `name: “<Project-name>”` (Package.swift snippet in install-sdk; it isn't valid Swift). *Pending SME confirmation.*
 
 **Option B: Xcode**
 1. Open your project in Xcode.
 2. Select **File → Add Packages…**
-3. Enter `https://github.com/Capillary/hydra-sdk-ios-packages` (or the PAT URL from step 1), or pick it from recently added packages.
+3. Enter `https://github.com/Capillary/hydra-ios-sdk-spm`, or pick it from recently added packages.
 4. Under **Dependency Rule**, choose the version (`{{sdk_version}}`) or branch. Leaving the version blank selects the latest. Xcode shows the package's dependencies: check they don't conflict with your project's.
 5. Under **Add to project**, select your project.
 6. Click **Add Package**, select the frameworks you need (table above), and click **Add Package** again.
@@ -107,32 +101,34 @@ let package = Package(
 **Option C: CocoaPods**
 
 ```ruby file=Podfile
-platform :ios, '13.0'
+platform :ios, '15.6'
 use_frameworks!
 
-private_repo = 'https://<GITHUB_USERNAME>:<PERSONAL_ACCESS_TOKEN>@github.com/Capillary/hydra-sdk-ios-packages.git'
+hydra_repo = 'https://github.com/Capillary/hydra-ios-sdk-spm.git'
 
 target 'YourAppTargetName' do
-  pod 'HydraCore', :git => private_repo
-  pod 'HydraPushNotification', :git => private_repo
-  pod 'HydraPushNotificationServiceExtension', :git => private_repo
-  pod 'HydraInAppMessage', :git => private_repo
-  pod 'HydraInboxCore', :git => private_repo
-  pod 'HydraInboxUI', :git => private_repo
+  pod 'HydraCore', :git => hydra_repo
+  pod 'HydraPushNotification', :git => hydra_repo
+  pod 'HydraPushNotificationServiceExtension', :git => hydra_repo
+  pod 'HydraInAppMessage', :git => hydra_repo
+  pod 'HydraInboxCore', :git => hydra_repo
+  pod 'HydraInboxUI', :git => hydra_repo
 end
 
 target 'YourNotificationServiceExtensionTargetName' do
-  pod 'HydraPushNotificationServiceExtension', :git => private_repo
+  pod 'HydraPushNotificationServiceExtension', :git => hydra_repo
 end
 ```
 
 Run `pod install` (or `pod install --repo-update`) and open the generated `.xcworkspace`. The git approach needs the URL on every pod; with a private Spec Repo for your organisation you can use the `source` directive and plain pod names instead.
 
-> ⚠️ Correction: ✅ Use `private_repo = '…'` above both `target` blocks, as shown. ❌ Don't use it inside `target 'YourAppTargetName' do` (Podfile in install-sdk and Integration document p.91): Ruby hides it from the second target. *Pending SME confirmation.*
+> ⚠️ Correction: ✅ Use `hydra_repo = '…'` above both `target` blocks, as shown. ❌ Don't use it inside `target 'YourAppTargetName' do` (Podfile in install-sdk and Integration document p.91): Ruby hides it from the second target. *Pending SME confirmation.*
 
 > ⚠️ Correction: ✅ Use only the pod lines shown. ❌ Don't paste the uncommented line `Ensure you are using the correct source or git URL` from the install-sdk Podfile; it is a comment missing its `#`. *Pending SME confirmation.*
 
 > ⚠️ Gap: no Podfile shows how to pin `{{sdk_version}}`. Ask a Capillary engineer.
+
+> ⚠️ Gap: install-sdk installs the pods with `:git` from the `-spm` repository; it doesn't say whether that repository ships CocoaPods podspecs. If `pod install` can't find the pods, use Swift Package Manager or Xcode and ask a Capillary engineer.
 
 ### 3. Initialise the SDK
 Initialise in `AppDelegate`, inside `application(_:didFinishLaunchingWithOptions:)` (create the method if it isn't there). Create one SDK instance per application.
@@ -153,7 +149,9 @@ do {
 }
 ```
 
-`hydra` is the SDK instance used by every later step; the docs also call it `hydraCore`, `hydraCoreSDK` or `hydraSDK`. Region values: see `_shared/prerequisites.md`.
+`hydra` is the SDK instance used by every later step; the docs also call it `hydraCore`, `hydraCoreSDK` or `hydraSDK`. The region (`gamificationRegion`) is the value Capillary gives you (`_shared/prerequisites.md`).
+
+> ⚠️ Gap: the iOS docs don't say whether `gamificationRegion` is a string or an enum, or list its accepted values; the `IN` / `US` / `ME` values in `_shared/prerequisites.md` come from the Android enum. Ask a Capillary engineer.
 
 Full `generate` signature (initialise-ios-sdk):
 
@@ -191,6 +189,8 @@ hydraCore.update(interfaceID: "FCM-Token")        // the FCM token (apps using F
 hydraCore.update(notificationSupport: true)       // enable / disable notification support
 ```
 
+After sign-up or sign-in, call `update(customerID:)` with the same customer ID you report in step 5; after sign-out, set it to a guest ID or clear it (step 7) (core-features).
+
 Promotional / transactional push opt-in (defined by the SDK on `UserDefaults`, default `false`):
 
 ```swift
@@ -199,6 +199,8 @@ func setTransactionalPushOpted(status: Bool = false)
 ```
 
 The docs call them as `UserDefaults.standard.setPromotionalPushOpted(status:)` and `UserDefaults.standard.setTransactionalPushOpted(status:)`.
+
+> ⚠️ Gap: the docs show these calls as `UserDefaults.standard.setPromotionalPushOpted(status: Bool = false)`, which reads like a declaration, not a call. Pass an explicit `Bool` for `status:`, check that it compiles and ask a Capillary engineer if unsure.
 
 ### 5. Report user sign-up or sign-in
 `customerId` must match the Account Linking Identifier in Capillary CRM (see `_shared/prerequisites.md`).
@@ -220,10 +222,16 @@ public func reportUserSignIn(data: UserSignInGenerator, customData: Attributes)
 ```swift
 let userSignInData = UserDetails(customerId: "customer-id",firstName: "first-name", lastName: "last-name", email: "email@goodemail.com", phone: "xxxxxxxx")
 hydraCore.reportUserSignIn(data: userSignInData, customData: [:])
+hydraCore.update(customerID: "customer-id")   // core-features: update the SDK's customerId right after sign-in
 
 let userSignUpData = UserDetails(customerId: "customer-id",firstName: "first-name", lastName: "last-name", email: nil, phone: "xxxxxxxx")
 hydraCore.reportUserSignUp(data: userSignUpData, customData: ["Age": "25", "Gender": "Male"])
+hydraCore.update(customerID: "customer-id")   // core-features: update the SDK's customerId right after sign-up
 ```
+
+Also update the SDK's customerId immediately after sign-up/sign-in with `update(customerID:)`, using the same ID (core-features; step 4).
+
+> ⚠️ Gap: core-features spells the method `reportUserSignUP` (capital P) and marks only `customerId` as required (`firstName`, `lastName`, `email` and `phone` optional); ios-sdk-api-reference, used above, spells it `reportUserSignUp` and marks `customerId`, `firstName`, `lastName` and `phone` mandatory. Ask a Capillary engineer which is current.
 
 ### 6. Report a profile update
 ```swift
@@ -242,6 +250,8 @@ let userProfileUpdateData = UserDetails(customerId: "customer-id",firstName: "fi
 hydraCoreSDK.reportUserProfileUpdate(data: userProfileUpdateData, customData: [:], subscriptions: subscriptions)
 ```
 
+> ⚠️ Gap: core-features builds the subscriptions with its own `MySubscription(channel:type:)` (no `priority`) and says the format depends on your implementation; ios-sdk-api-reference uses `HydraSubscription(channel:priority:type:)` as above. Ask a Capillary engineer.
+
 ### 7. Report user sign-out
 Removes the user's details (first name, mobile number, …) from the session.
 
@@ -251,6 +261,8 @@ let customAttributes = ["key1": "value1", "key2": "value2"]
 
 hydra.reportUserSignOut(customData: customAttributes)   // or customData: [:]
 ```
+
+After signing out, update the SDK's customer ID to a guest ID (`hydra.update(customerID: "GUEST_ID")`) or clear it (`hydra.update(customerID: "")`) if necessary (core-features). If you use In-App messages, also call `inAppCore?.userLoggedOut()` (Modules → In-App).
 
 ### 8. Report custom behavioural events
 Events count only after a sign-in or sign-up has been reported, and are invalid after a sign-out. The name must be non-empty; attributes are optional. Behavioural events must also be configured in the Hydra config and the organisation settings.
@@ -349,7 +361,9 @@ Objective-C:
 2. **Upload it to Firebase:** Firebase Console → project settings → **Cloud Messaging** → **iOS app configuration** → upload the APNs authentication key or certificate.
 3. **`GoogleService-Info.plist`:** download it for your app and drag it into the Xcode project; make sure it is **added to the app's target**.
 
-> ⚠️ Gap: configure-push-notifications also says to copy the **Server Key** from Cloud Messaging → iOS app configuration "for later", but never says who uses it. Ask a Capillary engineer whether it is still needed.
+The Capillary backend also needs a service-account private key from your Firebase project to send push through FCM (configure-push-notifications, step 3). Your iOS app doesn't need this key and must never contain it. How to create and share it is in `_shared/firebase-setup.md` and `_shared/push.md`, the same Firebase setup as Android.
+
+> ⚠️ Gap: the earlier push page also told you to copy a Cloud Messaging **Server Key** from the iOS app configuration "for later"; the current page no longer mentions it. If Capillary still asks for a Server Key, ask a Capillary engineer.
 
 #### 2. Capabilities and App Group
 In **TARGETS → your app target → Signing & Capabilities**:
@@ -461,18 +475,18 @@ extension AppDelegate {
 }
 ```
 
-> ⚠️ Gap: the push sample is inconsistent: the API list puts `didRegisterForRemoteNotificationsWithToken` on `NotificationCore`, but the example calls it on `hydraCoreSDK`; `didReceiveRemoteNotification` is forwarded only to `InAppMessagingCore`, not `NotificationCore`; and requesting notification permission, calling `registerForRemoteNotifications()` and setting `UNUserNotificationCenter`'s delegate aren't shown. Ask a Capillary engineer.
+> ⚠️ Gap: the push sample is inconsistent: the API list puts `didRegisterForRemoteNotificationsWithToken` on `NotificationCore`, but the example calls it on `hydraCoreSDK`; `didReceiveRemoteNotification` is forwarded only to `InAppMessagingCore`, not `NotificationCore`; and requesting notification permission, calling `registerForRemoteNotifications()` and setting `UNUserNotificationCenter`'s delegate aren't shown. Also, initialise-ios-sdk offers `update(deviceToken:)` for the APNs token (step 4), while this sample forwards it through `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)`; the pages don't say whether both are needed. Ask a Capillary engineer.
 
 #### 5. Notification Service Extension (rich push)
 Rich push (images, buttons) needs `HydraPushNotificationServiceExtension` in a Notification Service Extension target.
 1. Xcode → **File → New → Target → Notification Service Extension** (iOS tab). Name it (e.g. `YourAppNotificationService`), **Finish**, and **Activate** the scheme if asked.
 2. Add `HydraPushNotificationServiceExtension` to the extension target (**Frameworks and Libraries**):
-   - SPM: **Project Settings → your project → Package Dependencies → `hydra-sdk-ios-packages`**, under **Targets** select the extension target and tick `HydraPushNotificationServiceExtension`.
+   - SPM: **Project Settings → your project → Package Dependencies → `hydra-ios-sdk-spm`**, under **Targets** select the extension target and tick `HydraPushNotificationServiceExtension`.
    - CocoaPods: the extension target block in the Podfile (step 2), then `pod install`. The rich-push page's version:
      ```ruby file=Podfile
      target 'YourNotificationServiceExtensionTargetName' do
        use_frameworks!
-       pod 'HydraPushNotificationServiceExtension', :git => 'https://github.com/Capillary/hydra-sdk-ios-packages.git' # Use your private repo URL if applicable
+       pod 'HydraPushNotificationServiceExtension', :git => 'https://github.com/Capillary/hydra-ios-sdk-spm.git'
      end
      ```
 3. Enable the same App Group as the app (Push step 2).
@@ -523,6 +537,8 @@ class NotificationService: UNNotificationServiceExtension {
 
 > ⚠️ Gap: the two pages show different `NotificationService` patterns (subclass `HydraRemoteNotificationService` vs. hold one inside a `UNNotificationServiceExtension`). Use one, not both. Ask a Capillary engineer which is recommended.
 
+> ⚠️ Gap: configure-push-notifications names the extension framework `HydraPushNotificationExtensionService` once; every other page (and step 2) calls it `HydraPushNotificationServiceExtension`. Use that name.
+
 How it works: when a notification with `mutable-content: 1` arrives while the app is in the background, iOS launches the extension; `HydraRemoteNotificationService.didReceive` parses the payload, downloads rich content (e.g. the image), attaches it, and calls `contentHandler` to show the modified notification.
 
 #### 6. Handle CTA buttons
@@ -564,10 +580,79 @@ class NotificationActionHandler: HydraNotificationCallbackDelegate {
 
 `CTA` has `type`, `action`, `actionText`; `payload` is the original notification (cast to `[AnyHashable : Any]`). Return `true` if the app handled the action. Return `false` otherwise: for common types like `external_url` the SDK may try its default (e.g. open the URL); unhandled custom types are usually ignored.
 
-### In-App
-`HydraInAppMessage` shows in-app messages as popups. The push sample forwards `didReceiveRemoteNotification` to `InAppMessagingCore.application(application, didReceiveRemoteNotification: userInfo, fetchCompletionHandler: completionHandler)` (Push step 4), and the Inbox sample declares `var inAppCore: InAppMessagingCore?`.
+> ⚠️ Gap: the delegate example switches on `CTAActionType.external`, but the prose says "common types like `external_url`"; the raw value of the external type (`external` vs `external_url`) isn't stated. Ask a Capillary engineer.
 
-> ⚠️ Gap: iOS in-app initialisation, configuration and callbacks aren't in the sources (the iOS in-app page, `in-app-messaging_ios`, wasn't provided; `in-app-messaging` covers Android only). Ask a Capillary engineer.
+### In-App
+`HydraInAppMessage` shows contextual in-app messages (popups, banners, feedback forms) while the user is in the app. They are usually triggered by silent push notifications or by user actions/events defined in campaigns (in-app-messaging_ios).
+
+**Prerequisites:** `HydraCore` and `HydraPushNotification` initialised, with the `NotificationCore` delegate methods forwarded (Push step 4); **Push Notifications** and **Background Modes → Remote notifications** turned on (Push step 2); the `HydraInAppMessage` framework added (step 2).
+
+**Initialise** `InAppMessagingCore` after `HydraCore` and `NotificationCore`, typically in `AppDelegate`:
+
+```swift file=AppDelegate.swift
+import HydraInAppMessage
+
+class AppDelegate: UIResponder, UIApplicationDelegate {
+
+    var hydraSDK: Hydra?
+    let notificationCore = NotificationCore.shared
+    var inAppCore: InAppMessagingCore?
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+
+        // --- Initialize Hydra Core, Notification Core ---
+
+        // --- Initialize In-App Messaging Core ---
+        if let config = hydraSDK?.configuration() {   // config from the initialised HydraCore
+            let inAppConfig = HydraInAppMessageConfiguration(
+                hydraConfig: config,
+                notificationCore: notificationCore,   // the shared NotificationCore instance
+                appStoreId: "YOUR_APP_STORE_ID",      // Optional: required for App Rating messages
+                placeholderImage: UIImage(named: "default-placeholder") // Optional
+            )
+            do {
+                inAppCore = try InAppMessagingCore(
+                    with: inAppConfig,
+                    environment: .dev,                // match the environment used for HydraCore
+                    applicationState: application.applicationState)
+                print("Hydra In-App Messaging Initialized Successfully!")
+            } catch let error {
+                print("Error Initializing Hydra In-App Messaging: \(error.localizedDescription)")
+            }
+        } else {
+            print("Error: Cannot initialize In-App Messaging without HydraCore config.")
+        }
+
+        // --- Rest of AppDelegate setup (register for push, forward delegate methods) ---
+        return true
+    }
+}
+```
+
+| `HydraInAppMessageConfiguration` parameter | Type | Mandatory | Description |
+|---|---|---|---|
+| `hydraConfig` | `ConfigurationGenerator` | Yes | The same `HydraConfiguration` used for `HydraCore` |
+| `notificationCore` | `NotificationCore?` | Yes | The shared `NotificationCore` instance |
+| `appStoreId` | `String?` | No | Your App Store ID. **Required** for App Rating messages |
+| `placeholderImage` | `UIImage?` | No | Placeholder shown while message images load |
+
+The push sample also forwards `didReceiveRemoteNotification` to `InAppMessagingCore.application(application, didReceiveRemoteNotification: userInfo, fetchCompletionHandler: completionHandler)` (Push step 4).
+
+**How it works.** `InAppMessagingCore` registers itself with `NotificationCore` to listen for silent pushes tagged for in-app messages. When one arrives, the SDK parses the payload, stores the message locally and may download its images. It keeps a queue of messages and watches the app state; when the app is active and conditions are met (for example an app-launch message was received), `InAppDisplayManager` shows the highest-priority message.
+
+**Supported layouts** (as pictured on the page): App rating, Feedback, Footer, Header, Interstitial, Pop up, Rating.
+
+**Interactions** (button taps, ratings, feedback, closing) are handled by the SDK. `InAppDisplayManager` reports the events (`inAppMessageClicked`, `inAppMessageDismissed`, `inAppMessageRating`, `inAppMessageFeedback`), performs the action (deep link or external URL through `hydraCore.performCTAAction`) and dismisses the view. No delegate is needed for standard interactions.
+
+**Logout.** After `reportUserSignOut(...)` (step 7), clear the user's pending in-app messages:
+
+```swift
+inAppCore?.userLoggedOut()
+```
+
+> ⚠️ Gap: the page's own example uses an older configuration (`HydraConfiguration(accountID:customerId:server: .server1)`), `Logger.updateLogLevel(level: .critical)` and calls `InAppMessagingCore(with:environment:)` without `applicationState:`; use the initialiser from step 3 and the call shown above, and ask a Capillary engineer if it doesn't compile.
+
+> ⚠️ Gap: the values for `environment:` other than `.dev` ("match the environment used for HydraCore") aren't listed, and the page doesn't say how to create an in-app campaign in Capillary or which silent-push payload triggers it. Ask a Capillary engineer.
 
 ### Inbox
 `HydraInboxCore` (storage + API) and `HydraInboxUI` (pre-built Notification Center). Requires push (`HydraPushNotification` and `HydraPushNotificationServiceExtension` initialised, delegate methods forwarded) and the **same App Group on the app and extension targets** (Push steps 2 and 5).
@@ -632,7 +717,7 @@ navController.pushViewController(inboxVC, animated: true)
 let inboxSwiftUIView = inboxUI.notificationCenterSwiftUIView()      // Option 3: SwiftUI view to embed
 ```
 
-Taps, CTA buttons, mark-as-read and delete inside the pre-built UI are handled by `HydraInboxUI` automatically, and the list refreshes itself.
+Taps, CTA buttons, mark-as-read and delete inside the pre-built UI are handled by `HydraInboxUI` automatically, and the list refreshes itself. Metrics tracked (configure-notification-center_ios): users who open the Notification Inbox, push notifications viewed in it, and push notifications deleted from it.
 
 **Unread badge:** fetch the count with `inboxCore.getUnreadNotificationCount`, and listen for changes by conforming to `HydraInboxUIProtocol` and calling `inboxUI.setHydraInboxUIDelegate(delegate: self)`; the SDK then calls `refreshNotificationList()` on new, read or deleted messages (update UI on the main queue).
 
@@ -743,10 +828,50 @@ UIView *loyalty =
 
 > ⚠️ Gap: `HydraGamificationDelegate` and `setGamificationSuppressed(_:)` appear only in the Firebase-mode gamification guide of the Integration document (pp.30–33), not in gamification-ios; whether they work in direct mode isn't stated. Ask a Capillary engineer.
 
+**Gamification events (Game and CMS).** gamification-ios lists seven events that Experience+ sends for game and CMS interactions:
+
+| Event | Flow | Fires when |
+|---|---|---|
+| `game_open` | Game | A game entry surface (pop-up, floating icon, modal or embedded banner) opens or launches the game |
+| `game_viewed` | Game | The game UI is rendered and visible to the user |
+| `game_played` | Game | The user makes the first real interaction (spin, scratch, tap or select) |
+| `game_completed` | Game | The game ends: won, lost, completed or abandoned |
+| `reward_seen` | Game | The user views the reward (reveal screen or wallet) |
+| `content_open` | CMS | A CMS surface (widget, banner or full page) is opened or displayed |
+| `content_viewed` | CMS | The CMS content is rendered and visible |
+
+- `cuid` is **required** on every event (the loginIdentifier value: mobile number, email or externalId). All other attributes are optional, and `event_name` is always sent. Payloads are flat JSON with no nested objects; numbers are sent as numbers.
+- Optional attributes: `campaign_id` and `game_type` (game events), `entry_surface`, `embed_id`, `entry_point_id`, `entry_point_location`, `deep_link_url`, `hyper_link_url` (`game_open`), `load_time_ms` (`game_viewed`, `content_viewed`), `total_time_ms` (`game_completed`), `reward_id` and `reward_type` (`reward_seen`), `content_surface` (CMS events), `page_id` (`content_viewed`).
+
+Example (`game_open`, shortened):
+
+```json
+{
+  "cuid": "stringxxx",
+  "event_name": "game_open",
+  "campaign_id": "camp_44",
+  "game_type": "spinthewheel",
+  "entry_surface": "popup"
+}
+```
+
+**Field mapping.** When the events are created, map these four fields (all required):
+
+| Event-creation field | Maps from |
+|---|---|
+| `customerId` | `cuid` from the event payload |
+| `identifierType` | The login identifier passed to the SDK: `mobile`, `email` or `externalId` |
+| `source` | SDK |
+| `accountId` | The SDK account ID |
+
+> ⚠️ Gap: gamification-ios says to apply this mapping "while creating the events" but doesn't say where in Capillary the events are created or by whom, and the page says Experience+ sends them, not that the app must report them itself. Ask a Capillary engineer.
+
 ## Verification
 - **Init:** an error thrown by `HydraConfiguration(...)` or `Hydra.generate(...)` is logged by the `catch` in step 3. Console logs default to `debug` (step 10).
 - **Push:** the `MessagingDelegate` sample logs the FCM token (`FCM_Token is …`) and passes it to `update(interfaceID:)`; then follow `_shared/push.md` › Test the push flow. A rich push (image) shows the image only if the extension is set up (Push step 5).
 - **Inbox:** the sample's `catch` prints `Error Initializing Hydra Inbox Core/UI: …` on failure; `refreshNotificationList()` fires when a new push is stored.
+- **In-App:** the sample prints `Hydra In-App Messaging Initialized Successfully!` on success and `Error Initializing Hydra In-App Messaging: …` on failure.
+- **Customer ID:** after sign-up or sign-in, `update(customerID:)` is called with the same ID (steps 4 and 5); after sign-out it is reset (step 7).
 - **Gamification:** floating buttons, bottom sheets and popups appear on reported screens; Banner, Embedded and Loyalty content appears where those views were added.
 - **Gamification checklist:** SDK at least `{{sdk_version}}`; gamification key plus region or base URL in `HydraConfiguration` (step 3); screens reported on appear and disappear (step 9); `setCapToken(...)` before a Loyalty View (step 11). Optional: Banner, Embedded, Loyalty views.
 
@@ -757,14 +882,14 @@ UIView *loyalty =
 ## Known Issues
 | Symptom | Cause | Fix |
 |---|---|---|
-| SDK fetch fails (SPM / Xcode / CocoaPods) | No access to the private repo, or no credentials in Xcode / PAT in the URL | Request access from Capillary's access team; then step 1 |
-| SPM resolves an old SDK | The docs' snippet uses `from: "1.1.0"` | Use `from: "{{sdk_version}}"` (step 2) |
+| SDK fetch fails (SPM / Xcode / CocoaPods) | No network, Xcode older than 16.1, a wrong package URL, or a dependency rule that doesn't allow `{{sdk_version}}` | Use the public URL `https://github.com/Capillary/hydra-ios-sdk-spm` (no credentials, steps 1 and 2); check Xcode 16.1 or later, deployment target iOS 15.6 and the dependency rule. Ask Capillary if it still fails |
 | Objective-C code can't call `HydraConfiguration` / `Hydra.generate` | Both are Swift-only | Initialise from a small Swift file (step 3) |
 | Events don't count | Reported before any sign-in / sign-up, or after sign-out | Report sign-in or sign-up first (steps 5, 8) |
 | Push stops arriving after a token change | New FCM token not passed to the SDK | Call `update(interfaceID:)` from `messaging(_:didReceiveRegistrationToken:)` (Push step 4) |
 | Rich push shows no image or buttons | No Notification Service Extension, framework not added to the extension target, or payload without `mutable-content: 1` | Push step 5 |
 | Push CTA buttons (other than external URLs) do nothing | No `HydraNotificationCallbackDelegate` set | Set one with `setNotificationCallbackDelagte(delegate:)` (Push step 6) |
 | Inbox doesn't store / show notifications | App Group missing or different between the app and extension targets, or push not initialised | Same App Group ID on every SDK target (Push step 2); initialise Inbox after `HydraCore` and `NotificationCore` |
+| In-app messages never appear | `InAppMessagingCore` not initialised after `HydraCore` and `NotificationCore`, push capabilities or delegate forwarding missing, or `HydraInAppMessage` not added | Follow Modules → In-App and Push steps 2 and 4 |
 | Screen-targeted campaigns don't appear | Current screen not reported | Report screens (step 9) |
 | No gamification at all | Gamification key missing, or neither region nor base URL given | Pass key + region or base URL (step 3) |
 | Loyalty View renders empty | Token missing or invalid before the view mounts | Call `setCapToken(...)` first (step 11) |
@@ -777,7 +902,7 @@ UIView *loyalty =
 | `HydraConfiguration(accountID:server:orgID:gamificationWriteKey:gamificationRegion:gamificationBaseURL:)` | SDK config (`throws`) |
 | `.genericServer(apiBaseURL, sslKey, retryDelays)` | `server:` value (Base URL, SSL key, retry delays) |
 | `Hydra.generate(with:geoData:supportsPushNotifications:deviceScreenInfo:)` | Creates the `hydra` instance (`throws`); only `with:` is required in the examples |
-| `hydra.update(customerID:)` / `update(deviceToken:)` / `update(interfaceID:)` / `update(notificationSupport:)` | Update customer ID, device token, FCM token, notification support |
+| `hydra.update(customerID:)` / `update(deviceToken:)` / `update(interfaceID:)` / `update(notificationSupport:)` | Update customer ID, device token, FCM token, notification support; call `update(customerID:)` after sign-up/sign-in and reset it after sign-out |
 | `UserDefaults.standard.setPromotionalPushOpted(status:)` / `setTransactionalPushOpted(status:)` | Promotional / transactional push opt status (default `false`) |
 | `updateConsoleLogLevel(level:)` / `updateRemoteLogLevel(level:)` | Log levels `error`, `warning`, `info`, `debug`, `none` (defaults `debug` / `none`) |
 | `UserDetails(customerId:firstName:lastName:email:phone:)` | User details for sign-up, sign-in, profile update |
@@ -790,6 +915,8 @@ UIView *loyalty =
 | `notificationCore.setNotificationCallbackDelagte(delegate:)` | Register a `HydraNotificationCallbackDelegate` (`process(cta:notificationPayload:) -> Bool`) |
 | `HydraRemoteNotificationService` (`didReceive(_:withContentHandler:)`, `serviceExtensionTimeWillExpire()`) | Notification Service Extension handling |
 | `InAppMessagingCore.application(_:didReceiveRemoteNotification:fetchCompletionHandler:)` | Forward remote notifications to in-app |
+| `HydraInAppMessageConfiguration(hydraConfig:notificationCore:appStoreId:placeholderImage:)` / `InAppMessagingCore(with:environment:applicationState:)` | In-app messaging setup (`throws`) |
+| `inAppCore?.userLoggedOut()` | Clear pending in-app messages after sign-out |
 | `InboxCoreConfiguration(hydraConfig:maximumNotificationCount:)` / `InboxCore(with:configuredFor:)` | Inbox core (`throws`) |
 | `HydraInboxUIConfiguration(unreadMessageConfigType:readMessageConfigType:notificationsNotFoundConfiguration:placeholderImage:)` / `InboxUICore(with:configuration:)` | Inbox UI |
 | `inboxUI.showNotificationCenter(with:)` / `getNotificationCenter()` / `notificationCenterSwiftUIView()` | Show the Notification Center |

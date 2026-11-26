@@ -42,26 +42,26 @@ Capillary's team registers one **MAPP_SDK** channel account (*Organisation Setti
 | Account Linking Identifier | The identifier the app uses as `customerId` (`mobile`, `email`, …) |
 | Android / iOS | Which platforms the app runs on |
 | Bundle Name | The Android application ID and/or iOS bundle ID |
-| App Signature | The Android signing-report SHA256 |
-| FCM Project ID | `project_id` in the Firebase service-account file |
-| FCM Email | `client_email` in the Firebase service-account file |
+| App Signature | The Android signing-report SHA256 (Capillary's source-account page says it is required only for Android apps) |
+| FCM Project ID | `project_id` in the Firebase service-account file (also under *Project settings → General* in the Firebase console) |
+| FCM Email | `client_email` in the Firebase service-account file (also on the service account page in Firebase) |
 | Source Account Id | Generated automatically. **This is the Account Id the client puts in the SDK.** |
 | Valid Till Name | A till in the org (needed by the form); **Enable Mirror** isn't required |
 | Deep links | Optional; offered in Engage+ push creatives |
 
-Capillary also sets up the push gateways for Android and iOS (bulk and transactional) from the service-account file, and restarts its messaging services so the change takes effect. Until that is done, push won't send even when the app is correct.
+Capillary also sets up the push gateways for Android and iOS (bulk and transactional) from the service-account file, and restarts its messaging services so the change takes effect. There are four FCM gateways: Android and iOS, each as bulk (campaign messages) and transactional (the `optout`, `otp`, `highvoltrans` and `transaction` scopes). As the developer you don't do this yourself: your Capillary CSM starts it. Until that is done, push won't send even when the app is correct.
 
-> **Never put the Firebase service-account file in chat, email, a ticket or git.** It contains a private key. Share it only through the secure channel the Capillary contact names.
+> **Never put the Firebase service-account file in chat, email, a ticket or git.** It contains a private key. Share it only by one of the two methods Capillary documents: a **one-time link** from an enterprise password manager or secrets vault (restricted to the recipient's email, expiring within 24 to 48 hours, single view), or a **restricted link** from an enterprise file-sharing platform (shared only with the recipient's email, with an expiry date, access removed after Capillary confirms). How to create the service account and which role it needs is in `_shared/firebase-setup.md` section 7. Only Capillary's backend holds this key: your apps ship only `google-services.json` (Android) and `GoogleService-Info.plist` (iOS).
 
-> ⚠️ Gap: the channel for sharing the service-account file, and how long the gateway setup takes, aren't documented. Ask a Capillary engineer.
+> ⚠️ Gap: how long the gateway setup takes isn't documented. Ask a Capillary engineer.
 
-**iOS:** the app's APNs certificate must be added to the Firebase project's Cloud Messaging configuration, so FCM can deliver to iOS (Capillary's SDK prerequisites; steps in Capillary's developer docs, `https://docs.capillarytech.com/docs/configure-push-notifications`).
+**iOS:** the app's APNs authentication key (or certificate) must be added to the Firebase project's Cloud Messaging configuration, so FCM can deliver to iOS (Capillary's SDK prerequisites; steps in Capillary's developer docs, `https://docs.capillarytech.com/docs/configure-push-notifications`).
 
 One source account can serve **both Android and iOS** when everything except the bundle ID (FCM Project ID, identifier type, …) is the same: enter both IDs in Bundle Name separated by a semicolon (`android:<applicationId>;ios:<bundleId>`). A brand that already has separate accounts and wants to merge them asks the app developer to make the change, enters both IDs in one account and deprecates the other; subscription status responses don't change.
 
 **Late pushes (campaign TTL).** A push that can't be delivered in real time is pulled when the user next opens the app, as long as it is within the campaign TTL (15 days by default, configurable per organisation, for promotional and transactional messages). After the TTL the message is discarded. A user who receives a notification days later when opening the app is therefore normal, not a bug.
 
-**Apps that own their `FirebaseMessagingService`** (Android) must hand tokens and payloads to the SDK: see the platform file (`passFCMToken` in React Native and Flutter, `FcmConfig(false)` with `passPushToken` / `passPushPayload` in native Android).
+**Apps that own their `FirebaseMessagingService`** (Android) must hand tokens and payloads to the SDK: see the platform file (`passFCMToken` in React Native (tokens only) and Flutter, `FcmConfig(false)` with `passPushToken` / `passPushPayload` in native Android).
 
 ## Test the push flow end to end
 1. Confirm the registration above is done, and that the SDK in the build uses the right Account Id, Base URL and SSL key for the environment.
@@ -87,7 +87,7 @@ The sample request Capillary sends to FCM has only a `data` object (no `notifica
 
 Apps that handle FCM themselves: **native Android** is documented in `android/firebase.md` (the own-FCM-service steps, including the manifest entry); **React Native and Flutter** pass tokens with `passFCMToken` (`react-native/*.md`, `flutter/*.md`).
 
-> ⚠️ Gap: how the SDK displays these data messages isn't documented, and neither is the `HydraFirebaseMessagingService` manifest entry for React Native and Flutter apps. Ask a Capillary engineer.
+> ⚠️ Gap: how the SDK displays these data messages isn't documented. For React Native no manual manifest entry is documented: the docs only say Android uses a manifest variant with or without Hydra's Firebase messaging service depending on `enable_push_notification`, and with your own `FirebaseMessagingService` only tokens are handed over (`passFCMToken`); how payloads reach Hydra isn't documented. The `HydraFirebaseMessagingService` manifest entry for Flutter apps isn't documented either. Ask a Capillary engineer.
 
 ## Confirm delivery with FCM reports (BigQuery)
 Firebase can export delivery data to BigQuery, which shows whether FCM accepted and delivered each message.
@@ -124,7 +124,7 @@ When Capillary doesn't send a push to a user, its campaign report records a **sk
 | `Unsubscribe` | The user is unsubscribed from push | Check the customer's profile (Capillary: *Intouch → MultiProfile → Profile V2*) |
 | `Request Entity Not Found` | The FCM token expired | The user logs out and logs in again |
 | `NotRegistered` | The token is no longer registered with the SDK | The user needs to register again (sign in on the current build) |
-| `HTTP 401` | The Firebase credentials Capillary holds for the project have expired | Send Capillary a renewed Firebase service-account credential (securely) to update |
+| `HTTP 401` | Capillary has no valid service-account key for the project (without the key Google issues no access token, so every send is rejected) | Check the key was shared with Capillary, that it belongs to the dedicated service account of the registered Firebase project, and that the account has one of the two documented roles (Firebase setup guide, section 7). Send a renewed key securely if needed |
 | `Gateway Not Found` | Capillary's push gateway or onboarding configuration is incomplete | Capillary checks the onboarding configuration and the Firebase service-account email in its UI and backend |
 
 ## Common problems

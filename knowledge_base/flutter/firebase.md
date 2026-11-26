@@ -5,7 +5,7 @@ sdk_package: capillary_hydra
 sdk_version: null            # the public docs install the latest release (`flutter pub add`); no version is pinned
 modules_covered: [core, push, inapp, inbox_api, inbox_ui, visitor, gamification, multi_account]
 modules_missing: []
-sources: ["Flutter-Hydra-Integration-Guide pp.1–24", "Integration document _ Experience+ pp.52–59 (Gamification Flutter Integration Guide)", "Capillary developer docs (docs.capillarytech.com): flutter-sdk, flutter-sdk-getting-started, flutter-sdk-install, flutter-sdk-advanced-setup, flutter-setup-overview, flutter-sdk-push-notifications, configuring-notification-center, gamification-flutter, flutter-sdk-api-reference (updated 2026-11-12)"]
+sources: ["Flutter-Hydra-Integration-Guide pp.1–24", "Integration document _ Experience+ pp.52–59 (Gamification Flutter Integration Guide)", "Capillary developer docs (docs.capillarytech.com): flutter-sdk, flutter-sdk-getting-started, flutter-sdk-install, flutter-sdk-advanced-setup, flutter-setup-overview, flutter-sdk-push-notifications, flutter-sdk-in-app-messaging, configuring-notification-center, flutter-sdk-api-reference (updated 2026-11-12); gamification-flutter (updated 2026-11-23)"]
 owner: TBD
 last_verified: null
 review_status: draft   # drafted from the source docs; not yet SME-verified
@@ -35,6 +35,8 @@ The SDK reads its account values from **Firebase Remote Config** under default k
 > ⚠️ Correction: ✅ Use the pub.dev packages `capillary_hydra` and `capillary_hydra_platform_interface` (flutter-sdk-getting-started, flutter-sdk-install). ❌ Don't use the GitHub repository `https://github.com/Capillary/flutter-hydra-lib` (an internal Capillary page). *Pending SME confirmation.*
 
 > ⚠️ Gap: Android compileSdk / AGP / Gradle / Kotlin, Xcode and CocoaPods versions aren't documented. Ask a Capillary engineer.
+
+> ⚠️ Gap: the docs' Flutter minimum is inconsistent: Flutter >= 3.3.0 bundles Dart 2.18, while Dart >= 3.0 arrived with Flutter 3.10, so both bounds can't be the real minimum. If `flutter pub get` fails on Flutter 3.3 to 3.9, upgrade Flutter, and ask a Capillary engineer (or check the `environment:` in the package's pubspec on pub.dev) for the real minimum.
 
 ## Prerequisites
 Common exchange: `_shared/prerequisites.md`. Firebase / Remote Config basics: `_shared/firebase-setup.md`.
@@ -172,10 +174,12 @@ In the `ios` folder:
 pod install
 ```
 
-### 9. iOS: add `GoogleService-Info.plist` (no AppDelegate code needed)
+### 9. iOS: add `GoogleService-Info.plist` (no Hydra code needed in AppDelegate for the base setup; the In-App module adds one method, see Modules › In-App)
 Add `GoogleService-Info.plist` (step 1) to the iOS project using Xcode.
 
 Both the app-delegate lifecycle and the UIScene lifecycle (`FlutterSceneDelegate` with `FlutterImplicitEngineDelegate`) are supported. **You don't need any Hydra code in `AppDelegate.swift`** for either: once registered, the plugin starts the Hydra SDK itself, reading the default Remote Config keys (step 1). Custom key names: Modules → Multi-account.
+
+> ⚠️ Gap: the docs don't say whether this automatic start is skipped when you call an initializer yourself (custom key names, Modules → Multi-account); for Android they state the rule (it runs only when the Application class is exactly `HydraApplication`). If `onHydraSdkInitializationResult(success: false)` appears after you added your own iOS initializer, suspect a double start that reads missing default Remote Config keys, and ask a Capillary engineer.
 
 ### 10. Android: add `google-services.json` and the Google Services plugin
 1. Add `google-services.json` (step 1) to the `android/app` folder.
@@ -408,6 +412,8 @@ FirebaseMessaging.instance.onTokenRefresh.listen(
 
 In-app clicks (CTA tapped on an in-app message) arrive in `onHydraNotificationClicked`. Keep `enable_in_app_messaging_in_flutter` `false` (non-functional).
 
+> ⚠️ Gap: the public In-App page (flutter-sdk-in-app-messaging) gives only the steps above. It has no Android-specific steps, and it doesn't say where the `application(_:didReceiveRemoteNotification:fetchCompletionHandler:)` override goes under the UIScene lifecycle (step 9 says no `AppDelegate` code is needed for the base setup, but this module adds one method). Ask a Capillary engineer.
+
 ### Inbox
 **Inbox API** (build your own notification list). The SDK stores received notifications in a local database, capped by `max_notification_count`, so the inbox depends on Modules → Push.
 1. Set `enable_inbox_api` to `true`.
@@ -462,6 +468,8 @@ States: `none` → `visitor` (anonymous) → `merged` / `legacyRegistered` (iden
 ### Gamification
 Floating Button, Popup and Bottom Sheet campaigns, plus Banner, Embed and Loyalty widgets. Part of `capillary_hydra`; no extra package.
 
+> ⚠️ Gap: gamification-flutter lists the campaign types inconsistently: its intro says "Floating Button and Popup", while Screen tracking says "Floating Button, Popup, and Bottom Sheet" (followed here), and the `entry_surface` values in the event payloads (`popup`, `floating_icon`, `modal`, `banner_embedded`) have no bottom-sheet value. Ask a Capillary engineer whether Bottom Sheet campaigns are supported.
+
 > ⚠️ Gap: the public docs (gamification-flutter) give no minimum `capillary_hydra` version for gamification; the older Integration doc (pp.53, 58) names an unreleased minimum. Ask a Capillary engineer which release to require.
 
 **1. Configure.** Add the three gamification parameters to Remote Config (step 1); `capillary_hydra` picks them up automatically, no Dart code needed:
@@ -469,9 +477,11 @@ Floating Button, Popup and Bottom Sheet campaigns, plus Banner, Embed and Loyalt
 - `hydra_gamification_region`
 - `hydra_gamification_base_url`
 
-HydraGamification stays disabled if the key or region is missing. With custom key names: `keyForGamificationKey`, `keyForGamificationRegion`, `keyForGamificationBaseUrl` (Multi-account).
+HydraGamification stays disabled if the key, region or base URL is missing: the docs require all three. With custom key names: `keyForGamificationKey`, `keyForGamificationRegion`, `keyForGamificationBaseUrl` (Multi-account).
 
 > ⚠️ Correction: ✅ Use all three values, Gamification Key, Region **and Base URL** (gamification-flutter, flutter-sdk-getting-started). ❌ Don't treat the base URL as optional (Integration doc p.54). *Pending SME confirmation.*
+
+> ⚠️ Gap: the docs list all three as required, but don't say what the SDK does when only one of them (for example the base URL) is missing. Ask a Capillary engineer.
 
 > ⚠️ Correction: ✅ Use `hydra_gamification_base_url` as the Remote Config key (flutter-sdk-getting-started; Flutter guide p.1, pp.7–8, p.22). ❌ Don't use `hydra_gamification_url` (Integration doc Flutter chapter, pp.53–54). If the SDK says the base URL isn't recognised, check this key name first. *Pending SME confirmation.*
 
@@ -602,6 +612,43 @@ HydraThemeMode mode = await Hydra.getThemeMode();
 
 **7. Events** on your handler: `onGamificationDeeplink` (a campaign asks the app to open `url`: route it in your navigation), `onGamificationEventTrigger` (a game or campaign triggered a named event with a `payload`, e.g. reward unlocked), `onGamificationAnalyticsEvent` (analytics events to forward to your own analytics tool).
 
+**8. Game and CMS event payloads (Experience+).** The docs describe seven events Experience+ sends for game and CMS interactions, and four fields to map when the events are created in Capillary. Rules: `cuid` and `event_name` are required (`event_name` is always sent), all other attributes are optional, payloads are flat JSON (no nested objects), and numbers are sent as numbers, not strings. `cuid` is the login identifier value (mobile number, email or externalId).
+
+| Event | Flow | Fires when | Optional attributes |
+|---|---|---|---|
+| `game_open` | Game | A game entry surface opens or launches the game (pop-up, floating icon, modal or embedded banner) | `campaign_id`, `game_type`, `entry_surface` (`popup`, `floating_icon`, `modal`, `banner_embedded`), `embed_id`, `entry_point_id`, `entry_point_location`, `deep_link_url`, `hyper_link_url` |
+| `game_viewed` | Game | The game UI is rendered and actually visible | `campaign_id`, `game_type`, `load_time_ms` (number) |
+| `game_played` | Game | The user makes the first real interaction (spin, scratch, tap or select) | `campaign_id`, `game_type` |
+| `game_completed` | Game | The game ends: won, lost, completed or abandoned | `campaign_id`, `game_type`, `total_time_ms` (number) |
+| `reward_seen` | Game | The user views the reward (reveal screen or wallet) | `reward_id`, `campaign_id`, `reward_type` |
+| `content_open` | CMS | A CMS surface is opened or displayed (widget, banner or full page) | `content_surface` (`widget`, `banner`, `full_page`) |
+| `content_viewed` | CMS | The CMS content is rendered and visible | `page_id`, `content_surface`, `load_time_ms` (number) |
+
+```json
+{
+  "cuid": "stringxxx",
+  "event_name": "game_viewed",
+  "campaign_id": "camp_44",
+  "game_type": "spinthewheel",
+  "load_time_ms": 850
+}
+```
+
+Field mapping when creating the events (all four required):
+
+| Event-creation field | Maps from |
+|---|---|
+| `customerId` | `cuid` from the event payload (on every event) |
+| `identifierType` | what the SDK is given as the login identifier: mobile, email or externalId |
+| `source` | "Map `source` to SDK" |
+| `accountId` | the SDK account ID |
+
+> ⚠️ Gap: the docs don't say where the events are created or by whom (Capillary or the client), or whether the app must send them itself or Experience+ sends them (so don't call `Hydra.track` for these names unless a Capillary engineer confirms). `_shared/overview.md` says behavioural events must exist in Capillary first (Organisation settings → Master Data Management → Data Model → Behavioural events); confirm that this is the screen for these seven. Ask a Capillary engineer.
+
+> ⚠️ Gap: "Map `source` to SDK" doesn't say what literal value to enter for `source`. Ask a Capillary engineer.
+
+> ⚠️ Gap: `identifierType` allows only mobile, email or externalId, but `customerId` for `Hydra.identify` can also be InTouchUserId or FCMToken (Steps › 14). For an org whose Account Linking Identifier is InTouchUserId or FCMToken, the mapping is undefined. Ask a Capillary engineer.
+
 ### Multi-account
 One app talking to several Hydra accounts (e.g. India, the USA, Europe). Get each account's values (Account Id, Base URL, SSL public key, and Org Id / gamification values if used) from the apps team. Single account: nothing to do here.
 
@@ -698,6 +745,8 @@ func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBri
 
 (`keys` is built as in the app-delegate sample.)
 
+> ⚠️ Gap: whether the plugin's automatic iOS start is skipped when you call this initializer yourself isn't documented (see step 9). Ask a Capillary engineer.
+
 *Android:* in your `HydraApplication` subclass (step 11, Option B), immediately after `super.onCreate()`:
 
 ```kotlin file=android/app/src/main/kotlin/<your-package>/ExampleApplication.kt
@@ -754,7 +803,7 @@ class ExampleApplication : HydraApplication() {
 | Handler stops compiling after an SDK upgrade | Handler `implements` `HydraNativeEventHandler` and new callbacks were added | `extends` it instead (step 13) |
 | Inbox UI doesn't refresh | No "inbox updated" event | Refresh on `onHydraNotificationReceived` / `onNotificationCenterDismissed`, or call `HydraInbox` on demand |
 | Gamification base URL not recognised | Wrong Remote Config key name | `hydra_gamification_base_url`, not `hydra_gamification_url` |
-| Gamification campaigns never appear | `hydra_gamification_key` / `hydra_gamification_region` missing, or screens not reported | Add the keys; call `gamificationScreenAppeared` |
+| Gamification campaigns never appear | `hydra_gamification_key` / `hydra_gamification_region` / `hydra_gamification_base_url` missing, or screens not reported | Add all three keys; call `gamificationScreenAppeared` |
 | Campaigns don't re-evaluate on a persistent screen | No `initState` / `dispose` on refocus | `RouteObserver` + `RouteAware` + lifecycle observer |
 | Loyalty View shows no loyalty content | Cap token set after the view bound, or missing | `setCapToken` **before** mounting the view |
 | Widget keeps empty space after a campaign closes | `onHeightChanged` handler ignores `0` | Collapse on `0` (`height >= 0`) |

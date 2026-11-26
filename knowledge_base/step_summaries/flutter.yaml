@@ -27,7 +27,7 @@ flutter/direct:
     do: "iOS: add the `GoogleService-Info.plist` you downloaded in step 1 to the iOS project using Xcode."
     evidence: ["Add `GoogleService-Info.plist` (step 1) to the iOS project using Xcode."]
   "10":
-    do: "iOS: in `AppDelegate.swift`, after `GeneratedPluginRegistrant.register(with: self)`, build a `HydraRemoteConfig` from your Capillary values and call `HydraNativeAPI.shared.initApplication`. With UIScene, do this in `didInitializeImplicitFlutterEngine(_:)`."
+    do: "iOS: in `AppDelegate.swift`, after `GeneratedPluginRegistrant.register(with: self)`, build a `HydraRemoteConfig` from your Capillary values and call `HydraNativeAPI.shared.initApplication`. With UIScene, do it in `didInitializeImplicitFlutterEngine(_:)` (sample derived, to confirm)."
     evidence: ["HydraNativeAPI.shared.initApplication", "Call it **after** `GeneratedPluginRegistrant.register(...)`", "didInitializeImplicitFlutterEngine(_:)"]
   "11":
     do: "Android: put `google-services.json` from step 1 in `android/app`, declare `com.google.gms.google-services` (version `4.4.2`, `apply false`) in the root `plugins` block of `android/settings.gradle`, and apply it in `android/app/build.gradle`."
@@ -76,7 +76,7 @@ flutter/firebase:
     do: "iOS with CocoaPods only (skip if Swift Package Manager is enabled): run `pod install` in the `ios` folder."
     evidence: ["pod install", "In the `ios` folder:"]
   "9":
-    do: "iOS: add the `GoogleService-Info.plist` from step 1 to the iOS project using Xcode. No Hydra code is needed in `AppDelegate.swift`; the plugin starts the SDK itself from the default Remote Config keys."
+    do: "iOS: add the `GoogleService-Info.plist` from step 1 to the iOS project using Xcode. The base setup needs no Hydra code in `AppDelegate.swift` (the plugin starts the SDK from the default Remote Config keys); only the In-App module adds one method."
     evidence: ["Add `GoogleService-Info.plist` (step 1) to the iOS project using Xcode.", "You don't need any Hydra code in `AppDelegate.swift`"]
   "10":
     do: "Android: put `google-services.json` from step 1 in `android/app`, declare `com.google.gms.google-services` (version `4.4.2`, `apply false`) in the root `plugins` block of `android/settings.gradle`, and apply it in `android/app/build.gradle`."

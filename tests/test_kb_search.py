@@ -14,7 +14,7 @@ def top(query: str, **kwargs):
 
 
 def test_error_string_finds_the_known_issue():
-    assert top("Could not resolve com.capillary:hydra-core 401", files=["android/direct.md"]) == (
+    assert top("Could not resolve com.capillarytech:hydra-core 401 PAT read:packages", files=["android/direct.md"]) == (
         "android/direct.md › Known Issues"
     )
 

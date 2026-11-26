@@ -20,11 +20,11 @@ def files_for_profile(profile: IntegrationProfile) -> list[str]:
     files = list(SHARED_ALWAYS)
     apps = {f"{p.platform}/{p.config_mode}" for p in profile.platforms}
     # Firebase console steps: Firebase mode; Flutter in every mode (Firebase is base setup there);
-    # Web without Remote Config only when push is wanted.
+    # Web, React Native and iOS without Remote Config only when push is wanted (push needs a Firebase project).
     if (
         any(p.config_mode == "firebase" for p in profile.platforms)
         or "flutter/direct" in apps
-        or ("push" in profile.modules and "web/direct" in apps)
+        or ("push" in profile.modules and apps & {"web/direct", "react-native/direct", "ios/direct"})
     ):
         files.append(SHARED_FIREBASE)
     if "push" in profile.modules and any(
